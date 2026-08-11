@@ -1,0 +1,151 @@
+// Prisma Schema for Test Case Management System (TCMS) - Jira Ready MVP
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TestType {
+  WEB
+  MOBILE
+  API
+  MANUAL
+}
+
+enum Priority {
+  BLOCKER
+  CRITICAL
+  NORMAL
+  LOW
+}
+
+enum RunStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABORTED
+}
+
+enum ResultStatus {
+  PASSED
+  FAILED
+  SKIPPED
+  BLOCKED
+}
+
+model Project {
+  id             String     @id @default(uuid())
+  name           String
+  key            String     @unique
+  description    String?
+  jiraProjectKey String?
+  createdAt      DateTime   @default(now())
+
+  suites         Suite[]
+  testRuns       TestRun[]
+
+  @@map("projects")
+}
+
+model Suite {
+  id         String     @id @default(uuid())
+  name       String
+  projectId  String
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  parentId   String?
+  parent     Suite?     @relation("SuiteToSuite", fields: [parentId], references: [id], onDelete: Cascade)
+  children   Suite[]    @relation("SuiteToSuite")
+
+  cases      TestCase[]
+  orderIndex Int        @default(0)
+
+  @@map("suites")
+}
+
+model TestCase {
+  id           String       @id @default(uuid())
+  code         String       @unique
+  title        String
+  description  String?
+  type         TestType     @default(MANUAL)
+  priority     Priority     @default(NORMAL)
+  precondition String?
+
+  suiteId      String
+  suite        Suite        @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+
+  steps        TestStep[]
+  results      TestResult[]
+
+  // Jira Ready
+  jiraStoryKey String?
+  jiraIssueUrl String?
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("test_cases")
+}
+
+model TestStep {
+  id             String   @id @default(uuid())
+  stepNumber     Int
+  action         String
+  expectedResult String
+
+  testCaseId     String
+  testCase       TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@map("test_steps")
+}
+
+model TestRun {
+  id          String     @id @default(uuid())
+  title       String
+  version     String
+  environment String
+  status      RunStatus  @default(IN_PROGRESS)
+
+  executedBy  String
+  testerEmail String
+
+  projectId   String
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  results     TestResult[]
+
+  createdAt   DateTime   @default(now())
+
+  @@map("test_runs")
+}
+
+model TestResult {
+  id           String       @id @default(uuid())
+
+  testRunId    String
+  testRun      TestRun      @relation(fields: [testRunId], references: [id], onDelete: Cascade)
+
+  testCaseId   String
+  testCase     TestCase     @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  status       ResultStatus
+
+  executionMs  Int?
+  errorMessage String?
+
+  executedBy   String?
+  testerEmail  String?
+
+  // Jira Ready
+  jiraBugKey   String?
+  jiraBugUrl   String?
+
+  executedAt   DateTime     @default(now())
+
+  @@map("test_results")
+}
+
