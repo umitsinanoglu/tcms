@@ -7,13 +7,40 @@
 :root {
   --font-inter: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  /* Light Theme Variables */
+  --bg-background: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-secondary: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --glass-panel-bg: rgba(255, 255, 255, 0.85);
+  --glass-panel-border: rgba(226, 232, 240, 0.8);
+}
+
+.dark {
+  /* Dark Theme Variables */
+  --bg-background: #090d16;
+  --bg-surface: #111827;
+  --bg-surface-secondary: #1e293b;
+  --border-color: #1f293d;
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --scrollbar-track: #0b0f19;
+  --scrollbar-thumb: #1f293d;
+  --glass-panel-bg: rgba(17, 24, 39, 0.8);
+  --glass-panel-border: rgba(255, 255, 255, 0.08);
 }
 
 body {
   font-family: var(--font-inter);
-  background-color: #0b0f19;
-  color: #f3f4f6;
+  background-color: var(--bg-background);
+  color: var(--text-main);
   overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* Custom scrollbar */
@@ -22,28 +49,31 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0f19;
+  background: var(--scrollbar-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1f293d;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
   background: #374151;
 }
 
 /* Glassmorphism utility */
 .glass-panel {
-  background: rgba(17, 24, 39, 0.75);
+  background: var(--glass-panel-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-panel-border);
 }
 
 .glass-card {
-  background: rgba(30, 41, 59, 0.5);
+  background: var(--glass-panel-bg);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-panel-border);
 }
 
 /* Custom animations */
@@ -68,3 +98,4 @@ body {
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+

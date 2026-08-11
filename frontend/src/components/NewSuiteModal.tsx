@@ -69,39 +69,39 @@ export const NewSuiteModal: React.FC<NewSuiteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-surface border border-surface-border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scaleUp">
-        <div className="px-6 py-4 border-b border-surface-border flex items-center justify-between bg-slate-900/80">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
           <div className="flex items-center space-x-2.5">
-            <FolderPlus className="w-5 h-5 text-amber-400" />
-            <h3 className="text-sm font-bold text-slate-100">Yeni Suite (Klasör) Ekle</h3>
+            <FolderPlus className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Yeni Suite (Klasör) Ekle</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">Klasör / Suite Adı</label>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Klasör / Suite Adı</label>
             <input
               type="text"
               required
               placeholder="Örn: Ödeme Adımları & 3D Secure"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Üst Klasör / Proje (Parent)
             </label>
             <select
               value={selectedParentId}
               onChange={(e) => setSelectedParentId(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer shadow-sm"
             >
               <option value="">
                 🚀 Proje: {projectKey ? `[${projectKey}] ` : ''}{projectName || 'Aktif Proje Ana Dizini'}
@@ -118,7 +118,7 @@ export const NewSuiteModal: React.FC<NewSuiteModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700"
+              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700"
             >
               İptal
             </button>
@@ -137,3 +137,4 @@ export const NewSuiteModal: React.FC<NewSuiteModalProps> = ({
     </div>
   );
 };
+

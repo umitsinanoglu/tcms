@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { TestCase, TestResult } from '@/services/api';
-import { ExternalLink, Link2, Filter, Layers, CheckCircle, XCircle, AlertTriangle, MinusCircle } from 'lucide-react';
+import { ExternalLink, Link2, Filter, CheckCircle, XCircle, AlertTriangle, MinusCircle } from 'lucide-react';
 
 interface TraceabilityViewProps {
   testCases: TestCase[];
@@ -38,8 +38,8 @@ export const TraceabilityView: React.FC<TraceabilityViewProps> = ({
   const renderStatusBadge = (status?: string) => {
     if (!status) {
       return (
-        <span className="inline-flex items-center space-x-1 text-[11px] font-semibold text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700/50">
-          <MinusCircle className="w-3 h-3 text-slate-500" />
+        <span className="inline-flex items-center space-x-1 text-[11px] font-semibold text-slate-500 bg-slate-200 dark:bg-slate-800/60 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700/50">
+          <MinusCircle className="w-3 h-3 text-slate-400" />
           <span>NOT EXECUTED</span>
         </span>
       );
@@ -47,29 +47,29 @@ export const TraceabilityView: React.FC<TraceabilityViewProps> = ({
     switch (status) {
       case 'PASSED':
         return (
-          <span className="inline-flex items-center space-x-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-            <CheckCircle className="w-3 h-3 text-emerald-400" />
+          <span className="inline-flex items-center space-x-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+            <CheckCircle className="w-3 h-3 text-emerald-500" />
             <span>PASSED</span>
           </span>
         );
       case 'FAILED':
         return (
-          <span className="inline-flex items-center space-x-1 text-[11px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
-            <XCircle className="w-3 h-3 text-rose-400" />
+          <span className="inline-flex items-center space-x-1 text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+            <XCircle className="w-3 h-3 text-rose-500" />
             <span>FAILED</span>
           </span>
         );
       case 'SKIPPED':
         return (
-          <span className="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-            <MinusCircle className="w-3 h-3 text-amber-400" />
+          <span className="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+            <MinusCircle className="w-3 h-3 text-amber-500" />
             <span>SKIPPED</span>
           </span>
         );
       case 'BLOCKED':
         return (
-          <span className="inline-flex items-center space-x-1 text-[11px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
-            <AlertTriangle className="w-3 h-3 text-purple-400" />
+          <span className="inline-flex items-center space-x-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+            <AlertTriangle className="w-3 h-3 text-purple-500" />
             <span>BLOCKED</span>
           </span>
         );
@@ -79,15 +79,15 @@ export const TraceabilityView: React.FC<TraceabilityViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-background p-6 space-y-6 overflow-y-auto">
+    <div className="flex-1 flex flex-col bg-slate-50 dark:bg-[#090d16] text-slate-800 dark:text-slate-100 p-6 space-y-6 overflow-y-auto transition-colors duration-200">
       {/* Header & Stats */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-surface-border pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-100 flex items-center space-x-2">
-            <Link2 className="w-5 h-5 text-blue-400" />
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
+            <Link2 className="w-5 h-5 text-blue-500" />
             <span>Jira Traceability (İzlenebilirlik Matriksi)</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Test senaryolarının Jira Story gereksinimleri ile eşleşme durumunu ve son koşu sonuçlarını izleyin.
           </p>
         </div>
@@ -99,59 +99,59 @@ export const TraceabilityView: React.FC<TraceabilityViewProps> = ({
             placeholder="Senaryo veya Jira Key ara..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="bg-surface border border-surface-border rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm"
           />
 
-          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 space-x-1 text-xs">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-1 space-x-1 text-xs">
             <button
               onClick={() => setFilter('ALL')}
               className={`px-3 py-1 rounded font-medium transition-colors ${
                 filter === 'ALL'
                   ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              All ({testCases.length})
+              Tümü ({testCases.length})
             </button>
             <button
               onClick={() => setFilter('LINKED')}
               className={`px-3 py-1 rounded font-medium transition-colors ${
                 filter === 'LINKED'
                   ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              Jira Linked ({testCases.filter((tc) => tc.jiraStoryKey).length})
+              Jira Bağlı ({testCases.filter((tc) => tc.jiraStoryKey).length})
             </button>
             <button
               onClick={() => setFilter('UNLINKED')}
               className={`px-3 py-1 rounded font-medium transition-colors ${
                 filter === 'UNLINKED'
                   ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              Jira Not Linked ({testCases.filter((tc) => !tc.jiraStoryKey).length})
+              Bağlı Değil ({testCases.filter((tc) => !tc.jiraStoryKey).length})
             </button>
           </div>
         </div>
       </div>
 
       {/* Traceability Table */}
-      <div className="border border-surface-border rounded-xl overflow-hidden bg-surface/40">
+      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900/40 shadow-sm">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-900/90 text-slate-400 font-bold uppercase tracking-wider border-b border-surface-border">
+            <tr className="bg-slate-100 dark:bg-slate-900/90 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
               <th className="py-3 px-4 w-36">Test Case</th>
               <th className="py-3 px-4">Title (Senaryo Başlığı)</th>
               <th className="py-3 px-4 w-44">Jira Story</th>
-              <th className="py-3 px-4 w-36">Last Result</th>
+              <th className="py-3 px-4 w-36">Son Koşu Sonucu</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-surface-border">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
             {filteredCases.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-12 text-center text-slate-500">
+                <td colSpan={4} className="py-12 text-center text-slate-400 dark:text-slate-500">
                   <Filter className="w-6 h-6 mx-auto mb-2 opacity-30 text-slate-400" />
                   <p>Kriterlere uygun test senaryosu bulunamadı.</p>
                 </td>
@@ -163,12 +163,12 @@ export const TraceabilityView: React.FC<TraceabilityViewProps> = ({
                   <tr
                     key={tc.id}
                     onClick={() => onSelectTestCase && onSelectTestCase(tc)}
-                    className="hover:bg-slate-800/40 cursor-pointer transition-colors"
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer transition-colors"
                   >
-                    <td className="py-3 px-4 font-mono font-bold text-blue-400">
+                    <td className="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">
                       {tc.code}
                     </td>
-                    <td className="py-3 px-4 text-slate-200 font-medium">
+                    <td className="py-3 px-4 text-slate-800 dark:text-slate-200 font-medium">
                       {tc.title}
                     </td>
                     <td className="py-3 px-4">
@@ -178,13 +178,13 @@ export const TraceabilityView: React.FC<TraceabilityViewProps> = ({
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center space-x-1.5 font-mono font-bold text-xs text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 px-2.5 py-1 rounded border border-blue-500/20 transition-colors"
+                          className="inline-flex items-center space-x-1.5 font-mono font-bold text-xs text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 px-2.5 py-1 rounded border border-blue-500/20 transition-colors"
                         >
                           <span>{tc.jiraStoryKey}</span>
-                          <ExternalLink className="w-3 h-3 text-blue-400" />
+                          <ExternalLink className="w-3 h-3 text-blue-500" />
                         </a>
                       ) : (
-                        <span className="text-slate-600 font-mono">—</span>
+                        <span className="text-slate-400 font-mono">—</span>
                       )}
                     </td>
                     <td className="py-3 px-4">{renderStatusBadge(lastResult)}</td>
@@ -198,3 +198,4 @@ export const TraceabilityView: React.FC<TraceabilityViewProps> = ({
     </div>
   );
 };
+

@@ -13,6 +13,7 @@ import { Header } from '@/components/Header';
 import { ExplorerTree } from '@/components/ExplorerTree';
 import { TestCaseEditor } from '@/components/TestCaseEditor';
 import { TraceabilityView } from '@/components/TraceabilityView';
+import { DashboardView } from '@/components/DashboardView';
 import { ManualRunModal } from '@/components/ManualRunModal';
 import { NewProjectModal } from '@/components/NewProjectModal';
 import { NewSuiteModal } from '@/components/NewSuiteModal';
@@ -25,7 +26,7 @@ export default function Home() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [tree, setTree] = useState<SuiteTreeNode[]>([]);
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null);
-  const [activeTab, setActiveTab] = useState<'EXPLORER' | 'TRACEABILITY'>('EXPLORER');
+  const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'TRACEABILITY'>('EXPLORER');
   const [isLoadingTree, setIsLoadingTree] = useState(false);
 
   // Modals state
@@ -161,7 +162,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 transition-colors duration-200">
       {/* Top Header */}
       <Header
         projects={projects}
@@ -186,7 +187,7 @@ export default function Home() {
 
       {/* Main Workspace Layout */}
       <div className="flex flex-1 overflow-hidden">
-        {activeTab === 'EXPLORER' ? (
+        {activeTab === 'EXPLORER' && (
           <>
             {/* Left Panel: Explorer Tree */}
             <ExplorerTree
@@ -219,8 +220,25 @@ export default function Home() {
               onClose={() => setSelectedCase(null)}
             />
           </>
-        ) : (
-          /* Traceability Matrix View */
+        )}
+
+        {activeTab === 'DASHBOARD' && (
+          <DashboardView
+            project={selectedProject}
+            testCases={allCases}
+            onOpenManualRun={() => setIsManualRunOpen(true)}
+            onOpenNewCase={() => {
+              setActiveParentSuiteId(null);
+              setIsNewCaseOpen(true);
+            }}
+            onSelectCase={(tc) => {
+              setSelectedCase(tc);
+              setActiveTab('EXPLORER');
+            }}
+          />
+        )}
+
+        {activeTab === 'TRACEABILITY' && (
           <TraceabilityView
             testCases={allCases}
             onSelectTestCase={(tc) => {
@@ -292,4 +310,5 @@ export default function Home() {
     </div>
   );
 }
+
 

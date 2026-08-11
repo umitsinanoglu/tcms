@@ -2,13 +2,27 @@
 
 import React from 'react';
 import { Project } from '@/services/api';
-import { FolderPlus, FilePlus, Play, ExternalLink, PlusCircle, CheckCircle2, ChevronDown } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
+import {
+  FolderPlus,
+  FilePlus,
+  Play,
+  ExternalLink,
+  PlusCircle,
+  CheckCircle2,
+  ChevronDown,
+  Sun,
+  Moon,
+  BarChart3,
+  Layers,
+  GitBranch,
+} from 'lucide-react';
 
 interface HeaderProps {
   projects: Project[];
   selectedProject: Project | null;
-  activeView?: 'EXPLORER' | 'TRACEABILITY';
-  onTabChange?: (tab: 'EXPLORER' | 'TRACEABILITY') => void;
+  activeView?: 'EXPLORER' | 'DASHBOARD' | 'TRACEABILITY';
+  onTabChange?: (tab: 'EXPLORER' | 'DASHBOARD' | 'TRACEABILITY') => void;
   onSelectProject: (project: Project) => void;
   onOpenNewProject: () => void;
   onOpenNewSuite: () => void;
@@ -27,9 +41,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNewCase,
   onOpenManualRun,
 }) => {
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="h-16 border-b border-surface-border bg-surface/90 backdrop-blur-md px-6 flex items-center justify-between z-30 sticky top-0">
+    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-6 flex items-center justify-between z-30 sticky top-0 transition-colors duration-200">
       {/* Brand & Project Dropdown */}
       <div className="flex items-center space-x-6">
         <div className="flex items-center space-x-2.5">
@@ -37,14 +52,14 @@ export const Header: React.FC<HeaderProps> = ({
             <CheckCircle2 className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent leading-none">
+            <h1 className="text-lg font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-500 dark:from-white dark:via-slate-200 dark:to-slate-400 bg-clip-text text-transparent leading-none">
               TCMS
             </h1>
-            <span className="text-[10px] text-slate-400 font-mono">Test Case Management System</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Test Case Management</span>
           </div>
         </div>
 
-        <div className="h-5 w-[1px] bg-slate-800" />
+        <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800" />
 
         {/* Project Selector */}
         <div className="flex items-center space-x-2">
@@ -55,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
                 const proj = projects.find((p) => p.id === e.target.value);
                 if (proj) onSelectProject(proj);
               }}
-              className="appearance-none bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium rounded-lg px-3.5 py-1.5 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer min-w-[180px]"
+              className="appearance-none bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm font-medium rounded-lg px-3.5 py-1.5 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer min-w-[180px]"
             >
               {projects.length === 0 ? (
                 <option value="">Proje Bulunamadı</option>
@@ -72,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             onClick={onOpenNewProject}
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
             title="Yeni Proje Ekle"
           >
             <PlusCircle className="w-4 h-4" />
@@ -81,45 +96,78 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* View Switcher Tabs */}
         {activeView !== undefined && onTabChange && (
-          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 space-x-1 text-xs">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-1 space-x-1 text-xs">
             <button
               onClick={() => onTabChange('EXPLORER')}
-              className={`px-3 py-1 rounded font-medium transition-colors ${
-                activeView === 'EXPLORER' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+              className={`flex items-center space-x-1.5 px-3 py-1 rounded-md font-medium transition-colors ${
+                activeView === 'EXPLORER'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              Explorer & Editor
+              <Layers className="w-3.5 h-3.5" />
+              <span>Explorer</span>
             </button>
+
+            <button
+              onClick={() => onTabChange('DASHBOARD')}
+              className={`flex items-center space-x-1.5 px-3 py-1 rounded-md font-medium transition-colors ${
+                activeView === 'DASHBOARD'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Dashboard</span>
+            </button>
+
             <button
               onClick={() => onTabChange('TRACEABILITY')}
-              className={`px-3 py-1 rounded font-medium transition-colors ${
-                activeView === 'TRACEABILITY' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+              className={`flex items-center space-x-1.5 px-3 py-1 rounded-md font-medium transition-colors ${
+                activeView === 'TRACEABILITY'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              Traceability
+              <GitBranch className="w-3.5 h-3.5" />
+              <span>Traceability</span>
             </button>
           </div>
         )}
       </div>
 
-
-      {/* Action Buttons */}
+      {/* Action Buttons & Theme Switcher */}
       <div className="flex items-center space-x-3">
+        {/* Theme Switcher Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all"
+          title={theme === 'dark' ? 'Açık Temaya Geç (Light Mode)' : 'Koyu Temaya Geç (Dark Mode)'}
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-4 h-4 text-amber-400" />
+          ) : (
+            <Moon className="w-4 h-4 text-indigo-600" />
+          )}
+        </button>
+
+        <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 mx-0.5" />
+
         <button
           onClick={onOpenNewSuite}
           disabled={!selectedProject}
-          className="flex items-center space-x-2 px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700 rounded-lg text-slate-200 hover:text-white transition-all shadow-sm"
+          className="flex items-center space-x-2 px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
         >
-          <FolderPlus className="w-4 h-4 text-amber-400" />
+          <FolderPlus className="w-4 h-4 text-amber-500 dark:text-amber-400" />
           <span>Yeni Suite</span>
         </button>
 
         <button
           onClick={onOpenNewCase}
           disabled={!selectedProject}
-          className="flex items-center space-x-2 px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700 rounded-lg text-slate-200 hover:text-white transition-all shadow-sm"
+          className="flex items-center space-x-2 px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
         >
-          <FilePlus className="w-4 h-4 text-blue-400" />
+          <FilePlus className="w-4 h-4 text-blue-500 dark:text-blue-400" />
           <span>Yeni Case</span>
         </button>
 
@@ -132,13 +180,13 @@ export const Header: React.FC<HeaderProps> = ({
           <span>Run Manual Test</span>
         </button>
 
-        <div className="h-5 w-[1px] bg-slate-800 mx-1" />
+        <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1" />
 
         <a
           href="http://localhost:3001/api/docs"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-blue-400 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-slate-800/50"
+          className="flex items-center space-x-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"
           title="OpenAPI / Swagger Dokümantasyonunu Aç"
         >
           <span>Swagger Docs</span>
@@ -148,3 +196,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+
