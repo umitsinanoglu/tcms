@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Project } from '@/services/api';
-import { useTheme } from '@/context/ThemeContext';
+import { ThemeSelector } from './ThemeSelector';
 import {
   FolderPlus,
   FilePlus,
@@ -11,8 +11,6 @@ import {
   PlusCircle,
   CheckCircle2,
   ChevronDown,
-  Sun,
-  Moon,
   BarChart3,
   Layers,
   GitBranch,
@@ -41,7 +39,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNewCase,
   onOpenManualRun,
 }) => {
-  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-6 flex items-center justify-between z-30 sticky top-0 transition-colors duration-200">
@@ -138,18 +135,8 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Action Buttons & Theme Switcher */}
       <div className="flex items-center space-x-3">
-        {/* Theme Switcher Toggle */}
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all"
-          title={theme === 'dark' ? 'Açık Temaya Geç (Light Mode)' : 'Koyu Temaya Geç (Dark Mode)'}
-        >
-          {theme === 'dark' ? (
-            <Sun className="w-4 h-4 text-amber-400" />
-          ) : (
-            <Moon className="w-4 h-4 text-indigo-600" />
-          )}
-        </button>
+        {/* Theme Selector Component */}
+        <ThemeSelector />
 
         <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 mx-0.5" />
 

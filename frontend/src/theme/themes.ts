@@ -1,0 +1,88 @@
+import { DesignTokens, ThemeId } from './tokens';
+
+export const themePresets: Record<ThemeId, DesignTokens> = {
+  light: {
+    colors: {
+      background: '#f8fafc',
+      surface: '#ffffff',
+      surfaceSecondary: '#f1f5f9',
+      border: '#e2e8f0',
+      textMain: '#0f172a',
+      textMuted: '#64748b',
+      accentPrimary: '#3b82f6',
+      accentGradient: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+      accentHover: '#1d4ed8',
+      glassPanelBg: 'rgba(255, 255, 255, 0.85)',
+      glassPanelBorder: 'rgba(226, 232, 240, 0.8)',
+      scrollbarTrack: '#f1f5f9',
+      scrollbarThumb: '#cbd5e1',
+    },
+    radii: {
+      card: '12px',
+      button: '8px',
+      pill: '9999px',
+    },
+    shadows: {
+      sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+      lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+      accentGlow: '0 0 20px rgba(59, 130, 246, 0.3)',
+    },
+  },
+  dark: {
+    colors: {
+      background: '#090d16',
+      surface: '#111827',
+      surfaceSecondary: '#1e293b',
+      border: '#1f293d',
+      textMain: '#f3f4f6',
+      textMuted: '#9ca3af',
+      accentPrimary: '#3b82f6',
+      accentGradient: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+      accentHover: '#60a5fa',
+      glassPanelBg: 'rgba(17, 24, 39, 0.8)',
+      glassPanelBorder: 'rgba(255, 255, 255, 0.08)',
+      scrollbarTrack: '#0b0f19',
+      scrollbarThumb: '#1f293d',
+    },
+    radii: {
+      card: '12px',
+      button: '8px',
+      pill: '9999px',
+    },
+    shadows: {
+      sm: '0 1px 2px 0 rgba(0, 0, 0, 0.3)',
+      md: '0 4px 6px -1px rgba(0, 0, 0, 0.4)',
+      lg: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+      accentGlow: '0 0 20px rgba(59, 130, 246, 0.4)',
+    },
+  },
+  crimson: {
+    colors: {
+      background: '#191e28',
+      surface: '#222938',
+      surfaceSecondary: '#2b3447',
+      border: '#333f54',
+      textMain: '#f8fafc',
+      textMuted: '#94a3b8',
+      accentPrimary: '#ff4b6e',
+      accentGradient: 'linear-gradient(135deg, #ff4b6e 0%, #d82b4b 100%)',
+      accentHover: '#ff6b87',
+      glassPanelBg: 'rgba(34, 41, 56, 0.85)',
+      glassPanelBorder: 'rgba(255, 75, 110, 0.15)',
+      scrollbarTrack: '#141822',
+      scrollbarThumb: '#2d374a',
+    },
+    radii: {
+      card: '14px',
+      button: '10px',
+      pill: '9999px',
+    },
+    shadows: {
+      sm: '0 1px 3px rgba(0, 0, 0, 0.4)',
+      md: '0 4px 12px rgba(0, 0, 0, 0.35)',
+      lg: '0 12px 24px rgba(0, 0, 0, 0.45)',
+      accentGlow: '0 0 25px rgba(255, 75, 110, 0.45)',
+    },
+  },
+};

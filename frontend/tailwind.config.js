@@ -11,12 +11,15 @@ module.exports = {
       colors: {
         background: 'var(--bg-background)',
         surface: 'var(--bg-surface)',
+        'surface-secondary': 'var(--bg-surface-secondary)',
         'surface-border': 'var(--border-color)',
-        accent: '#3b82f6',
-        'accent-hover': '#2563eb',
+        accent: 'var(--accent-primary)',
+        'accent-hover': 'var(--accent-hover)',
+      },
+      backgroundImage: {
+        'accent-gradient': 'var(--accent-gradient)',
       },
     },
   },
   plugins: [],
 };
-
