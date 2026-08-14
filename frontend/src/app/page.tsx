@@ -12,7 +12,7 @@ import {
 import { Header } from '@/components/Header';
 import { ExplorerTree } from '@/components/ExplorerTree';
 import { TestCaseEditor } from '@/components/TestCaseEditor';
-import { TraceabilityView } from '@/components/TraceabilityView';
+import { TestRunsView } from '@/components/TestRunsView';
 import { DashboardView } from '@/components/DashboardView';
 import { ManualRunModal } from '@/components/ManualRunModal';
 import { NewProjectModal } from '@/components/NewProjectModal';
@@ -26,7 +26,7 @@ export default function Home() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [tree, setTree] = useState<SuiteTreeNode[]>([]);
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null);
-  const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'TRACEABILITY'>('EXPLORER');
+  const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'RUNS'>('EXPLORER');
   const [isLoadingTree, setIsLoadingTree] = useState(false);
 
   // Modals state
@@ -226,6 +226,7 @@ export default function Home() {
           <DashboardView
             project={selectedProject}
             testCases={allCases}
+            suites={tree}
             onOpenManualRun={() => setIsManualRunOpen(true)}
             onOpenNewCase={() => {
               setActiveParentSuiteId(null);
@@ -238,10 +239,11 @@ export default function Home() {
           />
         )}
 
-        {activeTab === 'TRACEABILITY' && (
-          <TraceabilityView
-            testCases={allCases}
-            onSelectTestCase={(tc) => {
+        {activeTab === 'RUNS' && (
+          <TestRunsView
+            projectId={selectedProject?.id || ''}
+            onOpenManualRun={() => setIsManualRunOpen(true)}
+            onSelectCase={(tc) => {
               setSelectedCase(tc);
               setActiveTab('EXPLORER');
             }}

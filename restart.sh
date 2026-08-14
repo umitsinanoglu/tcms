@@ -12,5 +12,8 @@ echo "🔄 TCMS Servisleri Yeniden Başlatılıyor (Restart)..."
 echo "⏳ Portların serbest kalması için 1 saniye bekleniyor..."
 sleep 1
 
+echo "🧹 Stale Next.js build ve cache temizleniyor..."
+rm -rf frontend/.next/cache
+
 # Launch both services
 ./start.sh
