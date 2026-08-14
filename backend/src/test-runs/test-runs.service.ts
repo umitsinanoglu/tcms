@@ -55,6 +55,7 @@ export class TestRunsService {
             errorMessage: item.errorMessage ?? null,
             jiraBugKey: item.jiraBugKey ?? null,
             jiraBugUrl: bugUrl,
+            screenshotUrl: item.screenshotUrl ?? existing.screenshotUrl ?? null,
             executedBy: run.executedBy,
             testerEmail: run.testerEmail,
             executedAt: new Date(),
@@ -70,9 +71,18 @@ export class TestRunsService {
             errorMessage: item.errorMessage ?? null,
             jiraBugKey: item.jiraBugKey ?? null,
             jiraBugUrl: bugUrl,
+            screenshotUrl: item.screenshotUrl ?? null,
             executedBy: run.executedBy,
             testerEmail: run.testerEmail,
           },
+        });
+      }
+
+      // Sync screenshotUrl to TestCase if provided
+      if (item.screenshotUrl !== undefined) {
+        await this.prisma.testCase.update({
+          where: { id: item.testCaseId },
+          data: { screenshotUrl: item.screenshotUrl || null },
         });
       }
     }
@@ -137,6 +147,7 @@ export class TestRunsService {
           testerEmail: dto.testerEmail || null,
           jiraBugKey: r.jiraBugKey || null,
           jiraBugUrl: bugUrl,
+          screenshotUrl: r.screenshotUrl || null,
         };
       });
 
@@ -201,8 +212,16 @@ export class TestRunsService {
         testerEmail: 'tester@company.com',
         jiraBugKey: dto.jiraBugKey || null,
         jiraBugUrl: bugUrl,
+        screenshotUrl: dto.screenshotUrl || null,
       },
     });
+
+    if (dto.screenshotUrl !== undefined) {
+      await this.prisma.testCase.update({
+        where: { id: dto.testCaseId },
+        data: { screenshotUrl: dto.screenshotUrl || null },
+      });
+    }
 
     return result;
   }

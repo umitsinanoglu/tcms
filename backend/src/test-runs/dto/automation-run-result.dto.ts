@@ -32,6 +32,11 @@ export class TestCaseResultItemDto {
   @IsString()
   @IsOptional()
   jiraBugUrl?: string;
+
+  @ApiProperty({ example: 'data:image/png;base64,...', description: 'Ekran görüntüsü (URL veya Base64)', required: false })
+  @IsString()
+  @IsOptional()
+  screenshotUrl?: string;
 }
 
 export class CreateAutomationRunDto {

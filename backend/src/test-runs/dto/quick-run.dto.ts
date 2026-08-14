@@ -19,4 +19,7 @@ export class QuickRunDto {
 
   @ApiPropertyOptional({ description: 'Testi koşan kullanıcı adı' })
   executedBy?: string;
+
+  @ApiPropertyOptional({ description: 'Ekran görüntüsü (URL veya Base64)' })
+  screenshotUrl?: string;
 }

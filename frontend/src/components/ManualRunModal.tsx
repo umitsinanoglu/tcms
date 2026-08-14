@@ -18,6 +18,11 @@ import {
   Zap,
   Bug,
   ExternalLink,
+  Image as ImageIcon,
+  Upload,
+  Trash2,
+  Maximize2,
+  Edit3,
 } from 'lucide-react';
 
 interface ManualRunModalProps {
@@ -36,8 +41,9 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeRun, setActiveRun] = useState<TestRun | null>(null);
   const [results, setResults] = useState<
-    Record<string, { status: ResultStatus; errorMessage?: string; jiraBugKey?: string; jiraBugUrl?: string }>
+    Record<string, { status: ResultStatus; errorMessage?: string; jiraBugKey?: string; jiraBugUrl?: string; screenshotUrl?: string }>
   >({});
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [title, setTitle] = useState('Sprint 24 Regression');
   const [version, setVersion] = useState('v2.4.0-rc1');
   const [environment, setEnvironment] = useState('STAGING');
@@ -64,6 +70,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       setIsSubmitted(false);
       setSummaryData(null);
       setActiveRun(null);
+      setLightboxImage(null);
     }
   }, [isOpen]);
 
@@ -76,6 +83,8 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
         [currentCase.id]: {
           ...prev[currentCase.id],
           status,
+          // Pre-fill screenshot from currentCase if available and not yet set
+          screenshotUrl: prev[currentCase.id]?.screenshotUrl ?? currentCase.screenshotUrl ?? undefined,
         },
       }));
     },
@@ -89,6 +98,17 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
         ...prev[caseId],
         status: prev[caseId]?.status || 'FAILED',
         errorMessage: msg,
+      },
+    }));
+  };
+
+  const handleScreenshotChange = (caseId: string, screenshotUrl: string) => {
+    setResults((prev) => ({
+      ...prev,
+      [caseId]: {
+        ...prev[caseId],
+        status: prev[caseId]?.status || 'FAILED',
+        screenshotUrl,
       },
     }));
   };
@@ -170,6 +190,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           errorMessage: res?.errorMessage,
           jiraBugKey: res?.jiraBugKey,
           jiraBugUrl: res?.jiraBugUrl,
+          screenshotUrl: res?.screenshotUrl ?? tc.screenshotUrl,
         };
       });
 
@@ -206,22 +227,22 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
   const currentResult = currentCase ? results[currentCase.id] : null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-surface border border-surface-border rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scaleUp">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-surface-border flex items-center justify-between bg-slate-900/80">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center justify-center">
               <Zap className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-100 flex items-center space-x-2">
+              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
                 <span>Manual Execution Dashboard</span>
-                <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">
+                <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 px-2 py-0.5 rounded-full font-mono">
                   {testCases.length} Senaryo
                 </span>
               </h2>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 TestCase seviyesinde test sonuçlarını veritabanına ve Jira Bug takibine işleyin.
               </p>
             </div>
@@ -476,6 +497,89 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                         </a>
                       </div>
                     )}
+
+                    {/* Manual Screenshot Upload for FAIL status */}
+                    <div className="space-y-2 pt-2 border-t border-red-500/20">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] text-slate-300 font-bold flex items-center space-x-1.5 uppercase tracking-wider">
+                          <ImageIcon className="w-3.5 h-3.5 text-red-400" />
+                          <span>Manuel Ekran Görüntüsü (Fail Kanıtı)</span>
+                        </label>
+                        {(currentResult.screenshotUrl || currentCase.screenshotUrl) && (
+                          <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-mono font-semibold border border-emerald-500/20">
+                            Görsel Ekli
+                          </span>
+                        )}
+                      </div>
+
+                      {currentResult.screenshotUrl || currentCase.screenshotUrl ? (
+                        <div className="relative group max-w-md overflow-hidden rounded-xl border border-red-500/30 bg-slate-900/60 p-2">
+                          <img
+                            src={currentResult.screenshotUrl || currentCase.screenshotUrl}
+                            alt="Fail Screenshot"
+                            className="w-full max-h-48 object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => setLightboxImage(currentResult.screenshotUrl || currentCase.screenshotUrl || null)}
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 backdrop-blur-[2px] rounded-xl">
+                            <button
+                              type="button"
+                              onClick={() => setLightboxImage(currentResult.screenshotUrl || currentCase.screenshotUrl || null)}
+                              className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-transform hover:scale-105"
+                              title="Büyüt / Tam Ekran"
+                            >
+                              <Maximize2 className="w-4 h-4" />
+                            </button>
+                            <label className="p-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 cursor-pointer transition-transform hover:scale-105" title="Görseli Değiştir">
+                              <Edit3 className="w-4 h-4 text-blue-400" />
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => handleScreenshotChange(currentCase.id, reader.result as string);
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => handleScreenshotChange(currentCase.id, '')}
+                              className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-transform hover:scale-105"
+                              title="Görseli Sil"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 border-2 border-dashed border-red-500/30 rounded-xl bg-slate-900/40 text-center space-y-2">
+                          <p className="text-xs text-slate-400">
+                            FAIL durumu için ekran görüntüsü kanıtı ekleyin
+                          </p>
+                          <label className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95">
+                            <Upload className="w-3.5 h-3.5 text-red-400" />
+                            <span>Ekran Görüntüsü Yükle</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => handleScreenshotChange(currentCase.id, reader.result as string);
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -565,6 +669,34 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           </div>
         )}
       </div>
+
+      {/* Lightbox Modal for Fullscreen Image View */}
+      {lightboxImage && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fadeIn">
+          <div className="absolute top-4 right-4 flex items-center space-x-3">
+            <a
+              href={lightboxImage}
+              download="fail-screenshot.png"
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg border border-slate-700 transition-colors"
+            >
+              İndir
+            </a>
+            <button
+              onClick={() => setLightboxImage(null)}
+              className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="max-w-5xl max-h-[85vh] p-2 overflow-auto">
+            <img
+              src={lightboxImage}
+              alt="Full Fail Screenshot"
+              className="max-w-full max-h-[80vh] object-contain rounded-xl border border-slate-800 shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

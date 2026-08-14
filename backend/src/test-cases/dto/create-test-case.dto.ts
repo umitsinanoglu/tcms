@@ -50,6 +50,11 @@ export class CreateTestCaseDto {
   @IsOptional()
   jiraIssueUrl?: string;
 
+  @ApiProperty({ example: 'data:image/png;base64,...', description: 'Ekran görüntüsü (URL veya Base64)', required: false })
+  @IsString()
+  @IsOptional()
+  screenshotUrl?: string;
+
   @ApiProperty({ type: [CreateTestStepDto], description: 'Test adımları listesi', required: false })
   @IsArray()
   @ValidateNested({ each: true })
