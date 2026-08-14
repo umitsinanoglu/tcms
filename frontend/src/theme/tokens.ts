@@ -1,4 +1,4 @@
-export type ThemeId = 'light' | 'dark' | 'crimson';
+export type ThemeId = 'crimson-dark' | 'crimson-light';
 
 export interface ThemeMeta {
   id: ThemeId;
@@ -37,22 +37,16 @@ export interface DesignTokens {
 }
 
 export const THEME_METADATA: Record<ThemeId, ThemeMeta> = {
-  light: {
-    id: 'light',
-    name: 'Açık Tema',
-    description: 'Ferah ve temiz standart açık arayüz',
-    swatchColors: ['#ffffff', '#3b82f6', '#f8fafc'],
+  'crimson-dark': {
+    id: 'crimson-dark',
+    name: 'Crimson Coral (Koyu)',
+    description: 'Derin arduvaz fon ve canlı mercan-kırmızı gradyanlı koyu arayüz',
+    swatchColors: ['#191e28', '#ff4b6e', '#222938'],
   },
-  dark: {
-    id: 'dark',
-    name: 'Koyu Tema',
-    description: 'Göz yormayan koyu gri / lacivert arayüz',
-    swatchColors: ['#111827', '#3b82f6', '#090d16'],
-  },
-  crimson: {
-    id: 'crimson',
-    name: 'Crimson Coral',
-    description: 'Derin arduvaz fon ve canlı mercan-kırmızı gradyanlar',
-    swatchColors: ['#1e2430', '#ff4b6e', '#28303d'],
+  'crimson-light': {
+    id: 'crimson-light',
+    name: 'Crimson Coral (Açık)',
+    description: 'Açık pastel fon ve canlı mercan-kırmızı vurgulu açık arayüz',
+    swatchColors: ['#f0f3f8', '#ff4b6e', '#ffffff'],
   },
 };

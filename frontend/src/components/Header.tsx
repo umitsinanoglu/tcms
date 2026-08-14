@@ -45,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Brand & Project Dropdown */}
       <div className="flex items-center space-x-6">
         <div className="flex items-center space-x-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500 via-pink-500 to-rose-600 flex items-center justify-center shadow-lg shadow-rose-500/30">
             <CheckCircle2 className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
                 const proj = projects.find((p) => p.id === e.target.value);
                 if (proj) onSelectProject(proj);
               }}
-              className="appearance-none bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm font-medium rounded-lg px-3.5 py-1.5 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer min-w-[180px]"
+              className="appearance-none bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm font-medium rounded-lg px-3.5 py-1.5 pr-8 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all cursor-pointer min-w-[180px]"
             >
               {projects.length === 0 ? (
                 <option value="">Proje Bulunamadı</option>
@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onTabChange('EXPLORER')}
               className={`flex items-center space-x-1.5 px-3 py-1 rounded-md font-medium transition-colors ${
                 activeView === 'EXPLORER'
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-sm shadow-rose-500/20'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -110,7 +110,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onTabChange('DASHBOARD')}
               className={`flex items-center space-x-1.5 px-3 py-1 rounded-md font-medium transition-colors ${
                 activeView === 'DASHBOARD'
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-sm shadow-rose-500/20'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -122,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onTabChange('TRACEABILITY')}
               className={`flex items-center space-x-1.5 px-3 py-1 rounded-md font-medium transition-colors ${
                 activeView === 'TRACEABILITY'
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-sm shadow-rose-500/20'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >

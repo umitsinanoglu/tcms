@@ -4,47 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root,
+.dark,
+[data-theme="crimson-dark"] {
   --font-inter: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Default Light Theme Variables */
-  --bg-background: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-surface-secondary: #f1f5f9;
-  --border-color: #e2e8f0;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --accent-primary: #3b82f6;
-  --accent-gradient: linear-gradient(135deg, #2563eb, #3b82f6);
-  --accent-hover: #1d4ed8;
-  --scrollbar-track: #f1f5f9;
-  --scrollbar-thumb: #cbd5e1;
-  --glass-panel-bg: rgba(255, 255, 255, 0.85);
-  --glass-panel-border: rgba(226, 232, 240, 0.8);
-  --accent-glow: rgba(59, 130, 246, 0.3);
-}
-
-.dark, [data-theme="dark"] {
-  /* Dark Theme Variables */
-  --bg-background: #090d16;
-  --bg-surface: #111827;
-  --bg-surface-secondary: #1e293b;
-  --border-color: #1f293d;
-  --text-main: #f3f4f6;
-  --text-muted: #9ca3af;
-  --accent-primary: #3b82f6;
-  --accent-gradient: linear-gradient(135deg, #3b82f6, #6366f1);
-  --accent-hover: #60a5fa;
-  --scrollbar-track: #0b0f19;
-  --scrollbar-thumb: #1f293d;
-  --glass-panel-bg: rgba(17, 24, 39, 0.8);
-  --glass-panel-border: rgba(255, 255, 255, 0.08);
-  --accent-glow: rgba(59, 130, 246, 0.4);
-}
-
-.theme-crimson, [data-theme="crimson"] {
-  /* Crimson Coral Theme Variables (Ekteki Görsel Tasarımı) */
+  /* Crimson Coral Dark Theme Variables */
   --bg-background: #191e28;
   --bg-surface: #222938;
   --bg-surface-secondary: #2b3447;
@@ -59,6 +25,24 @@
   --glass-panel-bg: rgba(34, 41, 56, 0.85);
   --glass-panel-border: rgba(255, 75, 110, 0.18);
   --accent-glow: rgba(255, 75, 110, 0.45);
+}
+
+[data-theme="crimson-light"] {
+  /* Crimson Coral Light Theme Variables */
+  --bg-background: #f0f3f8;
+  --bg-surface: #ffffff;
+  --bg-surface-secondary: #e8ecf3;
+  --border-color: #d5ddea;
+  --text-main: #191e28;
+  --text-muted: #64748b;
+  --accent-primary: #ff4b6e;
+  --accent-gradient: linear-gradient(135deg, #ff4b6e 0%, #d82b4b 100%);
+  --accent-hover: #e6385b;
+  --scrollbar-track: #e8ecf3;
+  --scrollbar-thumb: #cbd5e1;
+  --glass-panel-bg: rgba(255, 255, 255, 0.9);
+  --glass-panel-border: rgba(255, 75, 110, 0.2);
+  --accent-glow: rgba(255, 75, 110, 0.35);
 }
 
 body {
@@ -97,6 +81,20 @@ body {
   background: var(--glass-panel-bg);
   backdrop-filter: blur(8px);
   border: 1px solid var(--glass-panel-border);
+}
+
+/* Crimson gradient button utility */
+.btn-crimson {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(255, 75, 110, 0.35);
+}
+
+.btn-crimson:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px rgba(255, 75, 110, 0.5);
+  transform: translateY(-1px);
 }
 
 /* Custom animations */

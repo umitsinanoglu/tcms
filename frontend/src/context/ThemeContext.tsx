@@ -14,16 +14,16 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<ThemeId>('dark');
+  const [theme, setThemeState] = useState<ThemeId>('crimson-dark');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const savedTheme = localStorage.getItem('tcms_theme') as ThemeId | null;
-    if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'crimson')) {
+    if (savedTheme === 'crimson-dark' || savedTheme === 'crimson-light') {
       setThemeState(savedTheme);
-    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-      setThemeState('light');
+    } else {
+      setThemeState('crimson-dark');
     }
   }, []);
 
@@ -31,16 +31,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!mounted) return;
     const root = document.documentElement;
 
-    // Remove legacy classes
+    // Reset classes & attributes
     root.classList.remove('dark', 'theme-crimson', 'theme-light');
     root.removeAttribute('data-theme');
 
-    // Set active data-theme attribute
     root.setAttribute('data-theme', theme);
 
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else if (theme === 'crimson') {
+    if (theme === 'crimson-dark') {
       root.classList.add('dark', 'theme-crimson');
     } else {
       root.classList.add('theme-light');
@@ -53,7 +50,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setThemeState(newTheme);
   };
 
-  const tokens = themePresets[theme] || themePresets.dark;
+  const tokens = themePresets[theme] || themePresets['crimson-dark'];
   const availableThemes = Object.values(THEME_METADATA);
 
   return (
