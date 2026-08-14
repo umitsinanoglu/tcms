@@ -41,11 +41,15 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
 
   return (
-    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-30 sticky top-0 transition-colors duration-200 gap-2 overflow-x-auto no-scrollbar">
+    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-40 sticky top-0 transition-colors duration-200 gap-2">
       {/* Brand & Project Dropdown */}
       <div className="flex items-center space-x-3 sm:space-x-5 shrink-0">
-        <div className="flex items-center space-x-2 shrink-0">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-rose-500 via-pink-500 to-rose-600 flex items-center justify-center shadow-md shadow-rose-500/30">
+        <div
+          onClick={() => onTabChange && onTabChange('DASHBOARD')}
+          className="flex items-center space-x-2 shrink-0 cursor-pointer hover:opacity-80 transition-opacity group"
+          title="Top Dashboard'a Git"
+        >
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-rose-500 via-pink-500 to-rose-600 flex items-center justify-center shadow-md shadow-rose-500/30 group-hover:scale-105 transition-transform">
             <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
           <div>

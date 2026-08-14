@@ -21,6 +21,7 @@ import {
   Upload,
   Maximize2,
   Edit3,
+  Clock,
 } from 'lucide-react';
 
 interface TestCaseEditorProps {
@@ -584,6 +585,97 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
             </div>
           )}
         </div>
+
+        {/* Execution History Section */}
+        {testCase.results && testCase.results.length > 0 && (
+          <div className="space-y-3 p-4 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-indigo-500" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Koşum Geçmişi & Tüm Tekrar Koşuları ({testCase.results.length})
+                </h3>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">
+                Son Koşu: {testCase.results[0].executedAt ? new Date(testCase.results[0].executedAt).toLocaleString('tr-TR') : '-'}
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {testCase.results.map((res, idx) => (
+                <div
+                  key={res.id || idx}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-xs gap-2"
+                >
+                  <div className="flex items-center space-x-3 min-w-0">
+                    {res.status === 'PASSED' && (
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px] shrink-0 border border-emerald-500/30">
+                        PASSED
+                      </span>
+                    )}
+                    {res.status === 'FAILED' && (
+                      <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-600 dark:text-red-400 font-mono font-bold text-[10px] shrink-0 border border-red-500/30">
+                        FAILED
+                      </span>
+                    )}
+                    {res.status === 'BLOCKED' && (
+                      <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-600 dark:text-purple-400 font-mono font-bold text-[10px] shrink-0 border border-purple-500/30">
+                        BLOCKED
+                      </span>
+                    )}
+                    {res.status === 'SKIPPED' && (
+                      <span className="px-2 py-0.5 rounded bg-slate-500/20 text-slate-600 dark:text-slate-400 font-mono font-bold text-[10px] shrink-0 border border-slate-500/30">
+                        SKIPPED
+                      </span>
+                    )}
+
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center space-x-2 text-[11px]">
+                        <span className="font-mono text-slate-500 dark:text-slate-400 font-semibold">
+                          {res.executedAt ? new Date(res.executedAt).toLocaleString('tr-TR') : ''}
+                        </span>
+                        {res.executedBy && (
+                          <span className="text-slate-500 dark:text-slate-400">by {res.executedBy}</span>
+                        )}
+                        {res.executionMs && (
+                          <span className="text-slate-400 font-mono text-[10px]">({res.executionMs} ms)</span>
+                        )}
+                      </div>
+                      {res.errorMessage && (
+                        <p className="text-red-500 dark:text-red-400 font-mono text-[11px] truncate">
+                          Hata: {res.errorMessage}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2 shrink-0">
+                    {res.jiraBugKey && (
+                      <a
+                        href={res.jiraBugUrl || `https://company.atlassian.net/browse/${res.jiraBugKey}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] font-mono text-red-500 hover:underline flex items-center space-x-1"
+                      >
+                        <span>Bug: {res.jiraBugKey}</span>
+                      </a>
+                    )}
+                    {res.screenshotUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setScreenshotUrl(res.screenshotUrl || '')}
+                        className="text-[10px] text-emerald-500 hover:underline flex items-center space-x-1"
+                      >
+                        <ImageIcon className="w-3 h-3" />
+                        <span>Görsel</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </form>
     </main>
   );

@@ -27,12 +27,15 @@ import {
 interface ExplorerTreeProps {
   tree: SuiteTreeNode[];
   selectedCaseId: string | null;
+  selectedSuiteId?: string | null;
   onSelectCase: (testCase: TestCase) => void;
+  onSelectSuite?: (suite: SuiteTreeNode) => void;
   onAddSubSuite: (parentSuiteId: string) => void;
   onEditSuite?: (suite: SuiteTreeNode) => void;
   onDeleteSuite?: (suiteId: string) => void;
   onAddCaseInSuite: (suiteId: string) => void;
   onRunCase?: (testCase: TestCase) => void;
+  onRunSuite?: (suite: SuiteTreeNode) => void;
   onReorderSuite?: (suiteId: string, targetParentId: string | null, newOrder: number) => void;
 }
 
@@ -41,12 +44,15 @@ type StatusFilter = 'ALL' | 'PASSED' | 'FAILED' | 'BLOCKED' | 'UNTESTED';
 export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
   tree,
   selectedCaseId,
+  selectedSuiteId,
   onSelectCase,
+  onSelectSuite,
   onAddSubSuite,
   onEditSuite,
   onDeleteSuite,
   onAddCaseInSuite,
   onRunCase,
+  onRunSuite,
   onReorderSuite,
 }) => {
   const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
@@ -203,6 +209,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
   const renderSuiteNode = (node: SuiteTreeNode, depth: number = 0) => {
     const isExpanded = expandedMap[node.id] ?? true;
     const isDragOver = dragOverSuiteId === node.id;
+    const isSuiteSelected = selectedSuiteId === node.id;
 
     // Filter testcases if search query or status filter exists
     const filteredCases = node.testCases.filter((c) => {
@@ -227,9 +234,14 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
           className={`group flex items-center justify-between py-1.5 pr-2 rounded-lg transition-colors cursor-pointer text-xs font-medium ${
             isDragOver
               ? 'bg-blue-600/20 border border-blue-500'
+              : isSuiteSelected
+              ? 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-900 dark:text-amber-200 font-bold border-l-2 border-amber-500 shadow-sm'
               : 'hover:bg-slate-200/60 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
           }`}
-          onClick={(e) => toggleExpand(node.id, e)}
+          onClick={(e) => {
+            toggleExpand(node.id, e);
+            if (onSelectSuite) onSelectSuite(node);
+          }}
         >
           <div className="flex items-center space-x-1.5 min-w-0">
             <span className="opacity-0 group-hover:opacity-40 cursor-grab hover:opacity-100 transition-opacity">
@@ -282,6 +294,19 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
             >
               <Plus className="w-3 h-3" />
             </button>
+
+            {onRunSuite && node.testCases.length > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRunSuite(node);
+                }}
+                title="Suite İçindeki Tüm Senaryoları Koştur (Run Suite)"
+                className="p-1 rounded hover:bg-slate-300 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 font-bold"
+              >
+                <Play className="w-3 h-3 fill-current" />
+              </button>
+            )}
 
             {onEditSuite && (
               <button

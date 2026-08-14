@@ -11,7 +11,9 @@ import {
 } from '@/services/api';
 import { Header } from '@/components/Header';
 import { ExplorerTree } from '@/components/ExplorerTree';
+import { ProjectsSidebar } from '@/components/ProjectsSidebar';
 import { TestCaseEditor } from '@/components/TestCaseEditor';
+import { SuiteCasesView } from '@/components/SuiteCasesView';
 import { TestRunsView } from '@/components/TestRunsView';
 import { DashboardView } from '@/components/DashboardView';
 import { ManualRunModal } from '@/components/ManualRunModal';
@@ -26,6 +28,7 @@ export default function Home() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [tree, setTree] = useState<SuiteTreeNode[]>([]);
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null);
+  const [selectedSuite, setSelectedSuite] = useState<SuiteTreeNode | null>(null);
   const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'RUNS'>('EXPLORER');
   const [isLoadingTree, setIsLoadingTree] = useState(false);
 
@@ -38,6 +41,7 @@ export default function Home() {
   const [isManualRunOpen, setIsManualRunOpen] = useState(false);
   const [isQuickRunOpen, setIsQuickRunOpen] = useState(false);
   const [activeQuickRunCase, setActiveQuickRunCase] = useState<TestCase | null>(null);
+  const [activeSuiteRunCases, setActiveSuiteRunCases] = useState<TestCase[] | null>(null);
   const [activeParentSuiteId, setActiveParentSuiteId] = useState<string | null>(null);
 
   // Load projects list on mount
@@ -73,6 +77,7 @@ export default function Home() {
 
   useEffect(() => {
     setSelectedCase(null);
+    setSelectedSuite(null);
     if (selectedProject) {
       loadTree(selectedProject.id);
     }
@@ -147,6 +152,23 @@ export default function Home() {
     setIsQuickRunOpen(true);
   };
 
+  const handleRunSuite = (suiteNode: SuiteTreeNode) => {
+    const getCases = (node: SuiteTreeNode): TestCase[] => {
+      let cases = node.testCases ? [...node.testCases] : [];
+      if (node.children) {
+        node.children.forEach((c) => {
+          cases = cases.concat(getCases(c));
+        });
+      }
+      return cases;
+    };
+    const suiteCases = getCases(suiteNode);
+    if (suiteCases.length > 0) {
+      setActiveSuiteRunCases(suiteCases);
+      setIsManualRunOpen(true);
+    }
+  };
+
   const handleQuickRunSuccess = async () => {
     if (selectedProject) {
       await loadTree(selectedProject.id);
@@ -171,6 +193,7 @@ export default function Home() {
         onTabChange={(tab) => setActiveTab(tab)}
         onSelectProject={(p) => {
           setSelectedCase(null);
+          setSelectedSuite(null);
           setSelectedProject(p);
         }}
         onOpenNewProject={() => setIsNewProjectOpen(true)}
@@ -182,7 +205,10 @@ export default function Home() {
           setActiveParentSuiteId(null);
           setIsNewCaseOpen(true);
         }}
-        onOpenManualRun={() => setIsManualRunOpen(true)}
+        onOpenManualRun={() => {
+          setActiveSuiteRunCases(null);
+          setIsManualRunOpen(true);
+        }}
       />
 
       {/* Main Workspace Layout */}
@@ -193,7 +219,15 @@ export default function Home() {
             <ExplorerTree
               tree={tree}
               selectedCaseId={selectedCase?.id || null}
-              onSelectCase={(tc) => setSelectedCase(tc)}
+              selectedSuiteId={selectedSuite?.id || null}
+              onSelectCase={(tc) => {
+                setSelectedSuite(null);
+                setSelectedCase(tc);
+              }}
+              onSelectSuite={(suite) => {
+                setSelectedCase(null);
+                setSelectedSuite(suite);
+              }}
               onAddSubSuite={(parentSuiteId) => {
                 setActiveParentSuiteId(parentSuiteId);
                 setIsNewSuiteOpen(true);
@@ -208,43 +242,91 @@ export default function Home() {
                 setIsNewCaseOpen(true);
               }}
               onRunCase={handleRunCase}
+              onRunSuite={handleRunSuite}
               onReorderSuite={handleReorderSuite}
             />
 
-            {/* Middle Panel: TestCase Editor */}
-            <TestCaseEditor
-              testCase={selectedCase}
-              onSave={handleSaveCase}
-              onDelete={handleDeleteCase}
-              onRun={handleRunCase}
-              onClose={() => setSelectedCase(null)}
-            />
+            {/* Middle Panel: TestCase Editor OR Suite Cases Card View */}
+            {selectedCase ? (
+              <TestCaseEditor
+                testCase={selectedCase}
+                onSave={handleSaveCase}
+                onDelete={handleDeleteCase}
+                onRun={handleRunCase}
+                onClose={() => setSelectedCase(null)}
+              />
+            ) : selectedSuite ? (
+              <SuiteCasesView
+                suite={selectedSuite}
+                onSelectCase={(tc) => {
+                  setSelectedSuite(null);
+                  setSelectedCase(tc);
+                }}
+                onAddCaseInSuite={(suiteId) => {
+                  setActiveParentSuiteId(suiteId);
+                  setIsNewCaseOpen(true);
+                }}
+                onRunCase={handleRunCase}
+                onRunSuite={handleRunSuite}
+                onClose={() => setSelectedSuite(null)}
+              />
+            ) : (
+              <TestCaseEditor
+                testCase={null}
+                onSave={handleSaveCase}
+                onDelete={handleDeleteCase}
+                onRun={handleRunCase}
+              />
+            )}
           </>
         )}
 
         {activeTab === 'DASHBOARD' && (
-          <DashboardView
-            project={selectedProject}
-            testCases={allCases}
-            suites={tree}
-            onOpenManualRun={() => setIsManualRunOpen(true)}
-            onOpenNewCase={() => {
-              setActiveParentSuiteId(null);
-              setIsNewCaseOpen(true);
-            }}
-            onSelectCase={(tc) => {
-              setSelectedCase(tc);
-              setActiveTab('EXPLORER');
-            }}
-          />
+          <>
+            {/* Left Panel: Projects Navigation Sidebar */}
+            <ProjectsSidebar
+              projects={projects}
+              selectedProject={selectedProject}
+              onSelectProject={(p) => {
+                setSelectedCase(null);
+                setSelectedSuite(null);
+                setSelectedProject(p);
+              }}
+              onOpenNewProject={() => setIsNewProjectOpen(true)}
+            />
+
+            {/* Main Panel: Top Dashboard View */}
+            <DashboardView
+              project={selectedProject}
+              testCases={allCases}
+              suites={tree}
+              onOpenManualRun={() => {
+                setActiveSuiteRunCases(null);
+                setIsManualRunOpen(true);
+              }}
+              onOpenNewCase={() => {
+                setActiveParentSuiteId(null);
+                setIsNewCaseOpen(true);
+              }}
+              onSelectCase={(tc) => {
+                setSelectedCase(tc);
+                setSelectedSuite(null);
+                setActiveTab('EXPLORER');
+              }}
+            />
+          </>
         )}
 
         {activeTab === 'RUNS' && (
           <TestRunsView
             projectId={selectedProject?.id || ''}
-            onOpenManualRun={() => setIsManualRunOpen(true)}
+            onOpenManualRun={() => {
+              setActiveSuiteRunCases(null);
+              setIsManualRunOpen(true);
+            }}
             onSelectCase={(tc) => {
               setSelectedCase(tc);
+              setSelectedSuite(null);
               setActiveTab('EXPLORER');
             }}
           />
@@ -304,10 +386,11 @@ export default function Home() {
         isOpen={isManualRunOpen}
         onClose={() => {
           setIsManualRunOpen(false);
+          setActiveSuiteRunCases(null);
           if (selectedProject) loadTree(selectedProject.id);
         }}
         projectId={selectedProject?.id || ''}
-        testCases={allCases}
+        testCases={activeSuiteRunCases || allCases}
       />
     </div>
   );

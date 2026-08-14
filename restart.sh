@@ -13,7 +13,7 @@ echo "⏳ Portların serbest kalması için 1 saniye bekleniyor..."
 sleep 1
 
 echo "🧹 Stale Next.js build ve cache temizleniyor..."
-rm -rf frontend/.next/cache
+rm -rf frontend/.next
 
 # Launch both services
 ./start.sh

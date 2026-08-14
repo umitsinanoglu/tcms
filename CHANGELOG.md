@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Top Dashboard Left Projects Navigation Sidebar and Repeat Test Suite/Case Execution with Run History
+- Header logo link to Top Dashboard, ThemeSelector overflow/z-index fixes, and Suite test cases Card View
 - **AI Agent Context Infrastructure**:
   - `AGENTS.md`: Guidelines and rapid project overview for AI agents.
   - `PROJECT_CONTEXT.md`: High-density architectural and schema snapshot.

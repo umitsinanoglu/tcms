@@ -44,12 +44,12 @@ export const ThemeSelector: React.FC = () => {
   const activeThemeMeta = availableThemes.find((t) => t.id === theme) || availableThemes[0];
 
   return (
-    <div className="relative inline-block text-left z-50" ref={menuRef}>
+    <div className="relative inline-block text-left z-[100]" ref={menuRef}>
       {/* Theme Trigger Button */}
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700/90 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+        className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700/90 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50 cursor-pointer"
         title="Tema Seçici"
       >
         <div className="flex items-center space-x-1.5">
@@ -69,7 +69,7 @@ export const ThemeSelector: React.FC = () => {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl backdrop-blur-xl p-2 animate-in fade-in zoom-in-95 duration-150 z-50">
+        <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl drop-shadow-2xl backdrop-blur-xl p-2 animate-in fade-in zoom-in-95 duration-150 z-[100]">
           <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Palette className="w-4 h-4 text-rose-500" />
