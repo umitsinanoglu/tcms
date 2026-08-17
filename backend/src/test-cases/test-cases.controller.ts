@@ -4,6 +4,8 @@ import { TestCasesService } from './test-cases.service';
 import { CreateTestCaseDto } from './dto/create-test-case.dto';
 import { UpdateTestCaseDto } from './dto/update-test-case.dto';
 
+import { LinkJiraStoryDto } from './dto/jira-link.dto';
+
 @ApiTags('Test Cases')
 @Controller('api/v1/test-cases')
 export class TestCasesController {
@@ -41,8 +43,8 @@ export class TestCasesController {
   @Patch(':id/jira-link')
   @ApiOperation({ summary: 'Test Case ile Jira Story ID eşleştir (Jira Link API)' })
   @ApiParam({ name: 'id', description: 'TestCase UUID' })
-  linkJiraStory(@Param('id') id: string, @Body() body: { jiraStoryKey?: string; jiraIssueUrl?: string }) {
-    return this.testCasesService.linkJiraStory(id, body.jiraStoryKey, body.jiraIssueUrl);
+  linkJiraStory(@Param('id') id: string, @Body() dto: LinkJiraStoryDto) {
+    return this.testCasesService.linkJiraStory(id, dto.jiraStoryKey, dto.jiraIssueUrl);
   }
 
   @Patch(':id')

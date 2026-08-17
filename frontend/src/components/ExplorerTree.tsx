@@ -41,6 +41,7 @@ interface ExplorerTreeProps {
   onAddCaseInSuite: (suiteId: string) => void;
   onOpenNewSuite?: () => void;
   onOpenNewCase?: () => void;
+  onEditProject?: (project: Project) => void;
   onRunCase?: (testCase: TestCase) => void;
   onRunSuite?: (suite: SuiteTreeNode) => void;
   onReorderSuite?: (suiteId: string, targetParentId: string | null, newOrder: number) => void;
@@ -62,6 +63,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
   onAddCaseInSuite,
   onOpenNewSuite,
   onOpenNewCase,
+  onEditProject,
   onRunCase,
   onRunSuite,
   onReorderSuite,
@@ -483,7 +485,18 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
                 {selectedProject.name}
               </h2>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono shrink-0">Test Planı</span>
+            <div className="flex items-center space-x-1.5 shrink-0">
+              <span className="text-[10px] text-slate-400 font-mono">Test Planı</span>
+              {onEditProject && (
+                <button
+                  onClick={() => onEditProject(selectedProject)}
+                  className="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                  title="Test Planını Düzenle / Sil"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Plan-level Buttons: Yeni Suite & Yeni Case */}

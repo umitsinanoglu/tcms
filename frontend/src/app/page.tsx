@@ -18,6 +18,7 @@ import { TestRunsView } from '@/components/TestRunsView';
 import { DashboardView } from '@/components/DashboardView';
 import { ManualRunModal } from '@/components/ManualRunModal';
 import { NewProjectModal } from '@/components/NewProjectModal';
+import { EditProjectModal } from '@/components/EditProjectModal';
 import { NewSuiteModal } from '@/components/NewSuiteModal';
 import { EditSuiteModal } from '@/components/EditSuiteModal';
 import { NewCaseModal } from '@/components/NewCaseModal';
@@ -50,6 +51,8 @@ export default function Home() {
 
   // Modals state
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
+  const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
+  const [activeEditProject, setActiveEditProject] = useState<Project | null>(null);
   const [isNewSuiteOpen, setIsNewSuiteOpen] = useState(false);
   const [isEditSuiteOpen, setIsEditSuiteOpen] = useState(false);
   const [activeEditSuite, setActiveEditSuite] = useState<SuiteTreeNode | null>(null);
@@ -130,7 +133,36 @@ export default function Home() {
     const newProj = await ProjectsService.create(data);
     await loadProjects();
     setSelectedCase(null);
+    setSelectedSuite(null);
     setSelectedProject(newProj);
+  };
+
+  const handleUpdateProject = async (id: string, data: { name?: string; key?: string; description?: string; jiraProjectKey?: string }) => {
+    const updated = await ProjectsService.update(id, data);
+    await loadProjects();
+    setSelectedProject((prev) => (prev?.id === id ? { ...prev, ...updated } : prev));
+    if (selectedProject?.id === id) {
+      await loadTree(id);
+    }
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    await ProjectsService.delete(id);
+    setSelectedCase(null);
+    setSelectedSuite(null);
+    const updatedList = projects.filter((p) => p.id !== id);
+    setProjects(updatedList);
+    if (selectedProject?.id === id) {
+      const next = updatedList.length > 0 ? updatedList[0] : null;
+      setSelectedProject(next);
+      if (next) {
+        await loadTree(next.id);
+      } else {
+        setTree([]);
+        setRootCases([]);
+        setIsNewProjectOpen(true);
+      }
+    }
   };
 
   // Handlers for Suite actions
@@ -282,6 +314,10 @@ export default function Home() {
                 setActiveParentSuiteId(selectedSuite?.id || null);
                 setIsNewCaseOpen(true);
               }}
+              onEditProject={(p) => {
+                setActiveEditProject(p);
+                setIsEditProjectOpen(true);
+              }}
               onRunCase={handleRunCase}
               onRunSuite={handleRunSuite}
               onReorderSuite={handleReorderSuite}
@@ -334,6 +370,10 @@ export default function Home() {
                 setSelectedProject(p);
               }}
               onOpenNewProject={() => setIsNewProjectOpen(true)}
+              onEditProject={(p) => {
+                setActiveEditProject(p);
+                setIsEditProjectOpen(true);
+              }}
             />
 
             {/* Main Panel: Top Dashboard View */}
@@ -383,6 +423,17 @@ export default function Home() {
         isOpen={isNewProjectOpen}
         onClose={() => setIsNewProjectOpen(false)}
         onSubmit={handleCreateProject}
+      />
+
+      <EditProjectModal
+        isOpen={isEditProjectOpen}
+        onClose={() => {
+          setIsEditProjectOpen(false);
+          setActiveEditProject(null);
+        }}
+        project={activeEditProject}
+        onUpdate={handleUpdateProject}
+        onDelete={handleDeleteProject}
       />
 
       <NewSuiteModal

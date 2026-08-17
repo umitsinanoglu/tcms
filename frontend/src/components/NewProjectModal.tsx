@@ -6,7 +6,7 @@ import { X, Plus, FolderKanban } from 'lucide-react';
 interface NewProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { name: string; key: string; description?: string }) => Promise<void>;
+  onSubmit: (data: { name: string; key: string; description?: string; jiraProjectKey?: string }) => Promise<void>;
 }
 
 export const NewProjectModal: React.FC<NewProjectModalProps> = ({
@@ -17,23 +17,35 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
   const [name, setName] = useState('');
   const [key, setKey] = useState('');
   const [description, setDescription] = useState('');
+  const [jiraProjectKey, setJiraProjectKey] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !key) return;
+    if (!name.trim() || !key.trim()) return;
 
     setIsSubmitting(true);
+    setErrorMsg('');
     try {
-      await onSubmit({ name, key: key.toUpperCase(), description });
+      await onSubmit({
+        name: name.trim(),
+        key: key.trim().toUpperCase(),
+        description: description.trim() || undefined,
+        jiraProjectKey: jiraProjectKey.trim().toUpperCase() || undefined,
+      });
       setName('');
       setKey('');
       setDescription('');
+      setJiraProjectKey('');
+      setErrorMsg('');
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      const message = err?.response?.data?.message || err?.message || 'Test Planı oluşturulurken bir hata oluştu.';
+      setErrorMsg(Array.isArray(message) ? message.join(', ') : message);
     } finally {
       setIsSubmitting(false);
     }
@@ -51,6 +63,12 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {errorMsg && (
+          <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium">
+            {errorMsg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-1.5">
@@ -74,29 +92,46 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Test Planı Kodu / Key (TC Ön Eki)
-            </label>
-            <input
-              type="text"
-              required
-              maxLength={10}
-              placeholder="Örn: PLAN veya ATOM"
-              value={key}
-              onChange={(e) => setKey(e.target.value.toUpperCase())}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-rose-600 dark:text-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-500 uppercase shadow-sm"
-            />
-            <span className="text-[10px] text-slate-500">
-              Test Case'leriniz {key || 'KEY'}-TC-1, {key || 'KEY'}-TC-2 biçiminde kodlanacaktır.
-            </span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Plan Kodu / Key (Ön Ek)
+              </label>
+              <input
+                type="text"
+                required
+                maxLength={10}
+                placeholder="Örn: PLAN"
+                value={key}
+                onChange={(e) => setKey(e.target.value.toUpperCase())}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-rose-600 dark:text-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-500 uppercase shadow-sm"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Jira Proje Kodu (Opsiyonel)
+              </label>
+              <input
+                type="text"
+                maxLength={10}
+                placeholder="Örn: MOB veya PRJ"
+                value={jiraProjectKey}
+                onChange={(e) => setJiraProjectKey(e.target.value.toUpperCase())}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-blue-600 dark:text-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase shadow-sm"
+              />
+            </div>
           </div>
+
+          <span className="block text-[10px] text-slate-500">
+            Test Case'leriniz {key || 'KEY'}-TC-1, {key || 'KEY'}-TC-2 biçiminde otomatik kodlanacaktır.
+          </span>
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Açıklama</label>
             <textarea
               rows={3}
-              placeholder="Test Planı hedefi ve detayları..."
+              placeholder="Test Planı hedefi, kapsamı ve detayları..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500 resize-none shadow-sm"
@@ -114,7 +149,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !name.trim() || !key.trim()}
               className="flex items-center space-x-2 px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-rose-500/20 disabled:opacity-50"
             >
               <Plus className="w-4 h-4" />

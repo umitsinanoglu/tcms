@@ -138,6 +138,8 @@ export const ProjectsService = {
   getOne: (id: string) => api.get<Project>(`/projects/${id}`).then((res) => res.data),
   create: (data: { name: string; key: string; description?: string; jiraProjectKey?: string }) =>
     api.post<Project>('/projects', data).then((res) => res.data),
+  update: (id: string, data: { name?: string; key?: string; description?: string; jiraProjectKey?: string }) =>
+    api.patch<Project>(`/projects/${id}`, data).then((res) => res.data),
   getTree: (projectId: string) =>
     api.get<TreeResponse>(`/projects/${projectId}/tree`).then((res) => res.data),
   delete: (id: string) => api.delete(`/projects/${id}`).then((res) => res.data),

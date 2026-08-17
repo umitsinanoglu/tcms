@@ -39,18 +39,29 @@ export class TestCasesService {
       throw new NotFoundException('Either suiteId or projectId must be provided to create a Test Case');
     }
 
-    // Count existing test cases for project to generate incrementing code e.g. PRJ-TC-1
-    const totalCasesInProject = await this.prisma.testCase.count({
+    // Find highest test case number for the project to generate unique code
+    const existingCases = await this.prisma.testCase.findMany({
       where: {
         OR: [
           { projectId },
           { suite: { projectId } },
         ],
       },
+      select: { code: true },
     });
 
-    const nextNumber = totalCasesInProject + 1;
-    const code = `${projectKey}-TC-${nextNumber}`;
+    let maxNumber = 0;
+    const prefix = `${projectKey}-TC-`;
+    for (const tc of existingCases) {
+      if (tc.code.startsWith(prefix)) {
+        const num = parseInt(tc.code.substring(prefix.length), 10);
+        if (!isNaN(num) && num > maxNumber) {
+          maxNumber = num;
+        }
+      }
+    }
+
+    const code = `${projectKey}-TC-${maxNumber + 1}`;
 
     const { steps, ...caseData } = createTestCaseDto;
 

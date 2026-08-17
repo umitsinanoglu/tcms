@@ -41,6 +41,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   const [jiraBugUrl, setJiraBugUrl] = useState('');
   const [screenshotUrl, setScreenshotUrl] = useState('');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
       setJiraBugUrl(lastResult?.jiraBugUrl || '');
       setScreenshotUrl(lastResult?.screenshotUrl || testCase.screenshotUrl || '');
       setLightboxImage(null);
+      setErrorMsg('');
     }
   }, [isOpen, testCase]);
 
@@ -68,6 +70,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMsg('');
     try {
       await TestRunsService.quickRun(projectId, {
         testCaseId: testCase.id,
@@ -89,8 +92,10 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
 
       onSuccess();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error submitting quick run:', err);
+      const message = err?.response?.data?.message || err?.message || 'Hızlı koşu kaydedilirken bir hata oluştu.';
+      setErrorMsg(Array.isArray(message) ? message.join(', ') : message);
     } finally {
       setIsSubmitting(false);
     }
@@ -114,6 +119,12 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {errorMsg && (
+          <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium">
+            {errorMsg}
+          </div>
+        )}
 
         {/* Modal Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">

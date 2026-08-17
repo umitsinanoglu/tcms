@@ -31,6 +31,7 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
 
   const [description, setDescription] = useState('');
   const [preconditions, setPreconditions] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
     } else {
       setSuiteId('');
     }
+    setErrorMsg('');
   }, [defaultSuiteId, isOpen]);
 
   if (!isOpen) return null;
@@ -58,27 +60,31 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title) return;
+    if (!title.trim()) return;
 
     setIsSubmitting(true);
+    setErrorMsg('');
     try {
       await onSubmit({
-        title,
+        title: title.trim(),
         suiteId: suiteId || undefined,
         projectId,
         executionType,
         type,
         priority,
-        description,
-        precondition: preconditions,
+        description: description.trim() || undefined,
+        precondition: preconditions.trim() || undefined,
         steps: [],
       });
       setTitle('');
       setDescription('');
       setPreconditions('');
+      setErrorMsg('');
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      const message = err?.response?.data?.message || err?.message || 'Test Case oluşturulurken bir hata meydana geldi.';
+      setErrorMsg(Array.isArray(message) ? message.join(', ') : message);
     } finally {
       setIsSubmitting(false);
     }
@@ -100,6 +106,12 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {errorMsg && (
+          <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium">
+            {errorMsg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-1.5">

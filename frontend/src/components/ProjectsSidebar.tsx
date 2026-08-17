@@ -17,6 +17,7 @@ interface ProjectsSidebarProps {
   selectedProject: Project | null;
   onSelectProject: (project: Project) => void;
   onOpenNewProject: () => void;
+  onEditProject?: (project: Project) => void;
 }
 
 export const ProjectsSidebar: React.FC<ProjectsSidebarProps> = ({
@@ -24,6 +25,7 @@ export const ProjectsSidebar: React.FC<ProjectsSidebarProps> = ({
   selectedProject,
   onSelectProject,
   onOpenNewProject,
+  onEditProject,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -77,7 +79,7 @@ export const ProjectsSidebar: React.FC<ProjectsSidebarProps> = ({
               <div
                 key={p.id}
                 onClick={() => onSelectProject(p)}
-                className={`group p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                className={`group p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between space-y-2 relative ${
                   isSelected
                     ? 'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/40 text-slate-900 dark:text-white shadow-sm'
                     : 'bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300'
@@ -92,11 +94,26 @@ export const ProjectsSidebar: React.FC<ProjectsSidebarProps> = ({
                       {p.name}
                     </h3>
                   </div>
-                  <ChevronRight
-                    className={`w-3.5 h-3.5 shrink-0 transition-transform ${
-                      isSelected ? 'text-rose-500 translate-x-0.5' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'
-                    }`}
-                  />
+                  <div className="flex items-center space-x-1 shrink-0">
+                    {onEditProject && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditProject(p);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded transition-all"
+                        title="Test Planını Düzenle / Sil"
+                      >
+                        <FolderKanban className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <ChevronRight
+                      className={`w-3.5 h-3.5 transition-transform ${
+                        isSelected ? 'text-rose-500 translate-x-0.5' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'
+                      }`}
+                    />
+                  </div>
                 </div>
 
                 {p.description && (
