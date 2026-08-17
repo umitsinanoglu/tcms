@@ -12,8 +12,12 @@ datasource db {
 enum TestType {
   WEB
   MOBILE
+  IOS
+  ANDROID
   API
   MANUAL
+  PERFORMANCE
+  OTHER
 }
 
 enum Priority {
@@ -71,7 +75,8 @@ model TestCase {
   code         String       @unique
   title        String
   description  String?
-  type         TestType     @default(MANUAL)
+  executionType String      @default("MANUAL")
+  type         TestType     @default(WEB)
   priority     Priority     @default(NORMAL)
   precondition String?
 

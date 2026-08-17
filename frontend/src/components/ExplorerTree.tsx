@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { SuiteTreeNode, TestCase } from '@/services/api';
+import { SuiteTreeNode, TestCase, Project } from '@/services/api';
 import {
   Folder,
   FolderOpen,
@@ -22,10 +22,14 @@ import {
   Maximize2,
   Minimize2,
   Filter,
+  FolderPlus,
+  FilePlus,
+  FolderKanban,
 } from 'lucide-react';
 
 interface ExplorerTreeProps {
   tree: SuiteTreeNode[];
+  selectedProject?: Project | null;
   selectedCaseId: string | null;
   selectedSuiteId?: string | null;
   onSelectCase: (testCase: TestCase) => void;
@@ -34,6 +38,8 @@ interface ExplorerTreeProps {
   onEditSuite?: (suite: SuiteTreeNode) => void;
   onDeleteSuite?: (suiteId: string) => void;
   onAddCaseInSuite: (suiteId: string) => void;
+  onOpenNewSuite?: () => void;
+  onOpenNewCase?: () => void;
   onRunCase?: (testCase: TestCase) => void;
   onRunSuite?: (suite: SuiteTreeNode) => void;
   onReorderSuite?: (suiteId: string, targetParentId: string | null, newOrder: number) => void;
@@ -43,6 +49,7 @@ type StatusFilter = 'ALL' | 'PASSED' | 'FAILED' | 'BLOCKED' | 'UNTESTED';
 
 export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
   tree,
+  selectedProject,
   selectedCaseId,
   selectedSuiteId,
   onSelectCase,
@@ -51,6 +58,8 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
   onEditSuite,
   onDeleteSuite,
   onAddCaseInSuite,
+  onOpenNewSuite,
+  onOpenNewCase,
   onRunCase,
   onRunSuite,
   onReorderSuite,
@@ -276,17 +285,6 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onAddSubSuite(node.id);
-              }}
-              title="Alt Suite Ekle"
-              className="p-1 rounded hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400"
-            >
-              <Folder className="w-3 h-3" />
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
                 onAddCaseInSuite(node.id);
               }}
               title="Test Case Ekle"
@@ -404,7 +402,45 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
 
   return (
     <aside className="w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 flex flex-col h-[calc(100vh-4rem)] select-none transition-colors duration-200">
-      {/* Explorer Header */}
+      {/* Active Test Plan Info & Actions */}
+      {selectedProject && (
+        <div className="p-3.5 bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 min-w-0">
+              <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shrink-0">
+                [{selectedProject.key}]
+              </span>
+              <h2 className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate" title={selectedProject.name}>
+                {selectedProject.name}
+              </h2>
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono shrink-0">Test Planı</span>
+          </div>
+
+          {/* Plan-level Buttons: Yeni Suite & Yeni Case */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              onClick={() => onOpenNewSuite ? onOpenNewSuite() : onAddSubSuite('')}
+              className="flex items-center justify-center space-x-1.5 px-2.5 py-1.5 text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-lg transition-all shadow-sm active:scale-95 cursor-pointer"
+              title="Plan Altında Yeni Suite Oluştur"
+            >
+              <FolderPlus className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>+ Yeni Suite</span>
+            </button>
+
+            <button
+              onClick={() => onOpenNewCase ? onOpenNewCase() : onAddCaseInSuite('')}
+              className="flex items-center justify-center space-x-1.5 px-2.5 py-1.5 text-xs font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 rounded-lg transition-all shadow-sm active:scale-95 cursor-pointer"
+              title="Plan Altında Yeni Case Oluştur"
+            >
+              <FilePlus className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+              <span>+ Yeni Case</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Explorer Tree Toolbar & Search */}
       <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 space-y-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -502,7 +538,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
           <div className="text-center py-10 px-4 text-slate-400 dark:text-slate-500 text-xs">
             <Folder className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
             <p>Henüz klasör (Suite) bulunmuyor.</p>
-            <p className="text-[10px] mt-1 text-slate-500">Üst bardan "Yeni Suite" ekleyebilirsiniz.</p>
+            <p className="text-[10px] mt-1 text-slate-500">Yukarıdaki "+ Yeni Suite" butonundan klasör ekleyebilirsiniz.</p>
           </div>
         ) : (
           tree.map((node) => renderSuiteNode(node, 0))

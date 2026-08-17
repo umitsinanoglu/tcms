@@ -29,7 +29,8 @@ export interface TestStep {
   expectedResult: string;
 }
 
-export type TestType = 'WEB' | 'MOBILE' | 'API' | 'MANUAL';
+export type ExecutionType = 'MANUAL' | 'AUTOMATION';
+export type TestType = 'WEB' | 'IOS' | 'ANDROID' | 'API' | 'PERFORMANCE' | 'OTHER' | 'MANUAL' | 'MOBILE';
 export type Priority = 'BLOCKER' | 'CRITICAL' | 'NORMAL' | 'LOW';
 export type RunStatus = 'IN_PROGRESS' | 'COMPLETED' | 'ABORTED';
 export type ResultStatus = 'PASSED' | 'FAILED' | 'SKIPPED' | 'BLOCKED';
@@ -39,6 +40,7 @@ export interface TestCase {
   code: string;
   title: string;
   description?: string;
+  executionType?: ExecutionType;
   type: TestType;
   priority: Priority;
   precondition?: string;

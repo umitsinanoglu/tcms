@@ -41,7 +41,8 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState<TestType>('MANUAL');
+  const [executionType, setExecutionType] = useState<'MANUAL' | 'AUTOMATION'>('MANUAL');
+  const [type, setType] = useState<TestType>('WEB');
 
   const [priority, setPriority] = useState<Priority>('NORMAL');
   const [jiraStoryKey, setJiraStoryKey] = useState('');
@@ -57,7 +58,8 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
     if (testCase) {
       setTitle(testCase.title || '');
       setDescription(testCase.description || '');
-      setType(testCase.type || 'MANUAL');
+      setExecutionType(testCase.executionType || 'MANUAL');
+      setType(testCase.type || 'WEB');
       setPriority(testCase.priority || 'NORMAL');
       setJiraStoryKey(testCase.jiraStoryKey || '');
       setJiraIssueUrl(testCase.jiraIssueUrl || '');
@@ -163,6 +165,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
         id: testCase.id,
         title,
         description,
+        executionType,
         type,
         priority,
         jiraStoryKey,
@@ -185,7 +188,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-5">
           <div className="space-y-2 max-w-2xl w-full">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 flex-wrap gap-y-1">
               <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center space-x-1.5">
                 <FileCode2 className="w-3.5 h-3.5" />
                 <span>{testCase.code}</span>
@@ -193,16 +196,46 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
 
               {renderStatusBadge()}
 
-              {/* Type Badge Dropdown */}
+              {/* Execution Type Dropdown */}
+              <select
+                value={executionType}
+                onChange={(e) => {
+                  const newExec = e.target.value as 'MANUAL' | 'AUTOMATION';
+                  setExecutionType(newExec);
+                  if (newExec === 'MANUAL' && !['WEB', 'IOS', 'ANDROID', 'API', 'OTHER'].includes(type)) {
+                    setType('WEB');
+                  }
+                }}
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-md px-2.5 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm"
+              >
+                <option value="MANUAL">📋 MANUEL</option>
+                <option value="AUTOMATION">🤖 OTOMASYON</option>
+              </select>
+
+              {/* Test Type Dropdown */}
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as TestType)}
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold rounded-md px-2.5 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm"
               >
-                <option value="WEB">🌐 WEB</option>
-                <option value="MOBILE">📱 MOBILE</option>
-                <option value="API">⚡ API</option>
-                <option value="MANUAL">📋 MANUAL</option>
+                {executionType === 'MANUAL' ? (
+                  <>
+                    <option value="WEB">🌐 WEB</option>
+                    <option value="IOS">📱 IOS</option>
+                    <option value="ANDROID">🤖 ANDROID</option>
+                    <option value="API">⚡ API</option>
+                    <option value="OTHER">📦 DİĞER / GENEL</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="WEB">🌐 WEB (Selenium/Cypress)</option>
+                    <option value="IOS">📱 IOS (Appium)</option>
+                    <option value="ANDROID">🤖 ANDROID (Appium)</option>
+                    <option value="API">⚡ API (RestAssured)</option>
+                    <option value="PERFORMANCE">🚀 PERFORMANS</option>
+                    <option value="OTHER">⚙️ DİĞER OTOMASYON</option>
+                  </>
+                )}
               </select>
 
               {/* Priority Badge Dropdown */}

@@ -29,8 +29,23 @@ export default function Home() {
   const [tree, setTree] = useState<SuiteTreeNode[]>([]);
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null);
   const [selectedSuite, setSelectedSuite] = useState<SuiteTreeNode | null>(null);
-  const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'RUNS'>('EXPLORER');
+  const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'RUNS'>('DASHBOARD');
   const [isLoadingTree, setIsLoadingTree] = useState(false);
+
+  // Tab persistence handling: default to DASHBOARD, restore from localStorage on refresh
+  useEffect(() => {
+    const savedTab = localStorage.getItem('tcms_active_tab') as 'EXPLORER' | 'DASHBOARD' | 'RUNS' | null;
+    if (savedTab && ['EXPLORER', 'DASHBOARD', 'RUNS'].includes(savedTab)) {
+      setActiveTab(savedTab);
+    } else {
+      setActiveTab('DASHBOARD');
+    }
+  }, []);
+
+  const handleTabChange = useCallback((tab: 'EXPLORER' | 'DASHBOARD' | 'RUNS') => {
+    setActiveTab(tab);
+    localStorage.setItem('tcms_active_tab', tab);
+  }, []);
 
   // Modals state
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
@@ -44,18 +59,30 @@ export default function Home() {
   const [activeSuiteRunCases, setActiveSuiteRunCases] = useState<TestCase[] | null>(null);
   const [activeParentSuiteId, setActiveParentSuiteId] = useState<string | null>(null);
 
-  // Load projects list on mount
+  // Load projects (Test Plans) list on mount
   const loadProjects = useCallback(async () => {
     try {
       const data = await ProjectsService.getAll();
-      setProjects(data);
-      if (data.length > 0 && !selectedProject) {
-        setSelectedProject(data[0]);
+      // Sort test plans alphabetically by name
+      const sorted = [...data].sort((a, b) =>
+        a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
+      );
+      setProjects(sorted);
+
+      if (sorted.length > 0) {
+        setSelectedProject((prev) => {
+          if (!prev) return sorted[0];
+          const exists = sorted.find((p) => p.id === prev.id);
+          return exists || sorted[0];
+        });
+      } else {
+        setSelectedProject(null);
+        setIsNewProjectOpen(true);
       }
     } catch (err) {
-      console.error('Failed to load projects:', err);
+      console.error('Failed to load test plans:', err);
     }
-  }, [selectedProject]);
+  }, []);
 
   useEffect(() => {
     loadProjects();
@@ -190,7 +217,7 @@ export default function Home() {
         projects={projects}
         selectedProject={selectedProject}
         activeView={activeTab}
-        onTabChange={(tab) => setActiveTab(tab)}
+        onTabChange={(tab) => handleTabChange(tab)}
         onSelectProject={(p) => {
           setSelectedCase(null);
           setSelectedSuite(null);
@@ -202,7 +229,7 @@ export default function Home() {
           setIsNewSuiteOpen(true);
         }}
         onOpenNewCase={() => {
-          setActiveParentSuiteId(null);
+          setActiveParentSuiteId(selectedSuite?.id || (tree.length > 0 ? tree[0].id : null));
           setIsNewCaseOpen(true);
         }}
         onOpenManualRun={() => {
@@ -218,6 +245,7 @@ export default function Home() {
             {/* Left Panel: Explorer Tree */}
             <ExplorerTree
               tree={tree}
+              selectedProject={selectedProject}
               selectedCaseId={selectedCase?.id || null}
               selectedSuiteId={selectedSuite?.id || null}
               onSelectCase={(tc) => {
@@ -239,6 +267,14 @@ export default function Home() {
               onDeleteSuite={handleDeleteSuite}
               onAddCaseInSuite={(suiteId) => {
                 setActiveParentSuiteId(suiteId);
+                setIsNewCaseOpen(true);
+              }}
+              onOpenNewSuite={() => {
+                setActiveParentSuiteId(null);
+                setIsNewSuiteOpen(true);
+              }}
+              onOpenNewCase={() => {
+                setActiveParentSuiteId(selectedSuite?.id || (tree.length > 0 ? tree[0].id : null));
                 setIsNewCaseOpen(true);
               }}
               onRunCase={handleRunCase}
@@ -304,14 +340,18 @@ export default function Home() {
                 setActiveSuiteRunCases(null);
                 setIsManualRunOpen(true);
               }}
-              onOpenNewCase={() => {
+              onOpenNewSuite={() => {
                 setActiveParentSuiteId(null);
+                setIsNewSuiteOpen(true);
+              }}
+              onOpenNewCase={() => {
+                setActiveParentSuiteId(selectedSuite?.id || (tree.length > 0 ? tree[0].id : null));
                 setIsNewCaseOpen(true);
               }}
               onSelectCase={(tc) => {
                 setSelectedCase(tc);
                 setSelectedSuite(null);
-                setActiveTab('EXPLORER');
+                handleTabChange('EXPLORER');
               }}
             />
           </>
@@ -327,7 +367,7 @@ export default function Home() {
             onSelectCase={(tc) => {
               setSelectedCase(tc);
               setSelectedSuite(null);
-              setActiveTab('EXPLORER');
+              handleTabChange('EXPLORER');
             }}
           />
         )}

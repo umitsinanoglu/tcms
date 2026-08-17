@@ -13,7 +13,7 @@ export class SuitesService {
       const maxOrder = await this.prisma.suite.aggregate({
         where: {
           projectId: createSuiteDto.projectId,
-          parentId: createSuiteDto.parentId ?? null,
+          parentId: null,
         },
         _max: { orderIndex: true },
       });
@@ -21,7 +21,10 @@ export class SuitesService {
     }
 
     return this.prisma.suite.create({
-      data: createSuiteDto,
+      data: {
+        ...createSuiteDto,
+        parentId: null,
+      },
     });
   }
 

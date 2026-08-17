@@ -44,7 +44,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     Record<string, { status: ResultStatus; errorMessage?: string; jiraBugKey?: string; jiraBugUrl?: string; screenshotUrl?: string }>
   >({});
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
-  const [title, setTitle] = useState('Sprint 24 Regression');
+  const [title, setTitle] = useState('Sprint 24 Regresyon');
   const [version, setVersion] = useState('v2.4.0-rc1');
   const [environment, setEnvironment] = useState('STAGING');
   const [executedBy, setExecutedBy] = useState('Ahmet Yılmaz');
@@ -171,7 +171,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       let run = activeRun;
       if (!run) {
         run = await TestRunsService.createRun(projectId, {
-          title: title || `Test Run - ${version}`,
+          title: title || `Test Koşusu - ${version}`,
           version,
           environment,
           executedBy,
@@ -237,13 +237,13 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
-                <span>Manual Execution Dashboard</span>
-                <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 px-2 py-0.5 rounded-full font-mono">
+                <span>Manuel Test Koşum Paneli</span>
+                <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full font-mono">
                   {testCases.length} Senaryo
                 </span>
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                TestCase seviyesinde test sonuçlarını veritabanına ve Jira Bug takibine işleyin.
+                Test senaryoları seviyesinde sonuçları veritabanına ve Jira Hata takibine işleyin.
               </p>
             </div>
           </div>
@@ -253,8 +253,8 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Run Başlığı"
-              className="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Koşu Başlığı"
+              className="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1 font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
             />
 
             <input
@@ -262,13 +262,13 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               value={version}
               onChange={(e) => setVersion(e.target.value)}
               placeholder="v2.4.0-rc1"
-              className="w-24 bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1 font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-24 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2 py-1 font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
             />
 
             <select
               value={environment}
               onChange={(e) => setEnvironment(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+              className="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
             >
               <option value="STAGING">STAGING</option>
               <option value="PREPROD">PREPROD</option>
@@ -278,7 +278,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -288,53 +288,53 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
         {/* Modal Body */}
         {isSubmitted && summaryData ? (
           /* Summary View */
-          <div className="p-8 flex-1 flex flex-col items-center justify-center space-y-6 text-center overflow-y-auto">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+          <div className="p-8 flex-1 flex flex-col items-center justify-center space-y-6 text-center overflow-y-auto bg-white dark:bg-slate-900">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/10">
               <Trophy className="w-8 h-8" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xl font-bold text-slate-100">Test Koşusu Tamamlandı!</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Test Koşusu Tamamlandı!</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {title} — {version} ({environment}) sonuçları başarıyla kaydedildi.
               </p>
             </div>
 
             {/* Score Ring */}
-            <div className="w-32 h-32 rounded-full border-4 border-slate-800 flex flex-col items-center justify-center bg-slate-900/50">
-              <span className="text-3xl font-extrabold text-white font-mono">
+            <div className="w-32 h-32 rounded-full border-4 border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900/50">
+              <span className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono">
                 %{summaryData.passRate}
               </span>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
                 Başarı Oranı
               </span>
             </div>
 
             {/* Grid Stats */}
             <div className="grid grid-cols-4 gap-4 w-full max-w-lg">
-              <div className="bg-slate-900/80 border border-emerald-500/20 p-3 rounded-xl">
-                <span className="block text-lg font-bold text-emerald-400 font-mono">
+              <div className="bg-slate-50 dark:bg-slate-900/80 border border-emerald-500/20 p-3 rounded-xl">
+                <span className="block text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">
                   {summaryData.passed}
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium uppercase">Passed</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase">Başarılı</span>
               </div>
-              <div className="bg-slate-900/80 border border-red-500/20 p-3 rounded-xl">
-                <span className="block text-lg font-bold text-red-400 font-mono">
+              <div className="bg-slate-50 dark:bg-slate-900/80 border border-red-500/20 p-3 rounded-xl">
+                <span className="block text-lg font-bold text-red-600 dark:text-red-400 font-mono">
                   {summaryData.failed}
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium uppercase">Failed</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase">Başarısız</span>
               </div>
-              <div className="bg-slate-900/80 border border-slate-700/50 p-3 rounded-xl">
-                <span className="block text-lg font-bold text-slate-400 font-mono">
+              <div className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/50 p-3 rounded-xl">
+                <span className="block text-lg font-bold text-slate-600 dark:text-slate-400 font-mono">
                   {summaryData.skipped}
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium uppercase">Skipped</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase">Atlandı</span>
               </div>
-              <div className="bg-slate-900/80 border border-purple-500/20 p-3 rounded-xl">
-                <span className="block text-lg font-bold text-purple-400 font-mono">
+              <div className="bg-slate-50 dark:bg-slate-900/80 border border-purple-500/20 p-3 rounded-xl">
+                <span className="block text-lg font-bold text-purple-600 dark:text-purple-400 font-mono">
                   {summaryData.blocked}
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium uppercase">Blocked</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase">Engellendi</span>
               </div>
             </div>
 
@@ -344,7 +344,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   setIsSubmitted(false);
                   setSummaryData(null);
                 }}
-                className="flex items-center space-x-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Yeniden Düzenle</span>
@@ -359,26 +359,26 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
             </div>
           </div>
         ) : testCases.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-xs flex-1">
+          <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-xs flex-1">
             Koşulacak test senaryosu bulunamadı.
           </div>
         ) : (
           /* Active Test Execution View */
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Navigation & Status Header */}
-            <div className="px-6 py-2 bg-slate-900/50 border-b border-surface-border flex items-center justify-between text-xs text-slate-400">
+            <div className="px-6 py-2 bg-slate-100/70 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
               <div className="flex items-center space-x-4">
                 <span>
-                  Senaryo <strong className="text-white">{currentIndex + 1}</strong> / {testCases.length}
+                  Senaryo <strong className="text-slate-900 dark:text-white">{currentIndex + 1}</strong> / {testCases.length}
                 </span>
 
-                <div className="flex items-center space-x-2 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 text-[11px]">
-                  <Keyboard className="w-3.5 h-3.5 text-blue-400" />
+                <div className="flex items-center space-x-2 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px]">
+                  <Keyboard className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                   <span>
-                    Kısayollar: <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-emerald-400">P</kbd> Pass |{' '}
-                    <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-red-400">F</kbd> Fail |{' '}
-                    <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-slate-400">S</kbd> Skip |{' '}
-                    <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-purple-400">B</kbd> Block
+                    Kısayollar: <kbd className="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded font-mono text-emerald-600 dark:text-emerald-400">P</kbd> Başarılı |{' '}
+                    <kbd className="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded font-mono text-red-600 dark:text-red-400">F</kbd> Başarısız |{' '}
+                    <kbd className="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded font-mono text-slate-600 dark:text-slate-400">S</kbd> Atla |{' '}
+                    <kbd className="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded font-mono text-purple-600 dark:text-purple-400">B</kbd> Engelle
                   </span>
                 </div>
               </div>
@@ -387,18 +387,24 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                 <span
                   className={`px-2.5 py-0.5 rounded-full font-mono text-[10px] font-bold ${
                     currentResult.status === 'PASSED'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                       : currentResult.status === 'FAILED'
-                      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                      ? 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30'
                       : currentResult.status === 'BLOCKED'
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                      : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                      ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30'
+                      : 'bg-slate-500/20 text-slate-600 dark:text-slate-400 border border-slate-500/30'
                   }`}
                 >
-                  {currentResult.status}
+                  {currentResult.status === 'PASSED'
+                    ? 'BAŞARILI'
+                    : currentResult.status === 'FAILED'
+                    ? 'BAŞARISIZ'
+                    : currentResult.status === 'BLOCKED'
+                    ? 'ENGELLENDİ'
+                    : 'ATLANDI'}
                 </span>
               ) : (
-                <span className="text-[10px] text-slate-500 font-mono">Değerlendirilmedi</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Değerlendirilmedi</span>
               )}
             </div>
 
@@ -407,21 +413,21 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               <div className="p-6 flex-1 overflow-y-auto space-y-5">
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded border border-blue-500/20">
+                    <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded border border-blue-500/20">
                       {currentCase.code}
                     </span>
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      {currentCase.type}
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      {currentCase.type === 'MANUAL' ? 'MANUEL' : currentCase.type}
                     </span>
                     {currentCase.jiraStoryKey && (
-                      <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                      <span className="text-xs font-mono text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
                         {currentCase.jiraStoryKey}
                       </span>
                     )}
                   </div>
-                  <h3 className="text-lg font-bold text-slate-100">{currentCase.title}</h3>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{currentCase.title}</h3>
                   {currentCase.description && (
-                    <p className="text-xs text-slate-400 bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
                       {currentCase.description}
                     </p>
                   )}
@@ -430,16 +436,16 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                 {/* Steps Description (Read only context for manual evaluation) */}
                 {currentCase.steps && currentCase.steps.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    <h4 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Test Adımları ({currentCase.steps.length})
                     </h4>
-                    <div className="space-y-1.5 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <div className="space-y-1.5 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
                       {currentCase.steps.map((step, idx) => (
                         <div key={idx} className="text-xs flex items-start space-x-2">
-                          <span className="font-mono text-slate-500 font-bold">{step.stepNumber}.</span>
-                          <span className="text-slate-300">{step.action}</span>
+                          <span className="font-mono text-slate-400 dark:text-slate-500 font-bold">{step.stepNumber}.</span>
+                          <span className="text-slate-700 dark:text-slate-300">{step.action}</span>
                           {step.expectedResult && (
-                            <span className="text-emerald-400/80 font-mono text-[11px]">
+                            <span className="text-emerald-600 dark:text-emerald-400/80 font-mono text-[11px]">
                               → {step.expectedResult}
                             </span>
                           )}
@@ -451,46 +457,46 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
                 {/* FAILED Extra Fields: Error Message & Create Jira Bug Mock */}
                 {currentResult?.status === 'FAILED' && (
-                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl space-y-3 animate-fadeIn">
+                  <div className="p-4 bg-red-500/5 dark:bg-red-500/10 border border-red-500/20 dark:border-red-500/30 rounded-xl space-y-3 animate-fadeIn">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center space-x-1.5">
+                      <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider flex items-center space-x-1.5">
                         <XCircle className="w-4 h-4" />
-                        <span>Failed TestCase Detayları</span>
+                        <span>Başarısız Test Senaryosu Detayları</span>
                       </span>
 
                       <button
                         type="button"
                         onClick={() => handleCreateJiraBugMock(currentCase.id, currentCase.code)}
-                        className="flex items-center space-x-1.5 px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 rounded-lg text-xs font-semibold transition-colors"
+                        className="flex items-center space-x-1.5 px-3 py-1 bg-red-500/10 dark:bg-red-500/20 hover:bg-red-500/20 dark:hover:bg-red-500/30 text-red-600 dark:text-red-300 border border-red-500/30 dark:border-red-500/40 rounded-lg text-xs font-semibold transition-colors"
                       >
-                        <Bug className="w-3.5 h-3.5 text-red-400" />
-                        <span>Create Jira Bug (Mock)</span>
+                        <Bug className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
+                        <span>Jira Hata Kaydı Oluştur (Mock)</span>
                       </button>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[11px] text-slate-300 font-semibold">Error Message (Hata Açıklaması):</label>
+                      <label className="text-[11px] text-slate-700 dark:text-slate-300 font-semibold">Hata Mesajı / Açıklaması:</label>
                       <textarea
                         rows={2}
                         value={currentResult.errorMessage || ''}
                         onChange={(e) => handleErrorMessageChange(currentCase.id, e.target.value)}
-                        placeholder="Örn: Login butonu tıklanamadı veya Yanıt 500 hatası döndü..."
-                        className="w-full bg-slate-900 border border-red-500/30 rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="Örn: Login butonuna tıklanamadı veya HTTP 500 hatası alındı..."
+                        className="w-full bg-white dark:bg-slate-900 border border-red-300 dark:border-red-500/30 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500"
                       />
                     </div>
 
                     {currentResult.jiraBugKey && (
-                      <div className="flex items-center justify-between p-2.5 bg-slate-900 border border-red-500/20 rounded-lg text-xs">
+                      <div className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-900 border border-red-200 dark:border-red-500/20 rounded-lg text-xs">
                         <div className="flex items-center space-x-2">
-                          <Bug className="w-4 h-4 text-red-400" />
-                          <span className="font-mono font-bold text-red-400">{currentResult.jiraBugKey}</span>
-                          <span className="text-slate-400 text-[11px]">Jira Bug Kaydı Oluşturuldu</span>
+                          <Bug className="w-4 h-4 text-red-500 dark:text-red-400" />
+                          <span className="font-mono font-bold text-red-600 dark:text-red-400">{currentResult.jiraBugKey}</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-[11px]">Jira Hata Kaydı Oluşturuldu</span>
                         </div>
                         <a
                           href={currentResult.jiraBugUrl || `https://company.atlassian.net/browse/${currentResult.jiraBugKey}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-xs text-blue-400 hover:underline flex items-center space-x-1 font-semibold"
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center space-x-1 font-semibold"
                         >
                           <span>Jira'da İncele</span>
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -501,22 +507,22 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                     {/* Manual Screenshot Upload for FAIL status */}
                     <div className="space-y-2 pt-2 border-t border-red-500/20">
                       <div className="flex items-center justify-between">
-                        <label className="text-[11px] text-slate-300 font-bold flex items-center space-x-1.5 uppercase tracking-wider">
-                          <ImageIcon className="w-3.5 h-3.5 text-red-400" />
-                          <span>Manuel Ekran Görüntüsü (Fail Kanıtı)</span>
+                        <label className="text-[11px] text-slate-700 dark:text-slate-300 font-bold flex items-center space-x-1.5 uppercase tracking-wider">
+                          <ImageIcon className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
+                          <span>Manuel Ekran Görüntüsü (Hata Kanıtı)</span>
                         </label>
                         {(currentResult.screenshotUrl || currentCase.screenshotUrl) && (
-                          <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-mono font-semibold border border-emerald-500/20">
+                          <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-mono font-semibold border border-emerald-500/20">
                             Görsel Ekli
                           </span>
                         )}
                       </div>
 
                       {currentResult.screenshotUrl || currentCase.screenshotUrl ? (
-                        <div className="relative group max-w-md overflow-hidden rounded-xl border border-red-500/30 bg-slate-900/60 p-2">
+                        <div className="relative group max-w-md overflow-hidden rounded-xl border border-red-500/30 bg-white dark:bg-slate-900/60 p-2">
                           <img
                             src={currentResult.screenshotUrl || currentCase.screenshotUrl}
-                            alt="Fail Screenshot"
+                            alt="Hata Ekran Görüntüsü"
                             className="w-full max-h-48 object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                             onClick={() => setLightboxImage(currentResult.screenshotUrl || currentCase.screenshotUrl || null)}
                           />
@@ -556,12 +562,12 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                           </div>
                         </div>
                       ) : (
-                        <div className="p-4 border-2 border-dashed border-red-500/30 rounded-xl bg-slate-900/40 text-center space-y-2">
-                          <p className="text-xs text-slate-400">
-                            FAIL durumu için ekran görüntüsü kanıtı ekleyin
+                        <div className="p-4 border-2 border-dashed border-red-300 dark:border-red-500/30 rounded-xl bg-slate-50 dark:bg-slate-900/40 text-center space-y-2">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            BAŞARISIZ (FAIL) durumu için ekran görüntüsü kanıtı ekleyin
                           </p>
-                          <label className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95">
-                            <Upload className="w-3.5 h-3.5 text-red-400" />
+                          <label className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-red-500/10 dark:bg-red-500/20 hover:bg-red-500/20 dark:hover:bg-red-500/30 text-red-600 dark:text-red-300 border border-red-500/30 dark:border-red-500/40 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95">
+                            <Upload className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
                             <span>Ekran Görüntüsü Yükle</span>
                             <input
                               type="file"
@@ -586,12 +592,12 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
             )}
 
             {/* Evaluation Action Buttons Bar */}
-            <div className="px-6 py-4 bg-slate-900 border-t border-surface-border flex items-center justify-between">
+            <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <button
                   disabled={currentIndex === 0}
                   onClick={() => setCurrentIndex((prev) => prev - 1)}
-                  className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
+                  className="p-2 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -599,7 +605,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                 <button
                   disabled={currentIndex === testCases.length - 1}
                   onClick={() => setCurrentIndex((prev) => prev + 1)}
-                  className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
+                  className="p-2 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 transition-colors"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -612,11 +618,11 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl font-bold text-xs transition-all active:scale-95 border ${
                     currentResult?.status === 'PASSED'
                       ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
-                      : 'bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border-emerald-500/30'
+                      : 'bg-emerald-500/10 dark:bg-emerald-600/20 hover:bg-emerald-500/20 dark:hover:bg-emerald-600/30 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
                   }`}
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>PASS</span>
+                  <span>BAŞARILI</span>
                 </button>
 
                 <button
@@ -624,11 +630,11 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl font-bold text-xs transition-all active:scale-95 border ${
                     currentResult?.status === 'FAILED'
                       ? 'bg-red-600 text-white border-red-500 shadow-lg shadow-red-500/20'
-                      : 'bg-red-600/20 hover:bg-red-600/30 text-red-400 border-red-500/30'
+                      : 'bg-red-500/10 dark:bg-red-600/20 hover:bg-red-500/20 dark:hover:bg-red-600/30 text-red-600 dark:text-red-400 border-red-500/30'
                   }`}
                 >
                   <XCircle className="w-4 h-4" />
-                  <span>FAIL</span>
+                  <span>BAŞARISIZ</span>
                 </button>
 
                 <button
@@ -636,11 +642,11 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all active:scale-95 border ${
                     currentResult?.status === 'SKIPPED'
                       ? 'bg-slate-700 text-white border-slate-600'
-                      : 'bg-slate-800 hover:bg-slate-700 text-slate-400 border-slate-700'
+                      : 'bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700'
                   }`}
                 >
                   <SkipForward className="w-4 h-4" />
-                  <span>SKIP</span>
+                  <span>ATLA</span>
                 </button>
 
                 <button
@@ -648,11 +654,11 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition-all active:scale-95 border ${
                     currentResult?.status === 'BLOCKED'
                       ? 'bg-purple-600 text-white border-purple-500 shadow-lg shadow-purple-500/20'
-                      : 'bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border-purple-500/30'
+                      : 'bg-purple-500/10 dark:bg-purple-600/20 hover:bg-purple-500/20 dark:hover:bg-purple-600/30 text-purple-600 dark:text-purple-400 border-purple-500/30'
                   }`}
                 >
                   <Slash className="w-4 h-4" />
-                  <span>BLOCKED</span>
+                  <span>ENGELLE</span>
                 </button>
               </div>
 
@@ -676,7 +682,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           <div className="absolute top-4 right-4 flex items-center space-x-3">
             <a
               href={lightboxImage}
-              download="fail-screenshot.png"
+              download="hata-ekran-goruntusu.png"
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg border border-slate-700 transition-colors"
             >
               İndir
@@ -691,7 +697,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           <div className="max-w-5xl max-h-[85vh] p-2 overflow-auto">
             <img
               src={lightboxImage}
-              alt="Full Fail Screenshot"
+              alt="Tam Ekran Hata Görseli"
               className="max-w-full max-h-[80vh] object-contain rounded-xl border border-slate-800 shadow-2xl"
             />
           </div>

@@ -19,6 +19,8 @@ import {
   FolderKanban,
   ChevronRight,
   ExternalLink,
+  FolderPlus,
+  FilePlus,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -27,6 +29,7 @@ interface DashboardViewProps {
   suites?: SuiteTreeNode[];
   onOpenManualRun: () => void;
   onOpenNewCase: () => void;
+  onOpenNewSuite?: () => void;
   onSelectCase?: (testCase: TestCase) => void;
 }
 
@@ -44,6 +47,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   suites = [],
   onOpenManualRun,
   onOpenNewCase,
+  onOpenNewSuite,
   onSelectCase,
 }) => {
   const [dashboardTab, setDashboardTab] = useState<'SUITES' | 'METRICS'>('SUITES');
@@ -53,8 +57,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-400 dark:text-slate-500">
         <Layers className="w-16 h-16 mb-4 opacity-30 animate-pulse" />
-        <p className="text-lg font-medium">Lütfen bir proje seçin</p>
-        <p className="text-sm text-slate-500 mt-1">Dashboard metriklerini ve Suite kartlarını görüntülemek için üst menüden proje seçebilirsiniz.</p>
+        <p className="text-lg font-medium">Lütfen bir test planı seçin</p>
+        <p className="text-sm text-slate-500 mt-1">Dashboard metriklerini ve Suite kartlarını görüntülemek için soldaki navigasyondan test planı seçebilirsiniz.</p>
       </div>
     );
   }
@@ -206,15 +210,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
+          {onOpenNewSuite && (
+            <button
+              onClick={onOpenNewSuite}
+              className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <FolderPlus className="w-3.5 h-3.5 text-amber-500" />
+              <span>+ Yeni Suite Ekle</span>
+            </button>
+          )}
           <button
             onClick={onOpenNewCase}
-            className="hidden sm:inline-flex px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm transition-all"
+            className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 shadow-sm transition-all active:scale-95 cursor-pointer"
           >
-            + Yeni Case Ekle
+            <FilePlus className="w-3.5 h-3.5 text-blue-500" />
+            <span>+ Yeni Case Ekle</span>
           </button>
           <button
             onClick={onOpenManualRun}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/20 transition-all active:scale-95"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>Test Run</span>

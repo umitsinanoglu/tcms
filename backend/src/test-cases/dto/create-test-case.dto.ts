@@ -15,6 +15,11 @@ export class CreateTestCaseDto {
   @IsOptional()
   description?: string;
 
+  @ApiProperty({ example: 'MANUAL', description: 'Test yöntemi (MANUAL veya AUTOMATION)', required: false })
+  @IsString()
+  @IsOptional()
+  executionType?: string = 'MANUAL';
+
   @ApiProperty({ enum: TestType, example: TestType.WEB, description: 'Test tipi' })
   @IsEnum(TestType)
   @IsOptional()

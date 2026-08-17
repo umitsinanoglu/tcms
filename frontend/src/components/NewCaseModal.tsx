@@ -21,7 +21,8 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [suiteId, setSuiteId] = useState('');
-  const [type, setType] = useState<TestType>('MANUAL');
+  const [executionType, setExecutionType] = useState<'MANUAL' | 'AUTOMATION'>('MANUAL');
+  const [type, setType] = useState<TestType>('WEB');
   const [priority, setPriority] = useState<Priority>('NORMAL');
 
   const [description, setDescription] = useState('');
@@ -60,6 +61,7 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
       await onSubmit({
         title,
         suiteId,
+        executionType,
         type,
         priority,
         description,
@@ -133,6 +135,41 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
             />
           </div>
 
+          {/* Test Yöntemi Selection */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Test Yöntemi (Kategori)</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setExecutionType('MANUAL');
+                  if (!['WEB', 'IOS', 'ANDROID', 'API', 'OTHER'].includes(type)) setType('WEB');
+                }}
+                className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center space-x-2 ${
+                  executionType === 'MANUAL'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span>📋 MANUEL</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setExecutionType('AUTOMATION');
+                  if (!['WEB', 'IOS', 'ANDROID', 'API', 'PERFORMANCE', 'OTHER'].includes(type)) setType('WEB');
+                }}
+                className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center space-x-2 ${
+                  executionType === 'AUTOMATION'
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-500/20'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span>🤖 OTOMASYON</span>
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Test Tipi</label>
@@ -141,18 +178,24 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
                 onChange={(e) => setType(e.target.value as TestType)}
                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm"
               >
-                <option value="MANUAL" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                  📋 MANUAL
-                </option>
-                <option value="WEB" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                  🌐 WEB
-                </option>
-                <option value="MOBILE" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                  📱 MOBILE
-                </option>
-                <option value="API" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                  ⚡ API
-                </option>
+                {executionType === 'MANUAL' ? (
+                  <>
+                    <option value="WEB">🌐 WEB</option>
+                    <option value="IOS">📱 IOS</option>
+                    <option value="ANDROID">🤖 ANDROID</option>
+                    <option value="API">⚡ API</option>
+                    <option value="OTHER">📦 DİĞER / GENEL</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="WEB">🌐 WEB (Selenium/Cypress/Playwright)</option>
+                    <option value="IOS">📱 IOS (Appium)</option>
+                    <option value="ANDROID">🤖 ANDROID (Appium)</option>
+                    <option value="API">⚡ API (RestAssured/Postman)</option>
+                    <option value="PERFORMANCE">🚀 PERFORMANS / YÜK</option>
+                    <option value="OTHER">⚙️ DİĞER OTOMASYON</option>
+                  </>
+                )}
               </select>
             </div>
 
@@ -163,18 +206,10 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
                 onChange={(e) => setPriority(e.target.value as Priority)}
                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm"
               >
-                <option value="BLOCKER" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                  🔴 BLOCKER
-                </option>
-                <option value="CRITICAL" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                  🟠 CRITICAL
-                </option>
-                <option value="NORMAL" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                  🔵 NORMAL
-                </option>
-                <option value="LOW" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                  ⚪ LOW
-                </option>
+                <option value="BLOCKER">🔴 BLOCKER</option>
+                <option value="CRITICAL">🟠 CRITICAL</option>
+                <option value="NORMAL">🔵 NORMAL</option>
+                <option value="LOW">⚪ LOW</option>
               </select>
             </div>
           </div>

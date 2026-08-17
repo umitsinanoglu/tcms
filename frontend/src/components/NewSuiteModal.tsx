@@ -90,28 +90,19 @@ export const NewSuiteModal: React.FC<NewSuiteModalProps> = ({
               placeholder="Örn: Ödeme Adımları & 3D Secure"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 shadow-sm"
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Üst Klasör / Proje (Parent)
+              Bağlı Olduğu Test Planı
             </label>
-            <select
-              value={selectedParentId}
-              onChange={(e) => setSelectedParentId(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer shadow-sm"
-            >
-              <option value="">
-                🚀 Proje: {projectKey ? `[${projectKey}] ` : ''}{projectName || 'Aktif Proje Ana Dizini'}
-              </option>
-              {flatSuiteList.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {'—'.repeat(s.depth + 1)} 📂 {s.name}
-                </option>
-              ))}
-            </select>
+            <div className="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
+              <span className="text-amber-500 font-mono">🚀</span>
+              <span>{projectKey ? `[${projectKey}] ` : ''}{projectName || 'Aktif Test Planı'}</span>
+            </div>
+            <p className="text-[10px] text-slate-400">Suite'ler doğrudan Test Planı altında yer almaktadır.</p>
           </div>
 
           <div className="flex items-center justify-end space-x-3 pt-3">

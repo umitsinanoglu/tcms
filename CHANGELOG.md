@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Manual Execution Dashboard (Manuel Test Koşum Paneli) modalı Türkçe diline çevrildi ve tema ile tam uyumlu hale getirildi.
+
 ### Added
+- Test Case niteliklerinde Manuel/Otomasyon ve dinamik Test Tipi ayrimi, Dashboard Yeni Suite Ekle butonu, Yeni Case Ekle baglam fixi ve Suite hiyerarsi duzeltmesi.
 - Top Dashboard Left Projects Navigation Sidebar and Repeat Test Suite/Case Execution with Run History
 - Header logo link to Top Dashboard, ThemeSelector overflow/z-index fixes, and Suite test cases Card View
 - **AI Agent Context Infrastructure**:

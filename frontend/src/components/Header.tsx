@@ -39,10 +39,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNewCase,
   onOpenManualRun,
 }) => {
-
   return (
     <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-40 sticky top-0 transition-colors duration-200 gap-2">
-      {/* Brand & Project Dropdown */}
+      {/* Brand & Navigation */}
       <div className="flex items-center space-x-3 sm:space-x-5 shrink-0">
         <div
           onClick={() => onTabChange && onTabChange('DASHBOARD')}
@@ -62,54 +61,9 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 shrink-0" />
 
-        {/* Project Selector */}
-        <div className="flex items-center space-x-1.5 shrink-0">
-          <div className="relative group">
-            <select
-              value={selectedProject?.id || ''}
-              onChange={(e) => {
-                const proj = projects.find((p) => p.id === e.target.value);
-                if (proj) onSelectProject(proj);
-              }}
-              className="appearance-none bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-medium rounded-lg px-2.5 sm:px-3.5 py-1.5 pr-7 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all cursor-pointer max-w-[150px] sm:max-w-[210px] truncate"
-            >
-              {projects.length === 0 ? (
-                <option value="">Proje Bulunamadı</option>
-              ) : (
-                projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    [{p.key}] {p.name}
-                  </option>
-                ))
-              )}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-
-          <button
-            onClick={onOpenNewProject}
-            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
-            title="Yeni Proje Ekle"
-          >
-            <PlusCircle className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* View Switcher Tabs */}
+        {/* View Switcher Tabs (Dashboard & Test Koşumları) */}
         {activeView !== undefined && onTabChange && (
           <div className="flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-1 space-x-1 text-xs shrink-0">
-            <button
-              onClick={() => onTabChange('EXPLORER')}
-              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium transition-colors ${
-                activeView === 'EXPLORER'
-                  ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-sm shadow-rose-500/20'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 shrink-0" />
-              <span>Explorer</span>
-            </button>
-
             <button
               onClick={() => onTabChange('DASHBOARD')}
               className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium transition-colors ${
@@ -144,35 +98,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 mx-0.5 shrink-0" />
 
-        <button
-          onClick={onOpenNewSuite}
-          disabled={!selectedProject}
-          className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm shrink-0"
-        >
-          <FolderPlus className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
-          <span className="hidden sm:inline">Yeni Suite</span>
-        </button>
-
-        <button
-          onClick={onOpenNewCase}
-          disabled={!selectedProject}
-          className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm shrink-0"
-        >
-          <FilePlus className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
-          <span className="hidden sm:inline">Yeni Case</span>
-        </button>
-
-        <button
-          onClick={onOpenManualRun}
-          disabled={!selectedProject}
-          className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-1.5 text-xs font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white transition-all shadow-md shadow-emerald-600/20 active:scale-95 shrink-0"
-        >
-          <Play className="w-3.5 h-3.5 fill-current shrink-0" />
-          <span>Run Test</span>
-        </button>
-
-        <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 mx-0.5 shrink-0 hidden lg:block" />
-
         <a
           href="http://localhost:3001/api/docs"
           target="_blank"
@@ -183,6 +108,16 @@ export const Header: React.FC<HeaderProps> = ({
           <span>API Docs</span>
           <ExternalLink className="w-3.5 h-3.5 shrink-0" />
         </a>
+
+        {/* Far Right: 'Yeni Test Planı' Button */}
+        <button
+          onClick={onOpenNewProject}
+          className="flex items-center space-x-1.5 px-3 sm:px-4 py-1.5 text-xs font-semibold bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 rounded-lg text-white transition-all shadow-md shadow-rose-600/20 active:scale-95 shrink-0"
+          title="Yeni Test Planı Oluştur"
+        >
+          <PlusCircle className="w-4 h-4 shrink-0" />
+          <span>Yeni Test Planı</span>
+        </button>
       </div>
     </header>
   );
