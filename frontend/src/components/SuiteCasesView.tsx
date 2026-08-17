@@ -178,8 +178,39 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
               </p>
             </div>
           </div>
+          <div className="flex items-center flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                // Client-side quick suite CSV export
+                const BOM = '\uFEFF';
+                const headers = ['Test Kodu', 'Başlık', 'Öncelik', 'Tip', 'Yürütme Türü', 'Son Durum', 'Jira Story', 'Jira Bug'];
+                const rows = (suite.testCases || []).map((tc) => [
+                  `"${tc.code}"`,
+                  `"${(tc.title || '').replace(/"/g, '""')}"`,
+                  `"${tc.priority}"`,
+                  `"${tc.type}"`,
+                  `"${tc.executionType || 'MANUAL'}"`,
+                  `"${tc.results && tc.results.length > 0 ? tc.results[0].status : 'UNTESTED'}"`,
+                  `"${tc.jiraStoryKey || ''}"`,
+                  `"${tc.results && tc.results.length > 0 ? tc.results[0].jiraBugKey || '' : ''}"`,
+                ]);
+                const csvContent = BOM + [headers.map((h) => `"${h}"`).join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Suite_${suite.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Report.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="flex items-center space-x-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all active:scale-95 cursor-pointer"
+              title="Suite Test Senaryolarını CSV Formatında İndir"
+            >
+              <FileCode2 className="w-4 h-4 text-emerald-500" />
+              <span>Suite Raporu (CSV)</span>
+            </button>
 
-          <div className="flex items-center space-x-2">
             {onRunSuite && testCases.length > 0 && (
               <button
                 type="button"
@@ -194,20 +225,20 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
             <button
               type="button"
               onClick={() => onAddCaseInSuite(suite.id)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-rose-600/20 transition-all active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Yeni Case Ekle</span>
+              <span>Yeni Case</span>
             </button>
 
             {onClose && (
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white border border-slate-200 dark:border-slate-700 transition-colors"
-                title="Görünümü Kapat"
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                title="Kapat"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             )}
           </div>

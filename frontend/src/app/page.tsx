@@ -23,6 +23,7 @@ import { NewSuiteModal } from '@/components/NewSuiteModal';
 import { EditSuiteModal } from '@/components/EditSuiteModal';
 import { NewCaseModal } from '@/components/NewCaseModal';
 import { QuickRunModal } from '@/components/QuickRunModal';
+import { ReportsView } from '@/components/ReportsView';
 
 export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -31,20 +32,20 @@ export default function Home() {
   const [rootCases, setRootCases] = useState<TestCase[]>([]);
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null);
   const [selectedSuite, setSelectedSuite] = useState<SuiteTreeNode | null>(null);
-  const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'RUNS'>('DASHBOARD');
+  const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'RUNS' | 'REPORTS'>('DASHBOARD');
   const [isLoadingTree, setIsLoadingTree] = useState(false);
 
   // Tab persistence handling: default to DASHBOARD, restore from localStorage on refresh
   useEffect(() => {
-    const savedTab = localStorage.getItem('tcms_active_tab') as 'EXPLORER' | 'DASHBOARD' | 'RUNS' | null;
-    if (savedTab && ['EXPLORER', 'DASHBOARD', 'RUNS'].includes(savedTab)) {
+    const savedTab = localStorage.getItem('tcms_active_tab') as 'EXPLORER' | 'DASHBOARD' | 'RUNS' | 'REPORTS' | null;
+    if (savedTab && ['EXPLORER', 'DASHBOARD', 'RUNS', 'REPORTS'].includes(savedTab)) {
       setActiveTab(savedTab);
     } else {
       setActiveTab('DASHBOARD');
     }
   }, []);
 
-  const handleTabChange = useCallback((tab: 'EXPLORER' | 'DASHBOARD' | 'RUNS') => {
+  const handleTabChange = useCallback((tab: 'EXPLORER' | 'DASHBOARD' | 'RUNS' | 'REPORTS') => {
     setActiveTab(tab);
     localStorage.setItem('tcms_active_tab', tab);
   }, []);
@@ -398,6 +399,7 @@ export default function Home() {
                 setSelectedSuite(null);
                 handleTabChange('EXPLORER');
               }}
+              onNavigateToReports={() => handleTabChange('REPORTS')}
             />
           </>
         )}
@@ -413,6 +415,24 @@ export default function Home() {
               setSelectedCase(tc);
               setSelectedSuite(null);
               handleTabChange('EXPLORER');
+            }}
+          />
+        )}
+
+        {activeTab === 'REPORTS' && (
+          <ReportsView
+            project={selectedProject}
+            onOpenManualRun={() => {
+              setActiveSuiteRunCases(null);
+              setIsManualRunOpen(true);
+            }}
+            onSelectCase={(tcId) => {
+              const target = allCases.find((c) => c.id === tcId);
+              if (target) {
+                setSelectedCase(target);
+                setSelectedSuite(null);
+                handleTabChange('EXPLORER');
+              }
             }}
           />
         )}

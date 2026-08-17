@@ -21,7 +21,12 @@ import {
   ExternalLink,
   FolderPlus,
   FilePlus,
+  FileSpreadsheet,
+  Printer,
+  FileText,
+  Download,
 } from 'lucide-react';
+import { ReportsService } from '@/services/api';
 
 interface DashboardViewProps {
   project: Project | null;
@@ -31,6 +36,7 @@ interface DashboardViewProps {
   onOpenNewCase: () => void;
   onOpenNewSuite?: () => void;
   onSelectCase?: (testCase: TestCase) => void;
+  onNavigateToReports?: () => void;
 }
 
 interface FlattenedSuite {
@@ -49,6 +55,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenNewCase,
   onOpenNewSuite,
   onSelectCase,
+  onNavigateToReports,
 }) => {
   const [dashboardTab, setDashboardTab] = useState<'SUITES' | 'METRICS'>('SUITES');
   const [suiteSearch, setSuiteSearch] = useState('');
@@ -199,7 +206,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center flex-wrap gap-2.5">
           {/* Sub Tab Switcher */}
           <div className="flex items-center bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-1 text-xs">
             <button
@@ -226,13 +233,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
+          {/* Reporting Hub Quick Action */}
+          {onNavigateToReports && (
+            <button
+              onClick={onNavigateToReports}
+              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 shadow-sm transition-all active:scale-95 cursor-pointer"
+              title="Kapsamlı Raporlama ve Analitik Hub'ını Aç"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Raporlama Hub</span>
+            </button>
+          )}
+
+          {/* Quick CSV Export */}
+          <button
+            onClick={() => project && ReportsService.downloadProjectReport(project.id, 'csv', project.key)}
+            className="hidden sm:inline-flex items-center space-x-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 transition-all active:scale-95 cursor-pointer"
+            title="Excel / CSV Raporu İndir"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Excel / CSV</span>
+          </button>
+
           {onOpenNewSuite && (
             <button
               onClick={onOpenNewSuite}
               className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               <FolderPlus className="w-3.5 h-3.5 text-amber-500" />
-              <span>+ Yeni Suite Ekle</span>
+              <span>+ Suite Ekle</span>
             </button>
           )}
           <button
@@ -240,7 +269,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <FilePlus className="w-3.5 h-3.5 text-blue-500" />
-            <span>+ Yeni Case Ekle</span>
+            <span>+ Case Ekle</span>
           </button>
           <button
             onClick={onOpenManualRun}
