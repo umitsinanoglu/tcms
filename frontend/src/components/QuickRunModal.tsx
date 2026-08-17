@@ -106,7 +106,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
               <Play className="w-4 h-4 fill-current" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Test Senaryosu Koştur</h3>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Test Case Koştur</h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">Sonucu kaydedin ve test durumunu güncelleyin</p>
             </div>
           </div>

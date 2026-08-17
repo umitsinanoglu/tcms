@@ -299,7 +299,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
                   e.stopPropagation();
                   onRunSuite(node);
                 }}
-                title="Suite İçindeki Tüm Senaryoları Koştur (Run Suite)"
+                title="Suite İçindeki Tüm Test Case'leri Koştur (Run Suite)"
                 className="p-1 rounded hover:bg-slate-300 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 font-bold"
               >
                 <Play className="w-3 h-3 fill-current" />
@@ -375,7 +375,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
                           e.stopPropagation();
                           onRunCase(tc);
                         }}
-                        title="Senaryoyu Koştur (Run)"
+                        title="Test Case'i Koştur (Run)"
                         className="p-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center space-x-1 transition-all opacity-0 group-hover:opacity-100 font-semibold text-[10px]"
                       >
                         <Play className="w-3 h-3 fill-current text-emerald-500" />

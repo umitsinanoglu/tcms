@@ -88,7 +88,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-rose-600 dark:text-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-500 uppercase shadow-sm"
             />
             <span className="text-[10px] text-slate-500">
-              Test senaryolarınız {key || 'KEY'}-TC-1, {key || 'KEY'}-TC-2 biçiminde kodlanacaktır.
+              Test Case'leriniz {key || 'KEY'}-TC-1, {key || 'KEY'}-TC-2 biçiminde kodlanacaktır.
             </span>
           </div>
 

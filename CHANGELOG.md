@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Arayüz genelinde Test Senaryosu ve Senaryo terimleri 'Test Case' olarak standartlaştırıldı.
 - Manual Execution Dashboard (Manuel Test Koşum Paneli) modalı Türkçe diline çevrildi ve tema ile tam uyumlu hale getirildi.
 
 ### Added

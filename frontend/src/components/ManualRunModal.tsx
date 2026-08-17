@@ -239,11 +239,11 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
                 <span>Manuel Test Koşum Paneli</span>
                 <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full font-mono">
-                  {testCases.length} Senaryo
+                  {testCases.length} Test Case
                 </span>
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Test senaryoları seviyesinde sonuçları veritabanına ve Jira Hata takibine işleyin.
+                Test Case'ler seviyesinde sonuçları veritabanına ve Jira Hata takibine işleyin.
               </p>
             </div>
           </div>
@@ -360,7 +360,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           </div>
         ) : testCases.length === 0 ? (
           <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-xs flex-1">
-            Koşulacak test senaryosu bulunamadı.
+            Koşulacak Test Case bulunamadı.
           </div>
         ) : (
           /* Active Test Execution View */
@@ -369,7 +369,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
             <div className="px-6 py-2 bg-slate-100/70 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
               <div className="flex items-center space-x-4">
                 <span>
-                  Senaryo <strong className="text-slate-900 dark:text-white">{currentIndex + 1}</strong> / {testCases.length}
+                  Test Case <strong className="text-slate-900 dark:text-white">{currentIndex + 1}</strong> / {testCases.length}
                 </span>
 
                 <div className="flex items-center space-x-2 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px]">
@@ -461,7 +461,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider flex items-center space-x-1.5">
                         <XCircle className="w-4 h-4" />
-                        <span>Başarısız Test Senaryosu Detayları</span>
+                        <span>Başarısız Test Case Detayları</span>
                       </span>
 
                       <button

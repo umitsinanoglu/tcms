@@ -78,7 +78,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
         </div>
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Bir Test Case Seçin</h3>
         <p className="text-xs text-slate-500 max-w-sm text-center mt-1">
-          Sol paneldeki Explorer ağacından incelemek veya düzenlemek istediğiniz senaryoya tıklayın.
+          Sol paneldeki Explorer ağacından incelemek veya düzenlemek istediğiniz Test Case'e tıklayın.
         </p>
       </div>
     );
@@ -267,7 +267,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                 type="button"
                 onClick={() => onRun(testCase)}
                 className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-emerald-600/20 transition-all active:scale-95"
-                title="Bu Senaryoyu Koştur"
+                title="Bu Test Case'i Koştur"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
                 <span>Run Case</span>
@@ -330,7 +330,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Test senaryosunun detaylı açıklaması ve kapsamı..."
+              placeholder="Test Case'in detaylı açıklaması ve kapsamı..."
               className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none shadow-sm"
             />
           </div>
@@ -563,7 +563,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
               <AlertCircle className="w-6 h-6 mx-auto mb-2 opacity-30 text-slate-400" />
               <p>Henüz tanımlanmış bir test adımı bulunmuyor.</p>
               <p className="text-[10px] mt-1 text-slate-500">
-                "Adım Ekle" butonunu kullanarak test senaryosu adımlarını tanımlayabilirsiniz.
+                "Adım Ekle" butonunu kullanarak Test Case adımlarını tanımlayabilirsiniz.
               </p>
             </div>
           ) : (

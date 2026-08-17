@@ -494,7 +494,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                             {res.testCase?.code || 'TC'}
                           </span>
                           <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                            {res.testCase?.title || 'Test Senaryosu'}
+                            {res.testCase?.title || 'Test Case'}
                           </span>
                         </div>
 
@@ -584,8 +584,8 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                   <span>Entegrasyon Notları</span>
                 </h4>
                 <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                  <li><code className="text-blue-400">caseCode</code> (örn: TC-101) ile eşleşen senaryolar otomatik ilişkilendirilir.</li>
-                  <li>FAILED olan senaryolara <code className="text-blue-400">jiraBugKey</code> eklenirse Jira kartı otomatik oluşturulur.</li>
+                  <li><code className="text-blue-400">caseCode</code> (örn: TC-101) ile eşleşen Test Case'ler otomatik ilişkilendirilir.</li>
+                  <li>FAILED olan Test Case'lere <code className="text-blue-400">jiraBugKey</code> eklenirse Jira kartı otomatik oluşturulur.</li>
                 </ul>
               </div>
             </div>

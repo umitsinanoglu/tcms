@@ -467,7 +467,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <Activity className="w-4 h-4 text-blue-500" />
                   <span>Test Durumu Genel Dağılımı</span>
                 </h3>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{totalCases} Test Senaryosu</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{totalCases} Test Case</span>
               </div>
 
               {/* Big Progress Bar */}
