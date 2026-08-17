@@ -27,6 +27,7 @@ export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [tree, setTree] = useState<SuiteTreeNode[]>([]);
+  const [rootCases, setRootCases] = useState<TestCase[]>([]);
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null);
   const [selectedSuite, setSelectedSuite] = useState<SuiteTreeNode | null>(null);
   const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'RUNS'>('DASHBOARD');
@@ -94,9 +95,11 @@ export default function Home() {
     try {
       const res = await ProjectsService.getTree(projectId);
       setTree(res.tree || res.children || []);
+      setRootCases(res.rootTestCases || []);
     } catch (err) {
       console.error('Failed to load project tree:', err);
       setTree([]);
+      setRootCases([]);
     } finally {
       setIsLoadingTree(false);
     }
@@ -110,7 +113,7 @@ export default function Home() {
     }
   }, [selectedProject, loadTree]);
 
-  // Flatten all cases in the current tree
+  // Flatten all cases in the current tree plus root test cases
   const getAllCasesInTree = (nodes: SuiteTreeNode[]): TestCase[] => {
     let cases: TestCase[] = [];
     nodes.forEach((node) => {
@@ -120,7 +123,7 @@ export default function Home() {
     return cases;
   };
 
-  const allCases = getAllCasesInTree(tree);
+  const allCases = [...rootCases, ...getAllCasesInTree(tree)];
 
   // Handlers for Project actions
   const handleCreateProject = async (data: { name: string; key: string; description?: string; jiraProjectKey?: string }) => {
@@ -159,6 +162,7 @@ export default function Home() {
     const created = await TestCasesService.create(data);
     if (selectedProject) await loadTree(selectedProject.id);
     setSelectedCase(created);
+    handleTabChange('EXPLORER');
   };
 
   const handleSaveCase = async (updatedCase: Partial<TestCase>) => {
@@ -229,7 +233,7 @@ export default function Home() {
           setIsNewSuiteOpen(true);
         }}
         onOpenNewCase={() => {
-          setActiveParentSuiteId(selectedSuite?.id || (tree.length > 0 ? tree[0].id : null));
+          setActiveParentSuiteId(selectedSuite?.id || null);
           setIsNewCaseOpen(true);
         }}
         onOpenManualRun={() => {
@@ -245,6 +249,7 @@ export default function Home() {
             {/* Left Panel: Explorer Tree */}
             <ExplorerTree
               tree={tree}
+              rootTestCases={rootCases}
               selectedProject={selectedProject}
               selectedCaseId={selectedCase?.id || null}
               selectedSuiteId={selectedSuite?.id || null}
@@ -274,7 +279,7 @@ export default function Home() {
                 setIsNewSuiteOpen(true);
               }}
               onOpenNewCase={() => {
-                setActiveParentSuiteId(selectedSuite?.id || (tree.length > 0 ? tree[0].id : null));
+                setActiveParentSuiteId(selectedSuite?.id || null);
                 setIsNewCaseOpen(true);
               }}
               onRunCase={handleRunCase}
@@ -345,7 +350,7 @@ export default function Home() {
                 setIsNewSuiteOpen(true);
               }}
               onOpenNewCase={() => {
-                setActiveParentSuiteId(selectedSuite?.id || (tree.length > 0 ? tree[0].id : null));
+                setActiveParentSuiteId(selectedSuite?.id || null);
                 setIsNewCaseOpen(true);
               }}
               onSelectCase={(tc) => {
@@ -406,6 +411,8 @@ export default function Home() {
       <NewCaseModal
         isOpen={isNewCaseOpen}
         onClose={() => setIsNewCaseOpen(false)}
+        projectId={selectedProject?.id}
+        projectName={selectedProject?.name}
         defaultSuiteId={activeParentSuiteId}
         suites={tree}
         onSubmit={handleCreateCase}

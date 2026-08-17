@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
+
 ### Changed
 - Top navigasyon header sadeleştirildi, 2. görseldeki minimalist tasarıma uyarlanarak gereksiz butonlar kaldırıldı
 - Header top navigation menu update with Project Combobox, Explorer tab, and Quick Action buttons (Yeni Suite, Yeni Case, Test Koşusu) with empty database support
@@ -16,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manual Execution Dashboard (Manuel Test Koşum Paneli) modalı Türkçe diline çevrildi ve tema ile tam uyumlu hale getirildi.
 
 ### Added
+- Test Case'lerin bir Suite'e bagli kalmadan dogrudan Test Plani altinda olusturulabilmesi ve yonetilebilmesi destegi eklendi.
 - Test Case niteliklerinde Manuel/Otomasyon ve dinamik Test Tipi ayrimi, Dashboard Yeni Suite Ekle butonu, Yeni Case Ekle baglam fixi ve Suite hiyerarsi duzeltmesi.
 - Top Dashboard Left Projects Navigation Sidebar and Repeat Test Suite/Case Execution with Run History
 - Header logo link to Top Dashboard, ThemeSelector overflow/z-index fixes, and Suite test cases Card View

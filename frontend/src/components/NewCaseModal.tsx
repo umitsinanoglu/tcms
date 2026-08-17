@@ -7,6 +7,8 @@ import { X, FilePlus } from 'lucide-react';
 interface NewCaseModalProps {
   isOpen: boolean;
   onClose: () => void;
+  projectId?: string;
+  projectName?: string;
   defaultSuiteId?: string | null;
   suites: SuiteTreeNode[];
   onSubmit: (data: Partial<TestCase>) => Promise<void>;
@@ -15,6 +17,8 @@ interface NewCaseModalProps {
 export const NewCaseModal: React.FC<NewCaseModalProps> = ({
   isOpen,
   onClose,
+  projectId,
+  projectName,
   defaultSuiteId,
   suites,
   onSubmit,
@@ -30,12 +34,12 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (defaultSuiteId) {
+    if (defaultSuiteId !== undefined && defaultSuiteId !== null) {
       setSuiteId(defaultSuiteId);
-    } else if (suites.length > 0) {
-      setSuiteId(suites[0].id);
+    } else {
+      setSuiteId('');
     }
-  }, [defaultSuiteId, suites, isOpen]);
+  }, [defaultSuiteId, isOpen]);
 
   if (!isOpen) return null;
 
@@ -54,18 +58,19 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !suiteId) return;
+    if (!title) return;
 
     setIsSubmitting(true);
     try {
       await onSubmit({
         title,
-        suiteId,
+        suiteId: suiteId || undefined,
+        projectId,
         executionType,
         type,
         priority,
         description,
-        preconditions,
+        precondition: preconditions,
         steps: [],
       });
       setTitle('');
@@ -98,28 +103,24 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Hedef Suite (Klasör)</label>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Hedef Suite / Konum</label>
             <select
-              required
               value={suiteId}
               onChange={(e) => setSuiteId(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm"
             >
-              {flatSuiteList.length === 0 ? (
-                <option value="" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                  Önce bir Suite oluşturun
+              <option value="" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-semibold">
+                📋 (Suite Yok - Doğrudan Test Planı Altında)
+              </option>
+              {flatSuiteList.map((s) => (
+                <option
+                  key={s.id}
+                  value={s.id}
+                  className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
+                >
+                  {'—'.repeat(s.depth)} 📂 {s.name}
                 </option>
-              ) : (
-                flatSuiteList.map((s) => (
-                  <option
-                    key={s.id}
-                    value={s.id}
-                    className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
-                  >
-                    {'—'.repeat(s.depth)} 📂 {s.name}
-                  </option>
-                ))
-              )}
+              ))}
             </select>
           </div>
 
@@ -247,7 +248,7 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
 
             <button
               type="submit"
-              disabled={isSubmitting || !suiteId}
+              disabled={isSubmitting || !title}
               className="flex items-center space-x-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-blue-500/20 disabled:opacity-50 transition-all active:scale-95 cursor-pointer"
             >
               <FilePlus className="w-4 h-4" />

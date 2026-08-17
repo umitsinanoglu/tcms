@@ -98,8 +98,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   const flattenedSuites = flattenSuitesRecursive(suites);
-  const filteredSuites = flattenedSuites.filter((s) =>
-    s.fullPath.toLowerCase().includes(suiteSearch.toLowerCase())
+
+  // Root level cases without a suite
+  const rootCases = testCases.filter((tc) => !tc.suiteId);
+  const displaySuites: FlattenedSuite[] = [...flattenedSuites];
+
+  if (rootCases.length > 0) {
+    displaySuites.unshift({
+      id: '__root_cases__',
+      name: 'Plan Test Case\'leri (Suite\'siz)',
+      fullPath: `[${project.key}] / Plan Kökü`,
+      testCases: rootCases,
+      allCases: rootCases,
+    });
+  }
+
+  const filteredSuites = displaySuites.filter((s) =>
+    s.fullPath.toLowerCase().includes(suiteSearch.toLowerCase()) ||
+    s.name.toLowerCase().includes(suiteSearch.toLowerCase())
   );
 
   // Calculate Metrics

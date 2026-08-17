@@ -29,6 +29,7 @@ import {
 
 interface ExplorerTreeProps {
   tree: SuiteTreeNode[];
+  rootTestCases?: TestCase[];
   selectedProject?: Project | null;
   selectedCaseId: string | null;
   selectedSuiteId?: string | null;
@@ -49,6 +50,7 @@ type StatusFilter = 'ALL' | 'PASSED' | 'FAILED' | 'BLOCKED' | 'UNTESTED';
 
 export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
   tree,
+  rootTestCases = [],
   selectedProject,
   selectedCaseId,
   selectedSuiteId,
@@ -69,6 +71,38 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [draggedSuiteId, setDraggedSuiteId] = useState<string | null>(null);
   const [dragOverSuiteId, setDragOverSuiteId] = useState<string | null>(null);
+  const [isRootDragOver, setIsRootDragOver] = useState(false);
+
+  const isSubTreeContainsId = (rootNode: SuiteTreeNode, targetId: string): boolean => {
+    if (rootNode.id === targetId) return true;
+    if (rootNode.children) {
+      for (const child of rootNode.children) {
+        if (isSubTreeContainsId(child, targetId)) return true;
+      }
+    }
+    return false;
+  };
+
+  const findNodeInTree = (nodes: SuiteTreeNode[], id: string): SuiteTreeNode | null => {
+    for (const n of nodes) {
+      if (n.id === id) return n;
+      if (n.children) {
+        const found = findNodeInTree(n.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const isInvalidDropTarget = (draggedId: string | null, targetId: string): boolean => {
+    if (!draggedId) return false;
+    if (draggedId === targetId) return true;
+    const draggedNode = findNodeInTree(tree, draggedId);
+    if (draggedNode) {
+      return isSubTreeContainsId(draggedNode, targetId);
+    }
+    return false;
+  };
 
   const toggleExpand = (suiteId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -190,20 +224,46 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
     e.dataTransfer.setData('text/plain', suiteId);
   };
 
-  const handleDragOver = (e: React.DragEvent, suiteId: string) => {
+  const handleDragEnd = () => {
+    setDraggedSuiteId(null);
+    setDragOverSuiteId(null);
+    setIsRootDragOver(false);
+  };
+
+  const handleDragOverSuite = (e: React.DragEvent, targetSuiteId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (draggedSuiteId !== suiteId) {
-      setDragOverSuiteId(suiteId);
+    if (draggedSuiteId && !isInvalidDropTarget(draggedSuiteId, targetSuiteId)) {
+      setDragOverSuiteId(targetSuiteId);
+      setIsRootDragOver(false);
     }
   };
 
-  const handleDrop = (e: React.DragEvent, targetSuiteId: string) => {
+  const handleDropSuite = (e: React.DragEvent, targetSuiteId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverSuiteId(null);
-    if (draggedSuiteId && draggedSuiteId !== targetSuiteId && onReorderSuite) {
+    if (draggedSuiteId && !isInvalidDropTarget(draggedSuiteId, targetSuiteId) && onReorderSuite) {
       onReorderSuite(draggedSuiteId, targetSuiteId, 0);
+      setDraggedSuiteId(null);
+    }
+  };
+
+  const handleDragOverRoot = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedSuiteId) {
+      setIsRootDragOver(true);
+      setDragOverSuiteId(null);
+    }
+  };
+
+  const handleDropRoot = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsRootDragOver(false);
+    if (draggedSuiteId && onReorderSuite) {
+      onReorderSuite(draggedSuiteId, null, 0);
       setDraggedSuiteId(null);
     }
   };
@@ -217,6 +277,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
 
   const renderSuiteNode = (node: SuiteTreeNode, depth: number = 0) => {
     const isExpanded = expandedMap[node.id] ?? true;
+    const isBeingDragged = draggedSuiteId === node.id;
     const isDragOver = dragOverSuiteId === node.id;
     const isSuiteSelected = selectedSuiteId === node.id;
 
@@ -236,13 +297,16 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
         <div
           draggable
           onDragStart={(e) => handleDragStart(e, node.id)}
-          onDragOver={(e) => handleDragOver(e, node.id)}
-          onDrop={(e) => handleDrop(e, node.id)}
+          onDragEnd={handleDragEnd}
+          onDragOver={(e) => handleDragOverSuite(e, node.id)}
+          onDrop={(e) => handleDropSuite(e, node.id)}
           onDragLeave={() => setDragOverSuiteId(null)}
           style={{ paddingLeft: `${depth * 14 + 12}px` }}
-          className={`group flex items-center justify-between py-1.5 pr-2 rounded-lg transition-colors cursor-pointer text-xs font-medium ${
-            isDragOver
-              ? 'bg-blue-600/20 border border-blue-500'
+          className={`group flex items-center justify-between py-1.5 pr-2 rounded-lg transition-all cursor-pointer text-xs font-medium ${
+            isBeingDragged
+              ? 'opacity-40 border border-dashed border-amber-500 bg-amber-500/5'
+              : isDragOver
+              ? 'bg-blue-600/20 border-2 border-blue-500 text-blue-900 dark:text-blue-200 font-bold shadow-md ring-2 ring-blue-500/30'
               : isSuiteSelected
               ? 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-900 dark:text-amber-200 font-bold border-l-2 border-amber-500 shadow-sm'
               : 'hover:bg-slate-200/60 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
@@ -278,6 +342,11 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
             <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono ml-1">
               ({node.testCases.length})
             </span>
+            {isDragOver && (
+              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold ml-2 animate-pulse bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/30">
+                ↳ Alt Suite yap
+              </span>
+            )}
           </div>
 
           {/* Quick Actions for Suite */}
@@ -532,17 +601,114 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
         </div>
       </div>
 
+      {/* Root Level Drop Zone Banner when Dragging */}
+      {draggedSuiteId && (
+        <div
+          onDragOver={handleDragOverRoot}
+          onDragLeave={() => setIsRootDragOver(false)}
+          onDrop={handleDropRoot}
+          className={`mx-3 my-2 p-2.5 border-2 border-dashed rounded-xl flex items-center justify-center space-x-2 transition-all cursor-pointer text-xs font-bold ${
+            isRootDragOver
+              ? 'border-blue-500 bg-blue-500/25 text-blue-700 dark:text-blue-200 scale-[1.02] shadow-md ring-2 ring-blue-500/40'
+              : 'border-amber-500/50 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:border-amber-500 hover:bg-amber-500/20'
+          }`}
+        >
+          <FolderPlus className={`w-4 h-4 text-amber-500 ${isRootDragOver ? 'animate-bounce text-blue-500' : ''}`} />
+          <span>📁 Ana Dizine (Kök Seviyeye) Taşı</span>
+        </div>
+      )}
+
       {/* Tree View Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1">
-        {tree.length === 0 ? (
-          <div className="text-center py-10 px-4 text-slate-400 dark:text-slate-500 text-xs">
-            <Folder className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
-            <p>Henüz klasör (Suite) bulunmuyor.</p>
-            <p className="text-[10px] mt-1 text-slate-500">Yukarıdaki "+ Yeni Suite" butonundan klasör ekleyebilirsiniz.</p>
-          </div>
-        ) : (
-          tree.map((node) => renderSuiteNode(node, 0))
-        )}
+      <div
+        onDragOver={(e) => {
+          if (draggedSuiteId) handleDragOverRoot(e);
+        }}
+        onDrop={(e) => {
+          if (draggedSuiteId) handleDropRoot(e);
+        }}
+        className={`flex-1 overflow-y-auto p-2 space-y-1 transition-all ${
+          isRootDragOver ? 'bg-blue-500/5 ring-2 ring-blue-500/20 rounded-lg' : ''
+        }`}
+      >
+        {(() => {
+          const filteredRootCases = (rootTestCases || []).filter((c) => {
+            const matchesSearch = searchQuery
+              ? c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                c.code.toLowerCase().includes(searchQuery.toLowerCase())
+              : true;
+            const matchesStatus = matchCaseStatus(c);
+            return matchesSearch && matchesStatus;
+          });
+
+          return (
+            <>
+              {filteredRootCases.length > 0 && (
+                <div className="mb-2 space-y-0.5 pb-2 border-b border-slate-200 dark:border-slate-800">
+                  <div className="px-2 py-1 flex items-center space-x-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <FileText className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Plan Test Case'leri ({filteredRootCases.length})</span>
+                  </div>
+                  {filteredRootCases.map((tc) => {
+                    const isSelected = selectedCaseId === tc.id;
+                    return (
+                      <div
+                        key={tc.id}
+                        onClick={() => onSelectCase(tc)}
+                        className={`group flex items-center justify-between py-1.5 px-2 rounded-lg transition-all cursor-pointer text-xs ${
+                          isSelected
+                            ? 'bg-blue-500/10 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 font-semibold border-l-2 border-blue-500 shadow-sm'
+                            : 'hover:bg-slate-200/50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2 min-w-0 flex-1 mr-2">
+                          <FileText className={`w-3.5 h-3.5 shrink-0 ${getTypeBadge(tc.type)}`} />
+                          <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500 shrink-0 font-bold">
+                            {tc.code}
+                          </span>
+                          <span className="truncate">{tc.title}</span>
+                        </div>
+
+                        <div className="flex items-center space-x-1.5 shrink-0">
+                          {getLatestStatusBadge(tc)}
+                          {onRunCase && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRunCase(tc);
+                              }}
+                              title="Test Case'i Koştur (Run)"
+                              className="p-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center space-x-1 transition-all opacity-0 group-hover:opacity-100 font-semibold text-[10px]"
+                            >
+                              <Play className="w-3 h-3 fill-current text-emerald-500" />
+                              <span>Run</span>
+                            </button>
+                          )}
+                          <span
+                            className={`text-[9px] px-1.5 py-0.5 rounded border font-mono font-bold ${getPriorityColor(
+                              tc.priority
+                            )}`}
+                          >
+                            {tc.priority}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {tree.length === 0 && filteredRootCases.length === 0 ? (
+                <div className="text-center py-10 px-4 text-slate-400 dark:text-slate-500 text-xs">
+                  <Folder className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
+                  <p>Henüz klasör (Suite) veya Test Case bulunmuyor.</p>
+                  <p className="text-[10px] mt-1 text-slate-500">Yukarıdaki butonlardan yeni Suite veya Case ekleyebilirsiniz.</p>
+                </div>
+              ) : (
+                tree.map((node) => renderSuiteNode(node, 0))
+              )}
+            </>
+          );
+        })()}
       </div>
     </aside>
   );

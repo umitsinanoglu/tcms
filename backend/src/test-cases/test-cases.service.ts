@@ -8,23 +8,44 @@ export class TestCasesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createTestCaseDto: CreateTestCaseDto) {
-    const suite = await this.prisma.suite.findUnique({
-      where: { id: createTestCaseDto.suiteId },
-      include: { project: true },
-    });
+    let projectKey: string;
+    let projectId: string;
+    let suiteId: string | null = createTestCaseDto.suiteId || null;
 
-    if (!suite) {
-      throw new NotFoundException(`Suite with ID ${createTestCaseDto.suiteId} not found`);
+    if (suiteId) {
+      const suite = await this.prisma.suite.findUnique({
+        where: { id: suiteId },
+        include: { project: true },
+      });
+
+      if (!suite) {
+        throw new NotFoundException(`Suite with ID ${suiteId} not found`);
+      }
+
+      projectKey = suite.project.key;
+      projectId = suite.projectId;
+    } else if (createTestCaseDto.projectId) {
+      const project = await this.prisma.project.findUnique({
+        where: { id: createTestCaseDto.projectId },
+      });
+
+      if (!project) {
+        throw new NotFoundException(`Project with ID ${createTestCaseDto.projectId} not found`);
+      }
+
+      projectKey = project.key;
+      projectId = project.id;
+    } else {
+      throw new NotFoundException('Either suiteId or projectId must be provided to create a Test Case');
     }
-
-    const projectKey = suite.project.key;
 
     // Count existing test cases for project to generate incrementing code e.g. PRJ-TC-1
     const totalCasesInProject = await this.prisma.testCase.count({
       where: {
-        suite: {
-          projectId: suite.projectId,
-        },
+        OR: [
+          { projectId },
+          { suite: { projectId } },
+        ],
       },
     });
 
@@ -36,6 +57,8 @@ export class TestCasesService {
     return this.prisma.testCase.create({
       data: {
         ...caseData,
+        projectId,
+        suiteId: suiteId || undefined,
         code,
         steps: steps && steps.length > 0 ? {
           create: steps.map((step, idx) => ({
