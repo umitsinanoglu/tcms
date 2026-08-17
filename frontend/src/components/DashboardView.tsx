@@ -21,12 +21,7 @@ import {
   ExternalLink,
   FolderPlus,
   FilePlus,
-  FileSpreadsheet,
-  Printer,
-  FileText,
-  Download,
 } from 'lucide-react';
-import { ReportsService } from '@/services/api';
 
 interface DashboardViewProps {
   project: Project | null;
@@ -199,7 +194,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <BarChart3 className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">Top Dashboard (Yüksek Seviye Görünüm)</h1>
+            <h1 className="text-xl font-bold tracking-tight">{project.name}</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
               [{project.key}] {project.name} &bull; {flattenedSuites.length} Test Suite &bull; {totalCases} Test Case
             </p>
@@ -232,28 +227,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span>Genel Analiz & Aktivite</span>
             </button>
           </div>
-
-          {/* Reporting Hub Quick Action */}
-          {onNavigateToReports && (
-            <button
-              onClick={onNavigateToReports}
-              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 shadow-sm transition-all active:scale-95 cursor-pointer"
-              title="Kapsamlı Raporlama ve Analitik Hub'ını Aç"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Raporlama Hub</span>
-            </button>
-          )}
-
-          {/* Quick CSV Export */}
-          <button
-            onClick={() => project && ReportsService.downloadProjectReport(project.id, 'csv', project.key)}
-            className="hidden sm:inline-flex items-center space-x-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 transition-all active:scale-95 cursor-pointer"
-            title="Excel / CSV Raporu İndir"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>Excel / CSV</span>
-          </button>
 
           {onOpenNewSuite && (
             <button

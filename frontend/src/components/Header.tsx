@@ -7,7 +7,6 @@ import {
   PlusCircle,
   CheckCircle2,
   LayoutDashboard,
-  FolderTree,
   Play,
   FileText,
 } from 'lucide-react';
@@ -66,19 +65,6 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
             <span className="hidden md:inline">Dashboard</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange('EXPLORER')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeView === 'EXPLORER'
-                ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-            title="Klasör Ağacı ve Test Senaryoları"
-          >
-            <FolderTree className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Test Senaryoları</span>
           </button>
 
           <button

@@ -22,7 +22,6 @@ import {
   Maximize2,
   Edit3,
   Clock,
-  Printer,
   FileText,
   Download,
 } from 'lucide-react';
@@ -265,84 +264,6 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
 
           {/* Action Bar */}
           <div className="flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={() => {
-                // Generate and open standalone test case spec card for printing
-                const win = window.open('', '_blank');
-                if (!win) return;
-                const html = `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <title>TCMS Test Case Şartnamesi - ${testCase.code}</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 30px; line-height: 1.5; color: #1e293b; }
-    .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; }
-    .code { font-family: monospace; font-size: 14px; font-weight: bold; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; }
-    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 6px; }
-    .badge-p { background: #fee2e2; color: #b91c1c; }
-    .table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    .table th, .table td { border: 1px solid #cbd5e1; padding: 8px 12px; font-size: 13px; text-align: left; }
-    .table th { background: #f8fafc; }
-    .section-title { font-size: 15px; font-weight: bold; margin: 20px 0 8px 0; color: #0f172a; }
-    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 13px; }
-    @media print { .no-print { display: none; } }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <span class="code">${testCase.code}</span>
-        <span class="badge badge-p">${priority}</span>
-        <span class="badge" style="background:#e0f2fe; color:#0369a1;">${executionType} / ${type}</span>
-      </div>
-      <button class="no-print" onclick="window.print()" style="padding:6px 12px; background:#e11d48; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Yazdır / PDF</button>
-    </div>
-    <h1 style="font-size:20px; margin-top:10px;">${title || 'Başlıksız Test Case'}</h1>
-    ${description ? `<p style="color:#64748b; font-size:13px; margin-top:4px;">${description}</p>` : ''}
-    ${jiraStoryKey ? `<p style="color:#2563eb; font-size:12px; margin-top:4px;"><strong>Jira Story:</strong> ${jiraStoryKey}</p>` : ''}
-  </div>
-
-  ${preconditions ? `
-    <div class="section-title">📌 Ön Koşullar</div>
-    <div class="box">${preconditions}</div>
-  ` : ''}
-
-  <div class="section-title">📋 Test Adımları ve Beklenen Sonuçlar</div>
-  ${steps && steps.length > 0 ? `
-    <table class="table">
-      <thead>
-        <tr>
-          <th style="width: 50px;">Adım</th>
-          <th>İşlem / Eylem (Action)</th>
-          <th>Beklenen Sonuç (Expected Result)</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${steps.map((s, idx) => `
-          <tr>
-            <td style="font-weight:bold; text-align:center;">${idx + 1}</td>
-            <td>${s.action}</td>
-            <td>${s.expectedResult}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  ` : '<div class="box">Henüz test adımı tanımlanmamış.</div>'}
-</body>
-</html>`;
-                win.document.write(html);
-                win.document.close();
-              }}
-              className="flex items-center space-x-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 transition-colors shadow-sm"
-              title="Test Case Şartnamesini Yazdır / PDF Olarak Kaydet"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Şartname / Yazdır</span>
-            </button>
-
             {onRun && (
               <button
                 type="button"
