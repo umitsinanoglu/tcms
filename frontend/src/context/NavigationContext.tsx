@@ -50,6 +50,35 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const previousState = currentIndex > 0 ? history[currentIndex - 1] : null;
   const nextState = canGoForward ? history[currentIndex + 1] : null;
 
+  // Load history from localStorage on initial mount
+  useEffect(() => {
+    try {
+      const savedHist = localStorage.getItem('tcms_nav_history');
+      const savedIdx = localStorage.getItem('tcms_nav_index');
+      if (savedHist && savedIdx !== null) {
+        const parsed = JSON.parse(savedHist);
+        const idx = parseInt(savedIdx, 10);
+        if (Array.isArray(parsed) && parsed.length > 0 && idx >= 0 && idx < parsed.length) {
+          historyRef.current = parsed;
+          currentIndexRef.current = idx;
+          setHistory(parsed);
+          setCurrentIndex(idx);
+        }
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  const persistNavHistory = (hist: NavigationState[], idx: number) => {
+    try {
+      localStorage.setItem('tcms_nav_history', JSON.stringify(hist));
+      localStorage.setItem('tcms_nav_index', String(idx));
+    } catch {
+      // Ignore
+    }
+  };
+
   // Register state applicator from page.tsx
   const registerNavigationHandler = useCallback((handler: (state: NavigationState) => void) => {
     navigationHandlerRef.current = handler;
@@ -80,6 +109,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         updated[currentIdx] = { ...currentItem, label: newState.label };
         historyRef.current = updated;
         setHistory(updated);
+        persistNavHistory(updated, currentIdx);
       }
       return;
     }
@@ -103,6 +133,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     setHistory(newHistory);
     setCurrentIndex(newIndex);
+    persistNavHistory(newHistory, newIndex);
   }, []);
 
   // Go Back with Smart Fallback
@@ -119,6 +150,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         isNavigatingRef.current = true;
         currentIndexRef.current = targetIndex;
         setCurrentIndex(targetIndex);
+        persistNavHistory(prevHistory, targetIndex);
 
         if (navigationHandlerRef.current) {
           navigationHandlerRef.current(targetState);
@@ -151,6 +183,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       currentIndexRef.current = 0;
       setHistory(updatedHistory);
       setCurrentIndex(0);
+      persistNavHistory(updatedHistory, 0);
 
       setTimeout(() => {
         isNavigatingRef.current = false;
@@ -171,6 +204,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         isNavigatingRef.current = true;
         currentIndexRef.current = targetIndex;
         setCurrentIndex(targetIndex);
+        persistNavHistory(prevHistory, targetIndex);
 
         if (navigationHandlerRef.current) {
           navigationHandlerRef.current(targetState);

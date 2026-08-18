@@ -70,15 +70,43 @@ export default function Home() {
     return null;
   };
 
-  // Tab persistence handling: default to DASHBOARD, restore from localStorage on refresh
-  useEffect(() => {
-    const savedTab = localStorage.getItem('tcms_active_tab') as 'EXPLORER' | 'DASHBOARD' | 'RUNS' | 'REPORTS' | null;
-    if (savedTab && ['EXPLORER', 'DASHBOARD', 'RUNS', 'REPORTS'].includes(savedTab)) {
-      setActiveTab(savedTab);
-    } else {
-      setActiveTab('DASHBOARD');
+  // Helper for Session State Persistence
+  interface SavedSessionState {
+    projectId: string | null;
+    tab: 'DASHBOARD' | 'EXPLORER' | 'RUNS' | 'REPORTS';
+    suiteId: string | null;
+    caseId: string | null;
+  }
+
+  const saveSessionState = (state: Partial<SavedSessionState>) => {
+    try {
+      const existingRaw = localStorage.getItem('tcms_session_state');
+      const existing: SavedSessionState = existingRaw
+        ? JSON.parse(existingRaw)
+        : { projectId: null, tab: 'DASHBOARD', suiteId: null, caseId: null };
+
+      const merged: SavedSessionState = {
+        ...existing,
+        ...state,
+      };
+      localStorage.setItem('tcms_session_state', JSON.stringify(merged));
+      if (merged.tab) {
+        localStorage.setItem('tcms_active_tab', merged.tab);
+      }
+    } catch {
+      // Ignore localStorage errors
     }
-  }, []);
+  };
+
+  const getSavedSessionState = (): SavedSessionState | null => {
+    try {
+      const raw = localStorage.getItem('tcms_session_state');
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  };
 
   // Modals state
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
@@ -118,7 +146,12 @@ export default function Home() {
   const handleTabChange = useCallback(
     (tab: 'EXPLORER' | 'DASHBOARD' | 'RUNS' | 'REPORTS', shouldPushState = true) => {
       setActiveTab(tab);
-      localStorage.setItem('tcms_active_tab', tab);
+      saveSessionState({
+        tab,
+        projectId: selectedProject?.id || null,
+        suiteId: tab === 'EXPLORER' ? selectedSuite?.id || null : null,
+        caseId: tab === 'EXPLORER' ? selectedCase?.id || null : null,
+      });
 
       if (shouldPushState) {
         let label = 'Dashboard';
@@ -149,6 +182,12 @@ export default function Home() {
       setSelectedSuite(null);
       setSelectedProject(p);
       loadTree(p.id);
+      saveSessionState({
+        projectId: p.id,
+        tab: activeTab,
+        suiteId: null,
+        caseId: null,
+      });
 
       if (shouldPushState) {
         pushState({
@@ -169,7 +208,12 @@ export default function Home() {
       setSelectedCase(null);
       setSelectedSuite(suite);
       setActiveTab('EXPLORER');
-      localStorage.setItem('tcms_active_tab', 'EXPLORER');
+      saveSessionState({
+        projectId: selectedProject?.id || null,
+        tab: 'EXPLORER',
+        suiteId: suite.id,
+        caseId: null,
+      });
 
       if (shouldPushState) {
         pushState({
@@ -190,7 +234,12 @@ export default function Home() {
       setSelectedSuite(null);
       setSelectedCase(tc);
       setActiveTab('EXPLORER');
-      localStorage.setItem('tcms_active_tab', 'EXPLORER');
+      saveSessionState({
+        projectId: selectedProject?.id || null,
+        tab: 'EXPLORER',
+        suiteId: null,
+        caseId: tc.id,
+      });
 
       // Asynchronously fetch fresh details with all historical results and runs
       TestCasesService.getOne(tc.id)
@@ -217,6 +266,9 @@ export default function Home() {
   // Handle closing case editor
   const handleCloseCase = useCallback(() => {
     setSelectedCase(null);
+    saveSessionState({
+      caseId: null,
+    });
     pushState({
       tab: activeTab,
       projectId: selectedProject?.id || null,
@@ -229,6 +281,9 @@ export default function Home() {
   // Handle closing suite view
   const handleCloseSuite = useCallback(() => {
     setSelectedSuite(null);
+    saveSessionState({
+      suiteId: null,
+    });
     pushState({
       tab: activeTab,
       projectId: selectedProject?.id || null,
@@ -242,7 +297,12 @@ export default function Home() {
   useEffect(() => {
     const unregister = registerNavigationHandler(async (targetState: NavigationState) => {
       setActiveTab(targetState.tab);
-      localStorage.setItem('tcms_active_tab', targetState.tab);
+      saveSessionState({
+        tab: targetState.tab,
+        projectId: targetState.projectId,
+        suiteId: targetState.suiteId,
+        caseId: targetState.caseId,
+      });
 
       let targetTree = treeRef.current;
 
@@ -283,7 +343,7 @@ export default function Home() {
     return () => unregister();
   }, [registerNavigationHandler, loadTree]);
 
-  // Load projects on mount
+  // Load projects on mount - restores previous place if refreshed or defaults to first test plan's Dashboard
   const loadProjects = useCallback(async () => {
     try {
       const data = await ProjectsService.getAll();
@@ -293,22 +353,83 @@ export default function Home() {
       setProjects(sorted);
 
       if (sorted.length > 0) {
-        const initialProj = sorted[0];
-        setSelectedProject(initialProj);
-        loadTree(initialProj.id);
+        const savedState = getSavedSessionState();
 
-        const savedTab = (localStorage.getItem('tcms_active_tab') as 'EXPLORER' | 'DASHBOARD' | 'RUNS' | null) || 'DASHBOARD';
-        setActiveTab(savedTab);
+        // 1. Determine Project: restore saved if exists, otherwise default to first test plan (sorted[0])
+        let targetProj = sorted[0];
+        if (savedState?.projectId) {
+          const found = sorted.find((p) => p.id === savedState.projectId);
+          if (found) {
+            targetProj = found;
+          }
+        }
+
+        // 2. Determine Tab: restore saved if exists, otherwise default to DASHBOARD (Requirement 2)
+        const targetTab: 'DASHBOARD' | 'EXPLORER' | 'RUNS' | 'REPORTS' =
+          savedState?.tab && ['DASHBOARD', 'EXPLORER', 'RUNS', 'REPORTS'].includes(savedState.tab)
+            ? savedState.tab
+            : 'DASHBOARD';
+
+        setSelectedProject(targetProj);
+        setActiveTab(targetTab);
+
+        const loaded = await loadTree(targetProj.id);
+        const currentTree = loaded.tree;
+
+        let targetCase: TestCase | null = null;
+        let targetSuite: SuiteTreeNode | null = null;
+
+        // 3. Restore Case or Suite if user was in Explorer tab
+        if (targetTab === 'EXPLORER') {
+          if (savedState?.caseId) {
+            try {
+              const tc = await TestCasesService.getOne(savedState.caseId);
+              if (tc) {
+                targetCase = tc;
+                setSelectedCase(tc);
+              }
+            } catch {
+              targetCase = null;
+            }
+          } else if (savedState?.suiteId) {
+            const suite = findSuiteInTree(currentTree, savedState.suiteId);
+            if (suite) {
+              targetSuite = suite;
+              setSelectedSuite(suite);
+            }
+          }
+        }
+
+        // Persist the consolidated active state
+        saveSessionState({
+          projectId: targetProj.id,
+          tab: targetTab,
+          suiteId: targetSuite?.id || null,
+          caseId: targetCase?.id || null,
+        });
+
+        // Compute navigation label
+        let label = 'Dashboard';
+        if (targetTab === 'RUNS') label = 'Test Koşuları';
+        else if (targetTab === 'REPORTS') label = 'Raporlama';
+        else if (targetTab === 'EXPLORER') {
+          if (targetCase) label = `Case: ${targetCase.code}`;
+          else if (targetSuite) label = `Suite: ${targetSuite.name}`;
+          else label = 'Test Explorer';
+        }
 
         pushState({
-          tab: savedTab,
-          projectId: initialProj.id,
-          suiteId: null,
-          caseId: null,
-          label: savedTab === 'DASHBOARD' ? 'Dashboard' : savedTab === 'RUNS' ? 'Test Koşuları' : 'Test Explorer',
+          tab: targetTab,
+          projectId: targetProj.id,
+          suiteId: targetSuite?.id || null,
+          caseId: targetCase?.id || null,
+          label,
         });
       } else {
         setSelectedProject(null);
+        setSelectedCase(null);
+        setSelectedSuite(null);
+        localStorage.removeItem('tcms_session_state');
         setIsNewProjectOpen(true);
       }
     } catch (err) {
@@ -349,9 +470,16 @@ export default function Home() {
       setSelectedProject(next);
       if (next) {
         await loadTree(next.id);
+        saveSessionState({
+          projectId: next.id,
+          tab: 'DASHBOARD',
+          suiteId: null,
+          caseId: null,
+        });
       } else {
         setTree([]);
         setRootCases([]);
+        localStorage.removeItem('tcms_session_state');
         setIsNewProjectOpen(true);
       }
     }
@@ -373,6 +501,10 @@ export default function Home() {
 
   const handleDeleteSuite = async (suiteId: string) => {
     await SuitesService.delete(suiteId);
+    if (selectedSuite?.id === suiteId) {
+      setSelectedSuite(null);
+      saveSessionState({ suiteId: null });
+    }
     if (selectedProject) await loadTree(selectedProject.id);
   };
 
@@ -403,7 +535,10 @@ export default function Home() {
 
   const handleDeleteCase = async (caseId: string) => {
     await TestCasesService.delete(caseId);
-    setSelectedCase(null);
+    if (selectedCase?.id === caseId) {
+      setSelectedCase(null);
+      saveSessionState({ caseId: null });
+    }
     if (selectedProject) await loadTree(selectedProject.id);
   };
 
