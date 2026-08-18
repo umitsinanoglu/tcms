@@ -23,6 +23,8 @@ import {
   Trash2,
   Maximize2,
   Edit3,
+  AlertCircle,
+  MessageSquare,
 } from 'lucide-react';
 
 interface ManualRunModalProps {
@@ -51,6 +53,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
   const [testerEmail, setTesterEmail] = useState('ahmet.yilmaz@sirket.com');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [summaryData, setSummaryData] = useState<{
     total: number;
     passed: number;
@@ -71,6 +74,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       setSummaryData(null);
       setActiveRun(null);
       setLightboxImage(null);
+      setErrorMsg(null);
     }
   }, [isOpen]);
 
@@ -96,7 +100,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       ...prev,
       [caseId]: {
         ...prev[caseId],
-        status: prev[caseId]?.status || 'FAILED',
+        status: prev[caseId]?.status || 'PASSED',
         errorMessage: msg,
       },
     }));
@@ -107,7 +111,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       ...prev,
       [caseId]: {
         ...prev[caseId],
-        status: prev[caseId]?.status || 'FAILED',
+        status: prev[caseId]?.status || 'PASSED',
         screenshotUrl,
       },
     }));
@@ -128,6 +132,33 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       },
     }));
   };
+
+  // Support pasting screenshot from clipboard (Ctrl+V / Cmd+V)
+  useEffect(() => {
+    if (!isOpen || isSubmitted || !currentCase) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const blob = items[i].getAsFile();
+          if (blob) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              handleScreenshotChange(currentCase.id, reader.result as string);
+            };
+            reader.readAsDataURL(blob);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isOpen, isSubmitted, currentCase]);
 
   // Keyboard Shortcuts Listener
   useEffect(() => {
@@ -166,16 +197,21 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
   const handleSubmitRun = async () => {
     setIsSubmitting(true);
+    setErrorMsg(null);
     try {
+      if (!projectId) {
+        throw new Error('Proje kimliği bulunamadı. Lütfen bir proje seçtiğinizden emin olun.');
+      }
+
       // 1. Create or get TestRun
       let run = activeRun;
       if (!run) {
         run = await TestRunsService.createRun(projectId, {
-          title: title || `Test Koşusu - ${version}`,
-          version,
+          title: title.trim() || `Test Koşusu - ${version}`,
+          version: version.trim() || 'v1.0.0',
           environment,
-          executedBy,
-          testerEmail,
+          executedBy: executedBy.trim() || 'QA Tester',
+          testerEmail: testerEmail.trim() || 'tester@company.com',
         });
         setActiveRun(run);
       }
@@ -187,7 +223,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           testCaseId: tc.id,
           status: res ? res.status : ('SKIPPED' as ResultStatus),
           executionMs: Math.floor(Math.random() * 800) + 200,
-          errorMessage: res?.errorMessage,
+          errorMessage: res?.errorMessage || undefined,
           jiraBugKey: res?.jiraBugKey,
           jiraBugUrl: res?.jiraBugUrl,
           screenshotUrl: res?.screenshotUrl ?? tc.screenshotUrl,
@@ -217,8 +253,15 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           origin: { y: 0.6 },
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error submitting run:', err);
+      if (err?.response?.status === 413 || err?.message?.includes('413') || err?.message?.toLowerCase().includes('payload too large') || err?.message?.toLowerCase().includes('too large')) {
+        setErrorMsg('Boyut limiti hatası (413 Payload Too Large): Ekran görüntüleri veya veri boyutu sınırı aştı. Lütfen daha küçük görsel yükleyin veya görseli optimize edin.');
+      } else {
+        const serverMessage = err?.response?.data?.message;
+        const formattedMsg = Array.isArray(serverMessage) ? serverMessage.join(', ') : serverMessage;
+        setErrorMsg(formattedMsg || err?.message || 'Test koşusu kaydedilirken beklenmeyen bir hata oluştu.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -230,7 +273,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80 shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center justify-center">
               <Zap className="w-4 h-4" />
@@ -284,6 +327,26 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Error Alert Banner */}
+        {errorMsg && (
+          <div className="mx-6 mt-3 p-3 bg-red-500/10 dark:bg-red-500/20 border border-red-500/30 rounded-xl flex items-start justify-between text-xs text-red-700 dark:text-red-300 animate-fadeIn shrink-0 shadow-sm">
+            <div className="flex items-start space-x-2.5">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold block">Kayıt Başarısız:</span>
+                <span>{errorMsg}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setErrorMsg(null)}
+              className="p-1 hover:bg-red-500/20 rounded-lg text-red-500 transition-colors ml-2"
+              title="Kapat"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Modal Body */}
         {isSubmitted && summaryData ? (
@@ -439,18 +502,269 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                     <h4 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Test Adımları ({currentCase.steps.length})
                     </h4>
-                    <div className="space-y-1.5 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div className="space-y-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
                       {currentCase.steps.map((step, idx) => (
-                        <div key={idx} className="text-xs flex items-start space-x-2">
-                          <span className="font-mono text-slate-400 dark:text-slate-500 font-bold">{step.stepNumber}.</span>
-                          <span className="text-slate-700 dark:text-slate-300">{step.action}</span>
-                          {step.expectedResult && (
-                            <span className="text-emerald-600 dark:text-emerald-400/80 font-mono text-[11px]">
-                              → {step.expectedResult}
-                            </span>
+                        <div key={idx} className="space-y-1.5 text-xs pb-1.5 border-b border-slate-200/50 dark:border-slate-800/50 last:border-none last:pb-0">
+                          <div className="flex items-start space-x-2">
+                            <span className="font-mono text-slate-400 dark:text-slate-500 font-bold">{step.stepNumber}.</span>
+                            <span className="text-slate-700 dark:text-slate-300 font-medium">{step.action}</span>
+                            {step.expectedResult && (
+                              <span className="text-emerald-600 dark:text-emerald-400/80 font-mono text-[11px]">
+                                → {step.expectedResult}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Step Reference Screenshots & Comments */}
+                          {step.attachments && step.attachments.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-1 pl-4">
+                              {step.attachments.map((att, aIdx) => (
+                                <div
+                                  key={att.id || aIdx}
+                                  className="flex items-center space-x-2 p-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
+                                >
+                                  <img
+                                    src={att.url}
+                                    alt={att.comment || `Adım ${step.stepNumber} Görsel ${aIdx + 1}`}
+                                    className="w-14 h-10 object-contain rounded bg-slate-100 dark:bg-slate-900 cursor-pointer hover:opacity-90 transition-opacity border border-slate-200 dark:border-slate-700"
+                                    onClick={() => window.open(att.url, '_blank')}
+                                    title="Görseli sekmede aç"
+                                  />
+                                  {att.comment && (
+                                    <span className="text-[11px] text-slate-600 dark:text-slate-300 max-w-[180px] truncate" title={att.comment}>
+                                      {att.comment}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* PASSED Extra Fields: Success Screenshot & Comment/Note */}
+                {currentResult?.status === 'PASSED' && (
+                  <div className="p-4 bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 dark:border-emerald-500/30 rounded-xl space-y-3.5 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        <span>Başarılı Test Detayları & Kanıt</span>
+                      </span>
+
+                      {(currentResult.screenshotUrl || currentCase.screenshotUrl) && (
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-mono font-semibold border border-emerald-500/30">
+                          Görsel Ekli
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Comment / Note for PASSED */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] text-slate-700 dark:text-slate-300 font-semibold flex items-center space-x-1.5">
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Başarı Yorumu / Koşu Notu (İsteğe bağlı):</span>
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={currentResult.errorMessage || ''}
+                        onChange={(e) => handleErrorMessageChange(currentCase.id, e.target.value)}
+                        placeholder="Örn: Senaryo adımları başarıyla doğrulandı, beklenen sonuçlar elde edildi..."
+                        className="w-full bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-500/30 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-sm"
+                      />
+                    </div>
+
+                    {/* Screenshot Upload / Paste */}
+                    <div className="space-y-1.5 pt-1 border-t border-emerald-500/20">
+                      <label className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center space-x-1.5 uppercase tracking-wider">
+                        <ImageIcon className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Ekran Görüntüsü / Kanıt (İsteğe bağlı)</span>
+                      </label>
+
+                      {currentResult.screenshotUrl || currentCase.screenshotUrl ? (
+                        <div className="relative group max-w-md overflow-hidden rounded-xl border border-emerald-500/30 bg-white dark:bg-slate-900/60 p-2">
+                          <img
+                            src={currentResult.screenshotUrl || currentCase.screenshotUrl}
+                            alt="Başarı Ekran Görüntüsü"
+                            className="w-full max-h-48 object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => setLightboxImage(currentResult.screenshotUrl || currentCase.screenshotUrl || null)}
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 backdrop-blur-[2px] rounded-xl">
+                            <button
+                              type="button"
+                              onClick={() => setLightboxImage(currentResult.screenshotUrl || currentCase.screenshotUrl || null)}
+                              className="p-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-transform hover:scale-105"
+                              title="Büyüt / Tam Ekran"
+                            >
+                              <Maximize2 className="w-4 h-4" />
+                            </button>
+                            <label className="p-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 cursor-pointer transition-transform hover:scale-105" title="Görseli Değiştir">
+                              <Edit3 className="w-4 h-4 text-emerald-400" />
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => handleScreenshotChange(currentCase.id, reader.result as string);
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => handleScreenshotChange(currentCase.id, '')}
+                              className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-transform hover:scale-105"
+                              title="Görseli Sil"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 border-2 border-dashed border-emerald-300 dark:border-emerald-500/30 rounded-xl bg-slate-50 dark:bg-slate-900/40 text-center space-y-2">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Başarılı test koşusuna ait ekran görüntüsü ekleyin (İsteğe bağlı)
+                          </p>
+                          <div className="flex items-center justify-center space-x-2">
+                            <label className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-emerald-500/10 dark:bg-emerald-500/20 hover:bg-emerald-500/20 dark:hover:bg-emerald-500/30 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 dark:border-emerald-500/40 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95">
+                              <Upload className="w-3.5 h-3.5 text-emerald-500" />
+                              <span>Ekran Görüntüsü Yükle</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => handleScreenshotChange(currentCase.id, reader.result as string);
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                            <span className="text-[11px] text-slate-400 font-mono">veya Ctrl+V ile yapıştırın</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* BLOCKED Extra Fields: Screenshot & Reason/Comment */}
+                {currentResult?.status === 'BLOCKED' && (
+                  <div className="p-4 bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/20 dark:border-purple-500/30 rounded-xl space-y-3.5 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center space-x-1.5">
+                        <Slash className="w-4 h-4 text-purple-500" />
+                        <span>Engellenme (Blocked) Kanıtı & Yorum</span>
+                      </span>
+
+                      {(currentResult.screenshotUrl || currentCase.screenshotUrl) && (
+                        <span className="text-[10px] bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded font-mono font-semibold border border-purple-500/30">
+                          Görsel Ekli
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Comment / Reason for BLOCKED */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] text-slate-700 dark:text-slate-300 font-semibold flex items-center space-x-1.5">
+                        <MessageSquare className="w-3.5 h-3.5 text-purple-500" />
+                        <span>Engellenme Nedeni / Yorum:</span>
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={currentResult.errorMessage || ''}
+                        onChange={(e) => handleErrorMessageChange(currentCase.id, e.target.value)}
+                        placeholder="Örn: Bağımlı servis çalışmadığı veya test ortamı kapalı olduğu için test edilemedi..."
+                        className="w-full bg-white dark:bg-slate-900 border border-purple-300 dark:border-purple-500/30 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-purple-500 shadow-sm"
+                      />
+                    </div>
+
+                    {/* Screenshot Upload / Paste */}
+                    <div className="space-y-1.5 pt-1 border-t border-purple-500/20">
+                      <label className="text-[11px] text-purple-600 dark:text-purple-400 font-bold flex items-center space-x-1.5 uppercase tracking-wider">
+                        <ImageIcon className="w-3.5 h-3.5 text-purple-500" />
+                        <span>Ekran Görüntüsü / Kanıt (İsteğe bağlı)</span>
+                      </label>
+
+                      {currentResult.screenshotUrl || currentCase.screenshotUrl ? (
+                        <div className="relative group max-w-md overflow-hidden rounded-xl border border-purple-500/30 bg-white dark:bg-slate-900/60 p-2">
+                          <img
+                            src={currentResult.screenshotUrl || currentCase.screenshotUrl}
+                            alt="Blocked Ekran Görüntüsü"
+                            className="w-full max-h-48 object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => setLightboxImage(currentResult.screenshotUrl || currentCase.screenshotUrl || null)}
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 backdrop-blur-[2px] rounded-xl">
+                            <button
+                              type="button"
+                              onClick={() => setLightboxImage(currentResult.screenshotUrl || currentCase.screenshotUrl || null)}
+                              className="p-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-transform hover:scale-105"
+                              title="Büyüt / Tam Ekran"
+                            >
+                              <Maximize2 className="w-4 h-4" />
+                            </button>
+                            <label className="p-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 cursor-pointer transition-transform hover:scale-105" title="Görseli Değiştir">
+                              <Edit3 className="w-4 h-4 text-purple-400" />
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => handleScreenshotChange(currentCase.id, reader.result as string);
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => handleScreenshotChange(currentCase.id, '')}
+                              className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-transform hover:scale-105"
+                              title="Görseli Sil"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 border-2 border-dashed border-purple-300 dark:border-purple-500/30 rounded-xl bg-slate-50 dark:bg-slate-900/40 text-center space-y-2">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Engellenme durumuna dair ekran görüntüsü ekleyin (İsteğe bağlı)
+                          </p>
+                          <div className="flex items-center justify-center space-x-2">
+                            <label className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-purple-500/10 dark:bg-purple-500/20 hover:bg-purple-500/20 dark:hover:bg-purple-500/30 text-purple-600 dark:text-purple-300 border border-purple-500/30 dark:border-purple-500/40 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95">
+                              <Upload className="w-3.5 h-3.5 text-purple-500" />
+                              <span>Ekran Görüntüsü Yükle</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => handleScreenshotChange(currentCase.id, reader.result as string);
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                            <span className="text-[11px] text-slate-400 font-mono">veya Ctrl+V ile yapıştırın</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -566,23 +880,26 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                           <p className="text-xs text-slate-500 dark:text-slate-400">
                             BAŞARISIZ (FAIL) durumu için ekran görüntüsü kanıtı ekleyin
                           </p>
-                          <label className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-red-500/10 dark:bg-red-500/20 hover:bg-red-500/20 dark:hover:bg-red-500/30 text-red-600 dark:text-red-300 border border-red-500/30 dark:border-red-500/40 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95">
-                            <Upload className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
-                            <span>Ekran Görüntüsü Yükle</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  const reader = new FileReader();
-                                  reader.onloadend = () => handleScreenshotChange(currentCase.id, reader.result as string);
-                                  reader.readAsDataURL(file);
-                                }
-                              }}
-                            />
-                          </label>
+                          <div className="flex items-center justify-center space-x-2">
+                            <label className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-red-500/10 dark:bg-red-500/20 hover:bg-red-500/20 dark:hover:bg-red-500/30 text-red-600 dark:text-red-300 border border-red-500/30 dark:border-red-500/40 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95">
+                              <Upload className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
+                              <span>Ekran Görüntüsü Yükle</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => handleScreenshotChange(currentCase.id, reader.result as string);
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                            <span className="text-[11px] text-slate-400 font-mono">veya Ctrl+V ile yapıştırın</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -682,7 +999,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           <div className="absolute top-4 right-4 flex items-center space-x-3">
             <a
               href={lightboxImage}
-              download="hata-ekran-goruntusu.png"
+              download={`${currentCase?.code || 'test-case'}-ekran-goruntusu.png`}
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg border border-slate-700 transition-colors"
             >
               İndir
@@ -697,7 +1014,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           <div className="max-w-5xl max-h-[85vh] p-2 overflow-auto">
             <img
               src={lightboxImage}
-              alt="Tam Ekran Hata Görseli"
+              alt="Tam Ekran Ekran Görüntüsü"
               className="max-w-full max-h-[80vh] object-contain rounded-xl border border-slate-800 shadow-2xl"
             />
           </div>

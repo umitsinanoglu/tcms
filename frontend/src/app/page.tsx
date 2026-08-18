@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Project,
   SuiteTreeNode,
@@ -10,8 +10,7 @@ import {
   TestCasesService,
 } from '@/services/api';
 import { Header } from '@/components/Header';
-import { ExplorerTree } from '@/components/ExplorerTree';
-import { ProjectsSidebar } from '@/components/ProjectsSidebar';
+import { AppSidebar } from '@/components/AppSidebar';
 import { TestCaseEditor } from '@/components/TestCaseEditor';
 import { SuiteCasesView } from '@/components/SuiteCasesView';
 import { TestRunsView } from '@/components/TestRunsView';
@@ -23,8 +22,11 @@ import { NewSuiteModal } from '@/components/NewSuiteModal';
 import { EditSuiteModal } from '@/components/EditSuiteModal';
 import { NewCaseModal } from '@/components/NewCaseModal';
 import { QuickRunModal } from '@/components/QuickRunModal';
+import { useNavigation, NavigationState } from '@/context/NavigationContext';
 
 export default function Home() {
+  const { pushState, registerNavigationHandler, goBack } = useNavigation();
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [tree, setTree] = useState<SuiteTreeNode[]>([]);
@@ -34,20 +36,38 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'RUNS'>('DASHBOARD');
   const [isLoadingTree, setIsLoadingTree] = useState(false);
 
-  // Tab persistence handling: default to DASHBOARD, restore from localStorage on refresh
-  useEffect(() => {
-    const savedTab = localStorage.getItem('tcms_active_tab') as 'EXPLORER' | 'DASHBOARD' | 'RUNS' | null;
-    if (savedTab && ['EXPLORER', 'DASHBOARD', 'RUNS'].includes(savedTab)) {
-      setActiveTab(savedTab);
-    } else {
-      setActiveTab('DASHBOARD');
-    }
-  }, []);
+  const projectsRef = useRef<Project[]>([]);
+  projectsRef.current = projects;
 
-  const handleTabChange = useCallback((tab: 'EXPLORER' | 'DASHBOARD' | 'RUNS') => {
-    setActiveTab(tab);
-    localStorage.setItem('tcms_active_tab', tab);
-  }, []);
+  const selectedProjectRef = useRef<Project | null>(null);
+  selectedProjectRef.current = selectedProject;
+
+  const treeRef = useRef<SuiteTreeNode[]>([]);
+  treeRef.current = tree;
+
+  // Flatten all cases helper
+  const getAllCasesInTree = (nodes: SuiteTreeNode[]): TestCase[] => {
+    let cases: TestCase[] = [];
+    nodes.forEach((node) => {
+      if (node.testCases) cases = cases.concat(node.testCases);
+      if (node.children) cases = cases.concat(getAllCasesInTree(node.children));
+    });
+    return cases;
+  };
+
+  const allCases = [...rootCases, ...getAllCasesInTree(tree)];
+
+  // Helper to find a suite node inside the tree recursively
+  const findSuiteInTree = (nodes: SuiteTreeNode[], suiteId: string): SuiteTreeNode | null => {
+    for (const node of nodes) {
+      if (node.id === suiteId) return node;
+      if (node.children && node.children.length > 0) {
+        const found = findSuiteInTree(node.children, suiteId);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
 
   // Modals state
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
@@ -63,21 +83,208 @@ export default function Home() {
   const [activeSuiteRunCases, setActiveSuiteRunCases] = useState<TestCase[] | null>(null);
   const [activeParentSuiteId, setActiveParentSuiteId] = useState<string | null>(null);
 
-  // Load projects (Test Plans) list on mount
+  // Load Tree when selected project changes
+  const loadTree = useCallback(async (projectId: string) => {
+    setIsLoadingTree(true);
+    try {
+      const res = await ProjectsService.getTree(projectId);
+      const newTree = res.tree || res.children || [];
+      const newRootCases = res.rootTestCases || [];
+      setTree(newTree);
+      setRootCases(newRootCases);
+      return { tree: newTree, rootCases: newRootCases };
+    } catch (err) {
+      console.error('Failed to load project tree:', err);
+      setTree([]);
+      setRootCases([]);
+      return { tree: [], rootCases: [] };
+    } finally {
+      setIsLoadingTree(false);
+    }
+  }, []);
+
+  // Handle Tab Change with Navigation Push
+  const handleTabChange = useCallback(
+    (tab: 'EXPLORER' | 'DASHBOARD' | 'RUNS', shouldPushState = true) => {
+      setActiveTab(tab);
+      localStorage.setItem('tcms_active_tab', tab);
+
+      if (shouldPushState) {
+        let label = 'Dashboard';
+        if (tab === 'RUNS') label = 'Test Koşuları';
+        else if (tab === 'EXPLORER') {
+          if (selectedCase) label = `Case: ${selectedCase.code}`;
+          else if (selectedSuite) label = `Suite: ${selectedSuite.name}`;
+          else label = 'Test Explorer';
+        }
+
+        pushState({
+          tab,
+          projectId: selectedProject?.id || null,
+          suiteId: selectedSuite?.id || null,
+          caseId: selectedCase?.id || null,
+          label,
+        });
+      }
+    },
+    [pushState, selectedProject, selectedSuite, selectedCase]
+  );
+
+  // Handle Project Selection with Navigation Push
+  const handleSelectProject = useCallback(
+    (p: Project, shouldPushState = true) => {
+      setSelectedCase(null);
+      setSelectedSuite(null);
+      setSelectedProject(p);
+      loadTree(p.id);
+
+      if (shouldPushState) {
+        pushState({
+          tab: activeTab,
+          projectId: p.id,
+          suiteId: null,
+          caseId: null,
+          label: `Plan: [${p.key}] ${p.name}`,
+        });
+      }
+    },
+    [activeTab, loadTree, pushState]
+  );
+
+  // Handle Suite Selection with Navigation Push
+  const handleSelectSuite = useCallback(
+    (suite: SuiteTreeNode, shouldPushState = true) => {
+      setSelectedCase(null);
+      setSelectedSuite(suite);
+      setActiveTab('EXPLORER');
+      localStorage.setItem('tcms_active_tab', 'EXPLORER');
+
+      if (shouldPushState) {
+        pushState({
+          tab: 'EXPLORER',
+          projectId: selectedProject?.id || null,
+          suiteId: suite.id,
+          caseId: null,
+          label: `Suite: ${suite.name}`,
+        });
+      }
+    },
+    [pushState, selectedProject]
+  );
+
+  // Handle Test Case Selection with Navigation Push
+  const handleSelectCase = useCallback(
+    (tc: TestCase, shouldPushState = true) => {
+      setSelectedSuite(null);
+      setSelectedCase(tc);
+      setActiveTab('EXPLORER');
+      localStorage.setItem('tcms_active_tab', 'EXPLORER');
+
+      if (shouldPushState) {
+        pushState({
+          tab: 'EXPLORER',
+          projectId: selectedProject?.id || null,
+          suiteId: null,
+          caseId: tc.id,
+          label: `Case: ${tc.code} (${tc.title.length > 25 ? tc.title.slice(0, 25) + '...' : tc.title})`,
+        });
+      }
+    },
+    [pushState, selectedProject]
+  );
+
+  // Handle closing case editor
+  const handleCloseCase = useCallback(() => {
+    setSelectedCase(null);
+    pushState({
+      tab: activeTab,
+      projectId: selectedProject?.id || null,
+      suiteId: null,
+      caseId: null,
+      label: activeTab === 'DASHBOARD' ? 'Dashboard' : 'Test Explorer',
+    });
+  }, [activeTab, pushState, selectedProject]);
+
+  // Handle closing suite view
+  const handleCloseSuite = useCallback(() => {
+    setSelectedSuite(null);
+    pushState({
+      tab: activeTab,
+      projectId: selectedProject?.id || null,
+      suiteId: null,
+      caseId: null,
+      label: activeTab === 'DASHBOARD' ? 'Dashboard' : 'Test Explorer',
+    });
+  }, [activeTab, pushState, selectedProject]);
+
+  // Register Navigation History Handler for Back / Forward operations
+  useEffect(() => {
+    const unregister = registerNavigationHandler(async (targetState: NavigationState) => {
+      setActiveTab(targetState.tab);
+      localStorage.setItem('tcms_active_tab', targetState.tab);
+
+      let targetTree = treeRef.current;
+
+      // Handle Project switch if needed
+      const curProj = selectedProjectRef.current;
+      if (targetState.projectId && (!curProj || curProj.id !== targetState.projectId)) {
+        const foundProj = projectsRef.current.find((p) => p.id === targetState.projectId);
+        if (foundProj) {
+          setSelectedProject(foundProj);
+          const loaded = await loadTree(foundProj.id);
+          targetTree = loaded.tree;
+        }
+      }
+
+      // Handle Suite or Case restore
+      if (targetState.caseId) {
+        setSelectedSuite(null);
+        try {
+          const tc = await TestCasesService.getOne(targetState.caseId);
+          setSelectedCase(tc);
+        } catch {
+          setSelectedCase(null);
+        }
+      } else if (targetState.suiteId) {
+        setSelectedCase(null);
+        const suite = findSuiteInTree(targetTree, targetState.suiteId);
+        if (suite) {
+          setSelectedSuite(suite);
+        } else {
+          setSelectedSuite(null);
+        }
+      } else {
+        setSelectedCase(null);
+        setSelectedSuite(null);
+      }
+    });
+
+    return () => unregister();
+  }, [registerNavigationHandler, loadTree]);
+
+  // Load projects on mount
   const loadProjects = useCallback(async () => {
     try {
       const data = await ProjectsService.getAll();
-      // Sort test plans alphabetically by name
       const sorted = [...data].sort((a, b) =>
         a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
       );
       setProjects(sorted);
 
       if (sorted.length > 0) {
-        setSelectedProject((prev) => {
-          if (!prev) return sorted[0];
-          const exists = sorted.find((p) => p.id === prev.id);
-          return exists || sorted[0];
+        const initialProj = sorted[0];
+        setSelectedProject(initialProj);
+        loadTree(initialProj.id);
+
+        const savedTab = (localStorage.getItem('tcms_active_tab') as 'EXPLORER' | 'DASHBOARD' | 'RUNS' | null) || 'DASHBOARD';
+        setActiveTab(savedTab);
+
+        pushState({
+          tab: savedTab,
+          projectId: initialProj.id,
+          suiteId: null,
+          caseId: null,
+          label: savedTab === 'DASHBOARD' ? 'Dashboard' : savedTab === 'RUNS' ? 'Test Koşuları' : 'Test Explorer',
         });
       } else {
         setSelectedProject(null);
@@ -86,47 +293,11 @@ export default function Home() {
     } catch (err) {
       console.error('Failed to load test plans:', err);
     }
-  }, []);
+  }, [loadTree, pushState]);
 
   useEffect(() => {
     loadProjects();
-  }, []);
-
-  // Load Tree when selected project changes
-  const loadTree = useCallback(async (projectId: string) => {
-    setIsLoadingTree(true);
-    try {
-      const res = await ProjectsService.getTree(projectId);
-      setTree(res.tree || res.children || []);
-      setRootCases(res.rootTestCases || []);
-    } catch (err) {
-      console.error('Failed to load project tree:', err);
-      setTree([]);
-      setRootCases([]);
-    } finally {
-      setIsLoadingTree(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    setSelectedCase(null);
-    setSelectedSuite(null);
-    if (selectedProject) {
-      loadTree(selectedProject.id);
-    }
-  }, [selectedProject, loadTree]);
-
-  // Flatten all cases in the current tree plus root test cases
-  const getAllCasesInTree = (nodes: SuiteTreeNode[]): TestCase[] => {
-    let cases: TestCase[] = [];
-    nodes.forEach((node) => {
-      if (node.testCases) cases = cases.concat(node.testCases);
-      if (node.children) cases = cases.concat(getAllCasesInTree(node.children));
-    });
-    return cases;
-  };
-
-  const allCases = [...rootCases, ...getAllCasesInTree(tree)];
+  }, [loadProjects]);
 
   // Handlers for Project actions
   const handleCreateProject = async (data: { name: string; key: string; description?: string; jiraProjectKey?: string }) => {
@@ -193,8 +364,7 @@ export default function Home() {
   const handleCreateCase = async (data: Partial<TestCase>) => {
     const created = await TestCasesService.create(data);
     if (selectedProject) await loadTree(selectedProject.id);
-    setSelectedCase(created);
-    handleTabChange('EXPLORER');
+    handleSelectCase(created);
   };
 
   const handleSaveCase = async (updatedCase: Partial<TestCase>) => {
@@ -254,11 +424,7 @@ export default function Home() {
         selectedProject={selectedProject}
         activeView={activeTab}
         onTabChange={(tab) => handleTabChange(tab)}
-        onSelectProject={(p) => {
-          setSelectedCase(null);
-          setSelectedSuite(null);
-          setSelectedProject(p);
-        }}
+        onSelectProject={(p) => handleSelectProject(p)}
         onOpenNewProject={() => setIsNewProjectOpen(true)}
         onOpenNewSuite={() => {
           setActiveParentSuiteId(null);
@@ -274,70 +440,73 @@ export default function Home() {
         }}
       />
 
-      {/* Main Workspace Layout */}
+      {/* Main Workspace Layout with Persistent AppSidebar */}
       <div className="flex flex-1 overflow-hidden">
-        {activeTab === 'EXPLORER' && (
-          <>
-            {/* Left Panel: Explorer Tree */}
-            <ExplorerTree
-              tree={tree}
-              rootTestCases={rootCases}
-              selectedProject={selectedProject}
-              selectedCaseId={selectedCase?.id || null}
-              selectedSuiteId={selectedSuite?.id || null}
-              onSelectCase={(tc) => {
-                setSelectedSuite(null);
-                setSelectedCase(tc);
-              }}
-              onSelectSuite={(suite) => {
-                setSelectedCase(null);
-                setSelectedSuite(suite);
-              }}
-              onAddSubSuite={(parentSuiteId) => {
-                setActiveParentSuiteId(parentSuiteId);
-                setIsNewSuiteOpen(true);
-              }}
-              onEditSuite={(suiteNode) => {
-                setActiveEditSuite(suiteNode);
-                setIsEditSuiteOpen(true);
-              }}
-              onDeleteSuite={handleDeleteSuite}
-              onAddCaseInSuite={(suiteId) => {
-                setActiveParentSuiteId(suiteId);
-                setIsNewCaseOpen(true);
-              }}
-              onOpenNewSuite={() => {
-                setActiveParentSuiteId(null);
-                setIsNewSuiteOpen(true);
-              }}
-              onOpenNewCase={() => {
-                setActiveParentSuiteId(selectedSuite?.id || null);
-                setIsNewCaseOpen(true);
-              }}
-              onEditProject={(p) => {
-                setActiveEditProject(p);
-                setIsEditProjectOpen(true);
-              }}
-              onRunCase={handleRunCase}
-              onRunSuite={handleRunSuite}
-              onReorderSuite={handleReorderSuite}
-            />
+        {/* Left Persistent & Collapsible Sidebar */}
+        <AppSidebar
+          projects={projects}
+          selectedProject={selectedProject}
+          tree={tree}
+          rootTestCases={rootCases}
+          selectedCaseId={selectedCase?.id || null}
+          selectedSuiteId={selectedSuite?.id || null}
+          onSelectProject={(p) => handleSelectProject(p)}
+          onOpenNewProject={() => setIsNewProjectOpen(true)}
+          onEditProject={(p) => {
+            setActiveEditProject(p);
+            setIsEditProjectOpen(true);
+          }}
+          onDeleteProject={handleDeleteProject}
+          onSelectCase={(tc) => handleSelectCase(tc)}
+          onSelectSuite={(suite) => handleSelectSuite(suite)}
+          onAddSubSuite={(parentSuiteId) => {
+            setActiveParentSuiteId(parentSuiteId);
+            setIsNewSuiteOpen(true);
+          }}
+          onEditSuite={(suiteNode) => {
+            setActiveEditSuite(suiteNode);
+            setIsEditSuiteOpen(true);
+          }}
+          onDeleteSuite={handleDeleteSuite}
+          onAddCaseInSuite={(suiteId) => {
+            setActiveParentSuiteId(suiteId);
+            setIsNewCaseOpen(true);
+          }}
+          onOpenNewSuite={() => {
+            setActiveParentSuiteId(null);
+            setIsNewSuiteOpen(true);
+          }}
+          onOpenNewCase={() => {
+            setActiveParentSuiteId(selectedSuite?.id || null);
+            setIsNewCaseOpen(true);
+          }}
+          onRunCase={handleRunCase}
+          onRunSuite={handleRunSuite}
+          onReorderSuite={handleReorderSuite}
+          isLoadingTree={isLoadingTree}
+        />
 
-            {/* Middle Panel: TestCase Editor OR Suite Cases Card View */}
-            {selectedCase ? (
+        {/* Right Main Content Display Area */}
+        <div className="flex-1 flex overflow-hidden min-w-0">
+          {activeTab === 'EXPLORER' && (
+            selectedCase ? (
               <TestCaseEditor
                 testCase={selectedCase}
                 onSave={handleSaveCase}
                 onDelete={handleDeleteCase}
                 onRun={handleRunCase}
-                onClose={() => setSelectedCase(null)}
+                onClose={handleCloseCase}
+                onBack={goBack}
               />
             ) : selectedSuite ? (
               <SuiteCasesView
                 suite={selectedSuite}
-                onSelectCase={(tc) => {
-                  setSelectedSuite(null);
-                  setSelectedCase(tc);
+                allSuites={tree}
+                onSelectCase={(tc) => handleSelectCase(tc)}
+                onSelectSuite={(s) => handleSelectSuite(s)}
+                onAddSubSuite={(parentSuiteId) => {
+                  setActiveParentSuiteId(parentSuiteId);
+                  setIsNewSuiteOpen(true);
                 }}
                 onAddCaseInSuite={(suiteId) => {
                   setActiveParentSuiteId(suiteId);
@@ -345,7 +514,8 @@ export default function Home() {
                 }}
                 onRunCase={handleRunCase}
                 onRunSuite={handleRunSuite}
-                onClose={() => setSelectedSuite(null)}
+                onClose={handleCloseSuite}
+                onBack={goBack}
               />
             ) : (
               <TestCaseEditor
@@ -354,29 +524,10 @@ export default function Home() {
                 onDelete={handleDeleteCase}
                 onRun={handleRunCase}
               />
-            )}
-          </>
-        )}
+            )
+          )}
 
-        {activeTab === 'DASHBOARD' && (
-          <>
-            {/* Left Panel: Projects Navigation Sidebar */}
-            <ProjectsSidebar
-              projects={projects}
-              selectedProject={selectedProject}
-              onSelectProject={(p) => {
-                setSelectedCase(null);
-                setSelectedSuite(null);
-                setSelectedProject(p);
-              }}
-              onOpenNewProject={() => setIsNewProjectOpen(true)}
-              onEditProject={(p) => {
-                setActiveEditProject(p);
-                setIsEditProjectOpen(true);
-              }}
-            />
-
-            {/* Main Panel: Top Dashboard View */}
+          {activeTab === 'DASHBOARD' && (
             <DashboardView
               project={selectedProject}
               testCases={allCases}
@@ -393,29 +544,22 @@ export default function Home() {
                 setActiveParentSuiteId(selectedSuite?.id || null);
                 setIsNewCaseOpen(true);
               }}
-              onSelectCase={(tc) => {
-                setSelectedCase(tc);
-                setSelectedSuite(null);
-                handleTabChange('EXPLORER');
-              }}
+              onSelectCase={(tc) => handleSelectCase(tc)}
+              onSelectSuite={(suite) => handleSelectSuite(suite)}
             />
-          </>
-        )}
+          )}
 
-        {activeTab === 'RUNS' && (
-          <TestRunsView
-            projectId={selectedProject?.id || ''}
-            onOpenManualRun={() => {
-              setActiveSuiteRunCases(null);
-              setIsManualRunOpen(true);
-            }}
-            onSelectCase={(tc) => {
-              setSelectedCase(tc);
-              setSelectedSuite(null);
-              handleTabChange('EXPLORER');
-            }}
-          />
-        )}
+          {activeTab === 'RUNS' && (
+            <TestRunsView
+              projectId={selectedProject?.id || ''}
+              onOpenManualRun={() => {
+                setActiveSuiteRunCases(null);
+                setIsManualRunOpen(true);
+              }}
+              onSelectCase={(tc) => handleSelectCase(tc)}
+            />
+          )}
+        </div>
       </div>
 
       {/* Modals */}
@@ -493,5 +637,3 @@ export default function Home() {
     </div>
   );
 }
-
-

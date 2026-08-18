@@ -22,11 +22,18 @@ export interface Project {
   };
 }
 
+export interface StepAttachment {
+  id?: string;
+  url: string;
+  comment?: string;
+}
+
 export interface TestStep {
   id?: string;
   stepNumber: number;
   action: string;
   expectedResult: string;
+  attachments?: StepAttachment[];
 }
 
 export type ExecutionType = 'MANUAL' | 'AUTOMATION';

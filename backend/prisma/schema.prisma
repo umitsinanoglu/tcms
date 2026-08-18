@@ -107,6 +107,7 @@ model TestStep {
   stepNumber     Int
   action         String
   expectedResult String
+  attachments    Json?    @default("[]")
 
   testCaseId     String
   testCase       TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)

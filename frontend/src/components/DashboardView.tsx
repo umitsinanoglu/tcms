@@ -31,6 +31,7 @@ interface DashboardViewProps {
   onOpenNewCase: () => void;
   onOpenNewSuite?: () => void;
   onSelectCase?: (testCase: TestCase) => void;
+  onSelectSuite?: (suite: SuiteTreeNode) => void;
 }
 
 interface FlattenedSuite {
@@ -49,6 +50,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenNewCase,
   onOpenNewSuite,
   onSelectCase,
+  onSelectSuite,
 }) => {
   const [dashboardTab, setDashboardTab] = useState<'SUITES' | 'METRICS'>('SUITES');
   const [suiteSearch, setSuiteSearch] = useState('');
@@ -117,6 +119,36 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     s.fullPath.toLowerCase().includes(suiteSearch.toLowerCase()) ||
     s.name.toLowerCase().includes(suiteSearch.toLowerCase())
   );
+
+  // Helper to find SuiteTreeNode by id
+  const findSuiteNode = (nodes: SuiteTreeNode[], id: string): SuiteTreeNode | null => {
+    for (const node of nodes) {
+      if (node.id === id) return node;
+      if (node.children && node.children.length > 0) {
+        const found = findSuiteNode(node.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const handleOpenSuiteCard = (suiteId: string) => {
+    if (suiteId === '__root_cases__') {
+      if (onSelectCase && rootCases.length > 0) {
+        onSelectCase(rootCases[0]);
+      }
+      return;
+    }
+    const found = findSuiteNode(suites, suiteId);
+    if (found && onSelectSuite) {
+      onSelectSuite(found);
+    } else if (onSelectCase) {
+      const s = displaySuites.find((d) => d.id === suiteId);
+      if (s && s.allCases.length > 0) {
+        onSelectCase(s.allCases[0]);
+      }
+    }
+  };
 
   // Calculate Metrics
   const totalCases = testCases.length;
@@ -386,7 +418,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 return (
                   <div
                     key={s.id}
-                    className="group bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 hover:border-rose-500/50 dark:hover:border-rose-500/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-4"
+                    onClick={() => handleOpenSuiteCard(s.id)}
+                    className="group bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 hover:border-rose-500/50 dark:hover:border-rose-500/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-4 cursor-pointer"
                   >
                     {/* Suite Header */}
                     <div className="space-y-1.5">
@@ -446,17 +479,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </span>
 
                       <div className="flex items-center space-x-2">
-                        {s.allCases.length > 0 && onSelectCase && (
-                          <button
-                            onClick={() => onSelectCase(s.allCases[0])}
-                            className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1"
-                          >
-                            <span>İncele</span>
-                            <ChevronRight className="w-3 h-3" />
-                          </button>
-                        )}
                         <button
-                          onClick={onOpenManualRun}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenSuiteCard(s.id);
+                          }}
+                          className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1"
+                        >
+                          <span>Klasörü Aç</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenManualRun();
+                          }}
                           className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-all flex items-center space-x-1"
                         >
                           <Play className="w-3 h-3 fill-current" />

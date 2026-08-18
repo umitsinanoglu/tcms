@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { NavigationProvider } from '@/context/NavigationContext';
 
 export const metadata: Metadata = {
   title: 'Test Case Management System (TCMS)',
@@ -16,7 +17,9 @@ export default function RootLayout({
     <html lang="tr" className="dark">
       <body className="antialiased bg-background text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
         <ThemeProvider>
-          {children}
+          <NavigationProvider>
+            {children}
+          </NavigationProvider>
         </ThemeProvider>
       </body>
     </html>

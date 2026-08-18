@@ -515,8 +515,27 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                       </div>
 
                       {res.errorMessage && (
-                        <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-300 text-[11px] font-mono">
-                          <strong>Hata:</strong> {res.errorMessage}
+                        <div
+                          className={`p-2.5 rounded-lg text-[11px] font-mono ${
+                            res.status === 'PASSED'
+                              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                              : res.status === 'BLOCKED'
+                              ? 'bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300'
+                              : res.status === 'FAILED'
+                              ? 'bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-300'
+                              : 'bg-slate-500/10 border border-slate-500/20 text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          <strong>
+                            {res.status === 'PASSED'
+                              ? 'Başarı Yorumu / Not:'
+                              : res.status === 'BLOCKED'
+                              ? 'Engellenme Nedeni:'
+                              : res.status === 'FAILED'
+                              ? 'Hata:'
+                              : 'Not / Yorum:'}
+                          </strong>{' '}
+                          {res.errorMessage}
                         </div>
                       )}
 

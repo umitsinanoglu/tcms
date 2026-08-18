@@ -10,16 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Navigasyon geçmişi yöneticisinde (`NavigationContext`) state kilitlenmesi ve closure gecikmesi giderildi; senkron ref takibi ve akıllı fallback mekanizması ile "Geri" butonunun tüm sayfalarda kesintisiz çalışması sağlandı.
+- Dashboard üzerindeki Suite klasör kartlarına ("123", "abc", "Data" vb.) tıklandığında veya "Klasörü Aç" butonuna basıldığında ilgili Suite görünümüne girilmesi ve Suite içinde alt klasörlerin (sub-suites) hiyerarşik kartlar olarak gösterilmesi sağlandı.
 - Fix QuickRun DTO validation 500 error, test case code collision logic, and implement full Test Plan CRUD with EditProjectModal
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Sol üstteki genel geri butonu kaldırıldı; test planı etiket alanı yerine arama destekli, açılır menülü ve hızlı geçiş sağlayan Test Planı Navigasyon Combobox bileşeni entegre edildi.
 - Top navigasyon header sadeleştirildi, 2. görseldeki minimalist tasarıma uyarlanarak gereksiz butonlar kaldırıldı
 - Header top navigation menu update with Project Combobox, Explorer tab, and Quick Action buttons (Yeni Suite, Yeni Case, Test Koşusu) with empty database support
 - Arayüz genelinde Test Senaryosu ve Senaryo terimleri 'Test Case' olarak standartlaştırıldı.
 - Manual Execution Dashboard (Manuel Test Koşum Paneli) modalı Türkçe diline çevrildi ve tema ile tam uyumlu hale getirildi.
 
 ### Added
+- **Kalıcı & Daralabilir Sol Gezgin Menüsü (`AppSidebar`)**: Tüm sayfalarda (`Dashboard`, `Explorer`, `Test Koşuları`) solda sabit kalan, daralıp genişleyebilen (`w-16` / `w-84`), `Test Planı veya anahtar ara` anlık arama filtreli, `[1] 123`, `[A] abc`, `[P] Plan` formatında rozetli plan kartları ve `Test Planları → Test Suite → Case` hiyerarşik ağaç yapısına sahip birleşik sol menü geliştirildi.
+- **Test Adımlarına Çoklu Ekran Görüntüsü & Yorum Desteği**: Her bir test adımına birden fazla ekran görüntüsü (maksimum 10 adet, dosya başı 5MB limiti, PNG/JPG/WebP/GIF dosya tipi ve boyut denetimi) ekleme, her görselin altına özel yorum/açıklama satırı girme, panodan doğrudan görsel yapıştırma (`Ctrl + V`), tam ekran inceleme (Lightbox) ve koşum ekranlarında adım referans görsellerini görüntüleme desteği entegre edildi.
+- Uygulama geneline "Geri" (Back) ve "İleri" (Forward) navigasyon geçmişi yöneticisi (NavigationContext), Header ve ekran içi (TestCaseEditor, SuiteCasesView) geri butonları ile klavye kısayolu (Alt+Sol Ok) entegrasyonu eklendi.
+- Başarılı (PASSED) ve engellenen (BLOCKED) test koşularına da kanıt ekran görüntüsü ekleme desteği eklendi (QuickRunModal & ManualRunModal). Panodan doğrudan görsel yapıştırma (`Ctrl + V` / `Cmd + V`), tam ekran inceleme (Lightbox) ve görsel düzenleme/silme fonksiyonları entegre edildi.
 - Test Case'lerin bir Suite'e bagli kalmadan dogrudan Test Plani altinda olusturulabilmesi ve yonetilebilmesi destegi eklendi.
 - Test Case niteliklerinde Manuel/Otomasyon ve dinamik Test Tipi ayrimi, Dashboard Yeni Suite Ekle butonu, Yeni Case Ekle baglam fixi ve Suite hiyerarsi duzeltmesi.
 - Top Dashboard Left Projects Navigation Sidebar and Repeat Test Suite/Case Execution with Run History

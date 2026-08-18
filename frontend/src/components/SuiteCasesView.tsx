@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { SuiteTreeNode, TestCase, Priority, TestType } from '@/services/api';
 import {
   FolderOpen,
+  Folder,
+  FolderPlus,
   Plus,
   Play,
   Search,
@@ -19,26 +21,35 @@ import {
   X,
   Layers,
   ChevronRight,
+  ArrowLeft,
 } from 'lucide-react';
 
 interface SuiteCasesViewProps {
   suite: SuiteTreeNode | null;
+  allSuites?: SuiteTreeNode[];
   onSelectCase: (testCase: TestCase) => void;
+  onSelectSuite?: (suite: SuiteTreeNode) => void;
+  onAddSubSuite?: (parentSuiteId: string) => void;
   onAddCaseInSuite: (suiteId: string) => void;
   onRunCase?: (testCase: TestCase) => void;
   onRunSuite?: (suite: SuiteTreeNode) => void;
   onClose?: () => void;
+  onBack?: () => void;
 }
 
 type StatusFilter = 'ALL' | 'PASSED' | 'FAILED' | 'BLOCKED' | 'UNTESTED';
 
 export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
   suite,
+  allSuites = [],
   onSelectCase,
+  onSelectSuite,
+  onAddSubSuite,
   onAddCaseInSuite,
   onRunCase,
   onRunSuite,
   onClose,
+  onBack,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
@@ -48,6 +59,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
   if (!suite) return null;
 
   const testCases = suite.testCases || [];
+  const childSuites = suite.children || [];
 
   // Calculate suite stats
   const stats = {
@@ -163,6 +175,17 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
       <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm transition-all active:scale-95 cursor-pointer"
+                title="Önceki ekrana dön"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-rose-500" />
+                <span>Geri</span>
+              </button>
+            )}
             <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 shrink-0">
               <FolderOpen className="w-6 h-6" />
             </div>
@@ -172,9 +195,14 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-mono font-bold">
                   {stats.total} Test Case
                 </span>
+                {childSuites.length > 0 && (
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-mono font-bold">
+                    {childSuites.length} Alt Klasör
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Bu klasördeki (Suite) tüm Test Case'lerin kart görünümü
+                Klasör detayları, alt klasörler ve test case kartları
               </p>
             </div>
           </div>
@@ -188,6 +216,17 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
               >
                 <Play className="w-4 h-4 fill-current" />
                 <span>Suite'i Koştur ({testCases.length})</span>
+              </button>
+            )}
+
+            {onAddSubSuite && (
+              <button
+                type="button"
+                onClick={() => onAddSubSuite(suite.id)}
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <FolderPlus className="w-4 h-4 text-amber-500" />
+                <span>+ Alt Klasör Ekle</span>
               </button>
             )}
 
@@ -237,6 +276,49 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Sub-Suites / Alt Klasörler Section */}
+      {childSuites.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
+              <Folder className="w-4 h-4 text-amber-500" />
+              <span>Alt Klasörler (Sub-Suites) ({childSuites.length})</span>
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {childSuites.map((child) => {
+              const childCasesCount = child.testCases ? child.testCases.length : 0;
+              const childSubSuitesCount = child.children ? child.children.length : 0;
+              return (
+                <div
+                  key={child.id}
+                  onClick={() => onSelectSuite && onSelectSuite(child)}
+                  className="group p-3.5 rounded-2xl bg-white dark:bg-slate-900/80 hover:bg-amber-500/5 dark:hover:bg-amber-500/10 border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 rounded-xl transition-all shadow-sm hover:shadow cursor-pointer flex items-center justify-between"
+                >
+                  <div className="flex items-center space-x-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 group-hover:scale-105 transition-transform shrink-0">
+                      <FolderOpen className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors truncate">
+                        {child.name}
+                      </h4>
+                      <div className="flex items-center space-x-2 text-[10px] text-slate-400 font-mono mt-0.5">
+                        <span>{childCasesCount} Case</span>
+                        {childSubSuitesCount > 0 && <span>&bull; {childSubSuitesCount} Alt Klasör</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Toolbar & Filter Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -299,17 +381,32 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
       {filteredCases.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900/40 text-slate-400 dark:text-slate-500">
           <Layers className="w-10 h-10 mb-3 opacity-30 text-slate-400" />
-          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Test Case Bulunamadı</h4>
+          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            {childSuites.length > 0 ? 'Bu Düzeyde Test Case Bulunmuyor' : 'Test Case Bulunamadı'}
+          </h4>
           <p className="text-xs text-slate-500 mt-1 max-w-sm">
-            Bu suite içerisinde arama kriterlerinize uygun Test Case bulunmuyor veya henüz Test Case eklenmemiş.
+            {childSuites.length > 0
+              ? 'Bu klasör içerisinde doğrudan tanımlı Test Case yok. Yukarıdaki alt klasörlere girebilir veya yeni case ekleyebilirsiniz.'
+              : 'Bu suite içerisinde arama kriterlerinize uygun Test Case bulunmuyor veya henüz Test Case eklenmemiş.'}
           </p>
-          <button
-            type="button"
-            onClick={() => onAddCaseInSuite(suite.id)}
-            className="mt-4 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
-          >
-            + Yeni Test Case Oluştur
-          </button>
+          <div className="flex items-center space-x-2 mt-4">
+            {onAddSubSuite && (
+              <button
+                type="button"
+                onClick={() => onAddSubSuite(suite.id)}
+                className="px-3.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold rounded-lg shadow-sm transition-all"
+              >
+                + Alt Klasör Ekle
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => onAddCaseInSuite(suite.id)}
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
+            >
+              + Yeni Test Case Oluştur
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
