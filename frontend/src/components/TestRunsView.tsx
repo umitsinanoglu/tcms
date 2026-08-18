@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { TestRun, TestRunsService, RunStatus, ResultStatus, TestCase } from '@/services/api';
+import { TestRun, TestRunsService, RunStatus, ResultStatus, TestCase, ReportsService } from '@/services/api';
 import {
   Play,
   CheckCircle2,
@@ -24,6 +24,9 @@ import {
   AlertCircle,
   Copy,
   Check,
+  FileSpreadsheet,
+  Printer,
+  Download,
 } from 'lucide-react';
 
 interface TestRunsViewProps {
@@ -386,16 +389,38 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                     </td>
 
                     <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenDetail(run.id);
-                        }}
-                        className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                        title="Detayları İncele"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end space-x-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            ReportsService.downloadRunReport(run.id, 'csv', run.title);
+                          }}
+                          className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
+                          title="Koşum Raporunu CSV Olarak İndir"
+                        >
+                          <FileSpreadsheet className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            ReportsService.downloadRunReport(run.id, 'html', run.title);
+                          }}
+                          className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition-colors"
+                          title="HTML Koşum Raporunu Aç"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDetail(run.id);
+                          }}
+                          className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+                          title="Detayları İncele"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -429,7 +454,25 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => ReportsService.downloadRunReport(selectedRunDetails.id, 'csv', selectedRunDetails.title)}
+                  className="flex items-center space-x-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-all"
+                  title="CSV Formatında İndir"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>CSV İndir</span>
+                </button>
+
+                <button
+                  onClick={() => ReportsService.downloadRunReport(selectedRunDetails.id, 'html', selectedRunDetails.title)}
+                  className="flex items-center space-x-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 text-white border border-slate-700 rounded-lg text-xs font-semibold shadow-sm transition-all"
+                  title="HTML Raporu Yeni Sekmede Aç / Yazdır"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>HTML Rapor</span>
+                </button>
+
                 {selectedRunDetails.status === 'IN_PROGRESS' && (
                   <button
                     onClick={() => handleUpdateRunStatus(selectedRunDetails.id, 'COMPLETED')}

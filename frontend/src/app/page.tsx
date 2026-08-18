@@ -23,6 +23,7 @@ import { EditSuiteModal } from '@/components/EditSuiteModal';
 import { NewCaseModal } from '@/components/NewCaseModal';
 import { QuickRunModal } from '@/components/QuickRunModal';
 import { useNavigation, NavigationState } from '@/context/NavigationContext';
+import { ReportsView } from '@/components/ReportsView';
 
 export default function Home() {
   const { pushState, registerNavigationHandler, goBack } = useNavigation();
@@ -33,7 +34,7 @@ export default function Home() {
   const [rootCases, setRootCases] = useState<TestCase[]>([]);
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null);
   const [selectedSuite, setSelectedSuite] = useState<SuiteTreeNode | null>(null);
-  const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'RUNS'>('DASHBOARD');
+  const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'RUNS' | 'REPORTS'>('DASHBOARD');
   const [isLoadingTree, setIsLoadingTree] = useState(false);
 
   const projectsRef = useRef<Project[]>([]);
@@ -68,6 +69,16 @@ export default function Home() {
     }
     return null;
   };
+
+  // Tab persistence handling: default to DASHBOARD, restore from localStorage on refresh
+  useEffect(() => {
+    const savedTab = localStorage.getItem('tcms_active_tab') as 'EXPLORER' | 'DASHBOARD' | 'RUNS' | 'REPORTS' | null;
+    if (savedTab && ['EXPLORER', 'DASHBOARD', 'RUNS', 'REPORTS'].includes(savedTab)) {
+      setActiveTab(savedTab);
+    } else {
+      setActiveTab('DASHBOARD');
+    }
+  }, []);
 
   // Modals state
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
@@ -105,13 +116,14 @@ export default function Home() {
 
   // Handle Tab Change with Navigation Push
   const handleTabChange = useCallback(
-    (tab: 'EXPLORER' | 'DASHBOARD' | 'RUNS', shouldPushState = true) => {
+    (tab: 'EXPLORER' | 'DASHBOARD' | 'RUNS' | 'REPORTS', shouldPushState = true) => {
       setActiveTab(tab);
       localStorage.setItem('tcms_active_tab', tab);
 
       if (shouldPushState) {
         let label = 'Dashboard';
         if (tab === 'RUNS') label = 'Test Koşuları';
+        else if (tab === 'REPORTS') label = 'Raporlama';
         else if (tab === 'EXPLORER') {
           if (selectedCase) label = `Case: ${selectedCase.code}`;
           else if (selectedSuite) label = `Suite: ${selectedSuite.name}`;
@@ -546,6 +558,7 @@ export default function Home() {
               }}
               onSelectCase={(tc) => handleSelectCase(tc)}
               onSelectSuite={(suite) => handleSelectSuite(suite)}
+              onNavigateToReports={() => handleTabChange('REPORTS')}
             />
           )}
 
@@ -557,6 +570,22 @@ export default function Home() {
                 setIsManualRunOpen(true);
               }}
               onSelectCase={(tc) => handleSelectCase(tc)}
+            />
+          )}
+
+          {activeTab === 'REPORTS' && (
+            <ReportsView
+              project={selectedProject}
+              onOpenManualRun={() => {
+                setActiveSuiteRunCases(null);
+                setIsManualRunOpen(true);
+              }}
+              onSelectCase={(tcId) => {
+                const target = allCases.find((c) => c.id === tcId);
+                if (target) {
+                  handleSelectCase(target);
+                }
+              }}
             />
           )}
         </div>

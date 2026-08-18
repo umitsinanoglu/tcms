@@ -32,6 +32,7 @@ interface DashboardViewProps {
   onOpenNewSuite?: () => void;
   onSelectCase?: (testCase: TestCase) => void;
   onSelectSuite?: (suite: SuiteTreeNode) => void;
+  onNavigateToReports?: () => void;
 }
 
 interface FlattenedSuite {
@@ -51,6 +52,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenNewSuite,
   onSelectCase,
   onSelectSuite,
+  onNavigateToReports,
 }) => {
   const [dashboardTab, setDashboardTab] = useState<'SUITES' | 'METRICS'>('SUITES');
   const [suiteSearch, setSuiteSearch] = useState('');
@@ -224,14 +226,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <BarChart3 className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">Top Dashboard (Yüksek Seviye Görünüm)</h1>
+            <h1 className="text-xl font-bold tracking-tight">{project.name}</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
               [{project.key}] {project.name} &bull; {flattenedSuites.length} Test Suite &bull; {totalCases} Test Case
             </p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center flex-wrap gap-2.5">
           {/* Sub Tab Switcher */}
           <div className="flex items-center bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-1 text-xs">
             <button
@@ -264,7 +266,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               <FolderPlus className="w-3.5 h-3.5 text-amber-500" />
-              <span>+ Yeni Suite Ekle</span>
+              <span>+ Suite Ekle</span>
             </button>
           )}
           <button
@@ -272,7 +274,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <FilePlus className="w-3.5 h-3.5 text-blue-500" />
-            <span>+ Yeni Case Ekle</span>
+            <span>+ Case Ekle</span>
           </button>
           <button
             onClick={onOpenManualRun}

@@ -4,8 +4,12 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { NavigationProvider } from '@/context/NavigationContext';
 
 export const metadata: Metadata = {
-  title: 'Test Case Management System (TCMS)',
+  title: 'Türk Ticaret Bankası - Test Case Management System (TCMS)',
   description: 'Enterprise Test Case Management System with Tree Hierarchy and Fast Execution Dashboard',
+  icons: {
+    icon: '/brand/favicon.png',
+    apple: '/brand/favicon.png',
+  },
 };
 
 export default function RootLayout({

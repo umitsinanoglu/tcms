@@ -187,3 +187,183 @@ export const TestRunsService = {
     api.get<TestRun>(`/runs/${runId}`).then((res) => res.data),
 };
 
+export interface ProjectReportSummary {
+  project: Project;
+  metrics: {
+    totalCases: number;
+    totalSuites: number;
+    totalRuns: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    skipped: number;
+    untested: number;
+    executedTotal: number;
+    passRate: number;
+    executedPassRate: number;
+  };
+  distributions: {
+    priority: Record<string, number>;
+    type: Record<string, number>;
+    executionType: Record<string, number>;
+  };
+  suites: {
+    id: string;
+    name: string;
+    parentId?: string | null;
+    totalCases: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    untested: number;
+    passRate: number;
+  }[];
+  recentRuns: {
+    id: string;
+    title: string;
+    version: string;
+    environment: string;
+    status: RunStatus;
+    executedBy: string;
+    createdAt: string;
+    totalResults: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    passRate: number;
+  }[];
+  failedCases: {
+    code: string;
+    title: string;
+    suiteName: string;
+    priority: Priority;
+    errorMessage?: string;
+    jiraBugKey?: string;
+    jiraBugUrl?: string;
+    executedBy?: string;
+    executedAt?: string;
+  }[];
+  defects: {
+    jiraBugKey: string;
+    jiraBugUrl?: string;
+    testCaseCode: string;
+    testCaseTitle: string;
+    errorMessage?: string;
+    executedAt: string;
+  }[];
+  testCases: (TestCase & {
+    suiteName: string;
+    stepsCount: number;
+    latestStatus: ResultStatus | 'UNTESTED';
+    latestErrorMessage?: string;
+    latestJiraBugKey?: string;
+    latestJiraBugUrl?: string;
+    latestExecutionMs?: number;
+    latestExecutedAt?: string;
+  })[];
+  generatedAt: string;
+}
+
+export interface RunReportSummary {
+  run: TestRun & { projectName: string; projectKey: string };
+  metrics: {
+    total: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    skipped: number;
+    passRate: number;
+    totalExecutionMs: number;
+    avgExecutionMs: number;
+  };
+  defects: {
+    jiraBugKey: string;
+    jiraBugUrl?: string;
+    testCaseCode: string;
+    testCaseTitle: string;
+    errorMessage?: string;
+    screenshotUrl?: string;
+  }[];
+  results: {
+    id: string;
+    testCaseId: string;
+    testCaseCode: string;
+    testCaseTitle: string;
+    suiteName: string;
+    priority: Priority;
+    type: TestType;
+    executionType: ExecutionType;
+    status: ResultStatus;
+    executionMs?: number;
+    errorMessage?: string;
+    jiraBugKey?: string;
+    jiraBugUrl?: string;
+    screenshotUrl?: string;
+    executedBy?: string;
+    executedAt?: string;
+  }[];
+  generatedAt: string;
+}
+
+export const ReportsService = {
+  getProjectSummary: (projectId: string) =>
+    api.get<ProjectReportSummary>(`/reports/projects/${projectId}/summary`).then((res) => res.data),
+  getRunSummary: (runId: string) =>
+    api.get<RunReportSummary>(`/reports/runs/${runId}/summary`).then((res) => res.data),
+  getSuiteSummary: (suiteId: string) =>
+    api.get<any>(`/reports/suites/${suiteId}/summary`).then((res) => res.data),
+  getTestCaseSummary: (caseId: string) =>
+    api.get<any>(`/reports/test-cases/${caseId}/summary`).then((res) => res.data),
+
+  // Export URLs for browser direct download or new window
+  getProjectExportUrl: (projectId: string, format: 'json' | 'csv' | 'html') =>
+    `${API_BASE_URL}/reports/projects/${projectId}/export?format=${format}`,
+  getRunExportUrl: (runId: string, format: 'json' | 'csv' | 'html') =>
+    `${API_BASE_URL}/reports/runs/${runId}/export?format=${format}`,
+
+  // Trigger browser download via blob / direct link
+  downloadProjectReport: async (projectId: string, format: 'json' | 'csv' | 'html', projectKey?: string) => {
+    const url = `${API_BASE_URL}/reports/projects/${projectId}/export?format=${format}`;
+    if (format === 'html') {
+      window.open(url, '_blank');
+      return;
+    }
+    const response = await api.get(url, { responseType: 'blob' });
+    const blob = new Blob([response.data], {
+      type: format === 'csv' ? 'text/csv;charset=utf-8;' : 'application/json',
+    });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    const date = new Date().toISOString().split('T')[0];
+    link.setAttribute('download', `${projectKey || 'TCMS'}_Test_Report_${date}.${format}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  },
+
+  downloadRunReport: async (runId: string, format: 'json' | 'csv' | 'html', runTitle?: string) => {
+    const url = `${API_BASE_URL}/reports/runs/${runId}/export?format=${format}`;
+    if (format === 'html') {
+      window.open(url, '_blank');
+      return;
+    }
+    const response = await api.get(url, { responseType: 'blob' });
+    const blob = new Blob([response.data], {
+      type: format === 'csv' ? 'text/csv;charset=utf-8;' : 'application/json',
+    });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    const date = new Date().toISOString().split('T')[0];
+    const safeTitle = (runTitle || 'Run').replace(/[^a-zA-Z0-9_-]/g, '_');
+    link.setAttribute('download', `${safeTitle}_Report_${date}.${format}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  },
+};
+
+

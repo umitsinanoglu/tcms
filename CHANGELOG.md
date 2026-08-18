@@ -16,17 +16,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- **Test Planı Başlığı**: Dashboard ve Header başlıkları seçili Test Planı adına (`[KEY] Plan Adı`) dinamik olarak bağlandı.
+- **Test Koşuları Sayfası Revizyonu**: Test Koşuları tablosuna ve detay modalına test case'lerin bağlı olduğu **Ebeveyn Nesne / Modül (Parent Suite)** ve **Ürün Tipi (WEB, MOBILE, IOS, ANDROID, API)** sütunları ve rozetleri eklendi.
 - Sol üstteki genel geri butonu kaldırıldı; test planı etiket alanı yerine arama destekli, açılır menülü ve hızlı geçiş sağlayan Test Planı Navigasyon Combobox bileşeni entegre edildi.
-- Top navigasyon header sadeleştirildi, 2. görseldeki minimalist tasarıma uyarlanarak gereksiz butonlar kaldırıldı
-- Header top navigation menu update with Project Combobox, Explorer tab, and Quick Action buttons (Yeni Suite, Yeni Case, Test Koşusu) with empty database support
+- Revised UI Design System, Theme Tokens, and AI Rules to Enterprise SDLC Edition v2.
+- Top navigasyon header sadeleştirildi, 2. görseldeki minimalist tasarıma uyarlanarak gereksiz butonlar kaldırıldı.
+- Header top navigation menu update with Project Combobox, Explorer tab, and Quick Action buttons with empty database support.
 - Arayüz genelinde Test Senaryosu ve Senaryo terimleri 'Test Case' olarak standartlaştırıldı.
 - Manual Execution Dashboard (Manuel Test Koşum Paneli) modalı Türkçe diline çevrildi ve tema ile tam uyumlu hale getirildi.
 
 ### Added
+- **Bağımsız Test Koşum Kayıtları & Koşum Geçmişi**: Her bir test koşumu bağımsız bir kayıt olarak geçmişte tutulacak şekilde backend ve frontend güncellendi; her koşum için bağımsız koşu notu/yorumu, kanıt ekran görüntüsü (lightbox önizlemeli), tester ve yürütme detayları TestCaseEditor "Koşum Geçmişi & Tüm Tekrar Koşuları" bölümünde listelendi.
 - **Kalıcı & Daralabilir Sol Gezgin Menüsü (`AppSidebar`)**: Tüm sayfalarda (`Dashboard`, `Explorer`, `Test Koşuları`) solda sabit kalan, daralıp genişleyebilen (`w-16` / `w-84`), `Test Planı veya anahtar ara` anlık arama filtreli, `[1] 123`, `[A] abc`, `[P] Plan` formatında rozetli plan kartları ve `Test Planları → Test Suite → Case` hiyerarşik ağaç yapısına sahip birleşik sol menü geliştirildi.
 - **Test Adımlarına Çoklu Ekran Görüntüsü & Yorum Desteği**: Her bir test adımına birden fazla ekran görüntüsü (maksimum 10 adet, dosya başı 5MB limiti, PNG/JPG/WebP/GIF dosya tipi ve boyut denetimi) ekleme, her görselin altına özel yorum/açıklama satırı girme, panodan doğrudan görsel yapıştırma (`Ctrl + V`), tam ekran inceleme (Lightbox) ve koşum ekranlarında adım referans görsellerini görüntüleme desteği entegre edildi.
 - Uygulama geneline "Geri" (Back) ve "İleri" (Forward) navigasyon geçmişi yöneticisi (NavigationContext), Header ve ekran içi (TestCaseEditor, SuiteCasesView) geri butonları ile klavye kısayolu (Alt+Sol Ok) entegrasyonu eklendi.
 - Başarılı (PASSED) ve engellenen (BLOCKED) test koşularına da kanıt ekran görüntüsü ekleme desteği eklendi (QuickRunModal & ManualRunModal). Panodan doğrudan görsel yapıştırma (`Ctrl + V` / `Cmd + V`), tam ekran inceleme (Lightbox) ve görsel düzenleme/silme fonksiyonları entegre edildi.
+- Resmi Türk Ticaret Bankası ana logo ve amblemi sisteme entegre edildi; Koyu ve Açık temalara göre otomatik dinamik renk geçişi (Coral Red & White / Corporate Red) sağlandı.
+- Kapsamlı Raporlama Katmanı (Reporting Layer) ve çok formatlı (CSV, HTML, PDF/Yazdır, JSON) rapor çıkarma özellikleri eklendi.
 - Test Case'lerin bir Suite'e bagli kalmadan dogrudan Test Plani altinda olusturulabilmesi ve yonetilebilmesi destegi eklendi.
 - Test Case niteliklerinde Manuel/Otomasyon ve dinamik Test Tipi ayrimi, Dashboard Yeni Suite Ekle butonu, Yeni Case Ekle baglam fixi ve Suite hiyerarsi duzeltmesi.
 - Top Dashboard Left Projects Navigation Sidebar and Repeat Test Suite/Case Execution with Run History

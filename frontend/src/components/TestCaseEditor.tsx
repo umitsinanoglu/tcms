@@ -24,6 +24,10 @@ import {
   ArrowLeft,
   Download,
   MessageSquare,
+  FileText,
+  ExternalLink,
+  Bug,
+  RotateCcw,
 } from 'lucide-react';
 
 interface TestCaseEditorProps {
@@ -411,7 +415,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
           </div>
 
           {/* Action Bar */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             {onRun && (
               <button
                 type="button"
@@ -753,71 +757,214 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
         )}
 
         {/* Execution History Section */}
-        {testCase.results && testCase.results.length > 0 && (
-          <div className="space-y-3 p-4 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-indigo-500" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Koşum Geçmişi & Tüm Tekrar Koşuları ({testCase.results.length})
-                </h3>
+        <div className="space-y-4 p-5 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+            <div className="flex items-center space-x-2.5">
+              <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                <Clock className="w-4 h-4" />
               </div>
-              <span className="text-[10px] text-slate-400 font-mono">
-                Son Koşu: {testCase.results[0].executedAt ? new Date(testCase.results[0].executedAt).toLocaleString('tr-TR') : '-'}
-              </span>
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  Koşum Geçmişi & Tüm Tekrar Koşuları ({testCase.results?.length || 0})
+                </h3>
+                <p className="text-[11px] text-slate-400">
+                  Bu test case'e ait tüm bağımsız koşum kayıtları, test notları ve ekran görüntüleri
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              {testCase.results.map((res, idx) => (
-                <div
-                  key={res.id || idx}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-xs gap-2"
+            <div className="flex items-center space-x-2 shrink-0">
+              {onRun && (
+                <button
+                  type="button"
+                  onClick={() => onRun(testCase)}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-all shadow-sm active:scale-95 cursor-pointer"
+                  title="Bu Test Case için Yeni Bir Koşu Başlat"
                 >
-                  <div className="flex items-center space-x-3 min-w-0">
-                    {res.status === 'PASSED' && (
-                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px] shrink-0 border border-emerald-500/30">
-                        PASSED
-                      </span>
-                    )}
-                    {res.status === 'FAILED' && (
-                      <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-600 dark:text-red-400 font-mono font-bold text-[10px] shrink-0 border border-red-500/30">
-                        FAILED
-                      </span>
-                    )}
-                    {res.status === 'BLOCKED' && (
-                      <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-600 dark:text-purple-400 font-mono font-bold text-[10px] shrink-0 border border-purple-500/30">
-                        BLOCKED
-                      </span>
-                    )}
-                    {res.status === 'SKIPPED' && (
-                      <span className="px-2 py-0.5 rounded bg-slate-500/20 text-slate-600 dark:text-slate-400 font-mono font-bold text-[10px] shrink-0 border border-slate-500/30">
-                        SKIPPED
-                      </span>
-                    )}
-
-                    <div className="flex items-center space-x-2 truncate">
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">
-                        {res.executedBy || 'Tester'}
-                      </span>
-                      {res.executionMs && (
-                        <span className="text-[10px] text-slate-400 font-mono">({res.executionMs}ms)</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3 text-slate-400 font-mono text-[10px]">
-                    {res.jiraBugKey && (
-                      <span className="text-rose-500 font-bold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
-                        Bug: {res.jiraBugKey}
-                      </span>
-                    )}
-                    <span>{res.executedAt ? new Date(res.executedAt).toLocaleString('tr-TR') : ''}</span>
-                  </div>
-                </div>
-              ))}
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Tekrar Koş</span>
+                </button>
+              )}
             </div>
           </div>
-        )}
+
+          {!testCase.results || testCase.results.length === 0 ? (
+            <div className="py-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 space-y-2">
+              <Clock className="w-8 h-8 mx-auto opacity-30 text-slate-400" />
+              <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                Bu test case için henüz koşum kaydı bulunmuyor.
+              </p>
+              {onRun && (
+                <button
+                  type="button"
+                  onClick={() => onRun(testCase)}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-lg transition-colors"
+                >
+                  <Play className="w-3 h-3 fill-current" />
+                  <span>İlk Koşuyu Başlat</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {testCase.results.map((res, idx) => {
+                const runNumber = testCase.results!.length - idx;
+                const runTitle = res.testRun?.title || `Koşu #${runNumber}`;
+                const runVersion = res.testRun?.version || 'v1.0.0';
+                const runEnv = res.testRun?.environment || 'STAGING';
+
+                return (
+                  <div
+                    key={res.id || idx}
+                    className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/90 space-y-3 transition-all hover:border-slate-300 dark:hover:border-slate-700/80"
+                  >
+                    {/* Header Row: Status + Run Title + Tester + Date */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-800/60 pb-2.5">
+                      <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
+                        {/* Status Badge */}
+                        {res.status === 'PASSED' && (
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px] border border-emerald-500/30">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                            <span>PASSED</span>
+                          </span>
+                        )}
+                        {res.status === 'FAILED' && (
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 font-mono font-bold text-[10px] border border-rose-500/30">
+                            <XCircle className="w-3 h-3 text-rose-500" />
+                            <span>FAILED</span>
+                          </span>
+                        )}
+                        {res.status === 'BLOCKED' && (
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 font-mono font-bold text-[10px] border border-purple-500/30">
+                            <Slash className="w-3 h-3 text-purple-500" />
+                            <span>BLOCKED</span>
+                          </span>
+                        )}
+                        {res.status === 'SKIPPED' && (
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-500/15 text-slate-600 dark:text-slate-400 font-mono font-bold text-[10px] border border-slate-500/30">
+                            <SkipForward className="w-3 h-3 text-slate-500" />
+                            <span>SKIPPED</span>
+                          </span>
+                        )}
+
+                        {/* Run Title */}
+                        <span className="font-semibold text-xs text-slate-800 dark:text-slate-200">
+                          {runTitle}
+                        </span>
+
+                        {/* Version & Environment */}
+                        <span className="font-mono text-[10px] bg-slate-200/70 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600 dark:text-slate-400 border border-slate-300/60 dark:border-slate-700/60">
+                          {runVersion} &bull; {runEnv}
+                        </span>
+                      </div>
+
+                      {/* Right Meta Info: Tester + Duration + Date */}
+                      <div className="flex items-center space-x-2 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                          {res.executedBy || res.testRun?.executedBy || 'QA Tester'}
+                        </span>
+                        {res.executionMs && (
+                          <span className="text-slate-400">({res.executionMs}ms)</span>
+                        )}
+                        <span className="text-slate-400">&bull;</span>
+                        <span>{res.executedAt ? new Date(res.executedAt).toLocaleString('tr-TR') : '-'}</span>
+
+                        {res.jiraBugKey && (
+                          <a
+                            href={res.jiraBugUrl || `https://company.atlassian.net/browse/${res.jiraBugKey}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center space-x-1 text-rose-500 font-bold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 hover:underline ml-1"
+                          >
+                            <Bug className="w-3 h-3" />
+                            <span>{res.jiraBugKey}</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Independent Comment / Error Note */}
+                    {res.errorMessage && (
+                      <div
+                        className={`p-3 rounded-xl text-xs font-mono border ${
+                          res.status === 'PASSED'
+                            ? 'bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+                            : res.status === 'BLOCKED'
+                            ? 'bg-purple-500/5 dark:bg-purple-500/10 border-purple-500/20 text-purple-800 dark:text-purple-300'
+                            : res.status === 'FAILED'
+                            ? 'bg-rose-500/5 dark:bg-rose-500/10 border-rose-500/20 text-rose-800 dark:text-rose-300'
+                            : 'bg-slate-500/5 dark:bg-slate-500/10 border-slate-500/20 text-slate-800 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-start space-x-2">
+                          <MessageSquare className="w-3.5 h-3.5 shrink-0 mt-0.5 opacity-80" />
+                          <div className="space-y-0.5">
+                            <span className="font-bold block text-[10px] uppercase tracking-wider opacity-90">
+                              {res.status === 'PASSED'
+                                ? 'Koşu / Başarı Notu:'
+                                : res.status === 'BLOCKED'
+                                ? 'Engellenme Sebebi / Not:'
+                                : res.status === 'FAILED'
+                                ? 'Hata Detayı & Açıklama:'
+                                : 'Koşu Notu:'}
+                            </span>
+                            <p className="whitespace-pre-wrap">{res.errorMessage}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Independent Screenshot */}
+                    {res.screenshotUrl && (
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
+                          <ImageIcon className="w-3.5 h-3.5 text-indigo-500" />
+                          <span>Koşum Ekran Görüntüsü / Kanıt</span>
+                        </span>
+                        <div className="relative group max-w-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1.5 shadow-sm">
+                          <img
+                            src={res.screenshotUrl}
+                            alt="Koşum Ekran Görüntüsü"
+                            className="w-full max-h-44 object-contain rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+                            onClick={() =>
+                              setActiveLightbox({
+                                url: res.screenshotUrl!,
+                                caption: `${runTitle} - ${res.status} (${res.executedAt ? new Date(res.executedAt).toLocaleString('tr-TR') : ''}) ${res.errorMessage ? `\n${res.errorMessage}` : ''}`,
+                              })
+                            }
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 backdrop-blur-[1px] rounded-lg">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveLightbox({
+                                  url: res.screenshotUrl!,
+                                  caption: `${runTitle} - ${res.status} ${res.errorMessage ? `- ${res.errorMessage}` : ''}`,
+                                })
+                              }
+                              className="p-1.5 bg-slate-900/90 text-white rounded-lg hover:bg-slate-800 transition-transform hover:scale-105"
+                              title="Büyüt / İncele"
+                            >
+                              <Maximize2 className="w-4 h-4" />
+                            </button>
+                            <a
+                              href={res.screenshotUrl}
+                              download={`${testCase.code}-run-${runNumber}.png`}
+                              className="p-1.5 bg-slate-900/90 text-white rounded-lg hover:bg-slate-800 transition-transform hover:scale-105"
+                              title="İndir"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </form>
     </main>
   );
