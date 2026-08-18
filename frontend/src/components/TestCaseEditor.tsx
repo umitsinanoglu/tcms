@@ -18,7 +18,6 @@ import {
   X,
   Play,
   Image as ImageIcon,
-  Upload,
   Maximize2,
   Clock,
   ArrowLeft,
@@ -38,9 +37,6 @@ interface TestCaseEditorProps {
   onClose?: () => void;
   onBack?: () => void;
 }
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
-const MAX_ATTACHMENTS_PER_STEP = 10; // Max 10 images per step
 
 export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
   testCase,
@@ -174,7 +170,6 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
         stepNumber: nextNum,
         action: '',
         expectedResult: '',
-        attachments: [],
       },
     ]);
   };
@@ -198,104 +193,6 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
         stepNumber: idx + 1,
       }));
     });
-  };
-
-  // Step Attachment Actions
-  const handleAddStepFiles = (stepIndex: number, files: FileList | null | File[]) => {
-    if (!files || files.length === 0) return;
-
-    const currentStep = steps[stepIndex];
-    const currentAttachments = currentStep?.attachments || [];
-
-    if (currentAttachments.length >= MAX_ATTACHMENTS_PER_STEP) {
-      alert(`Bir adıma en fazla ${MAX_ATTACHMENTS_PER_STEP} adet görsel ekleyebilirsiniz.`);
-      return;
-    }
-
-    const remainingSlots = MAX_ATTACHMENTS_PER_STEP - currentAttachments.length;
-    const fileArray = Array.from(files).slice(0, remainingSlots);
-
-    fileArray.forEach((file) => {
-      if (!file.type.startsWith('image/')) {
-        alert(`"${file.name}" desteklenen bir görsel dosyası değil. Lütfen PNG, JPG, WebP veya GIF yükleyin.`);
-        return;
-      }
-
-      if (file.size > MAX_FILE_SIZE) {
-        alert(`"${file.name}" 5MB dosya boyutu limitini aşıyor (${(file.size / (1024 * 1024)).toFixed(1)}MB). Lütfen daha küçük bir görsel seçin.`);
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target?.result as string;
-        if (!base64) return;
-
-        setSteps((prevSteps) => {
-          const nextSteps = prevSteps.map((s, sIdx) => {
-            if (sIdx !== stepIndex) return s;
-            const prevAtts = s.attachments || [];
-            return {
-              ...s,
-              attachments: [
-                ...prevAtts,
-                {
-                  id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-                  url: base64,
-                  comment: '',
-                },
-              ],
-            };
-          });
-          return nextSteps;
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleRemoveStepAttachment = (stepIndex: number, attachIndex: number) => {
-    setSteps((prevSteps) => {
-      return prevSteps.map((s, sIdx) => {
-        if (sIdx !== stepIndex) return s;
-        const nextAtts = (s.attachments || []).filter((_, aIdx) => aIdx !== attachIndex);
-        return {
-          ...s,
-          attachments: nextAtts,
-        };
-      });
-    });
-  };
-
-  const handleStepAttachmentCommentChange = (stepIndex: number, attachIndex: number, comment: string) => {
-    setSteps((prevSteps) => {
-      return prevSteps.map((s, sIdx) => {
-        if (sIdx !== stepIndex) return s;
-        const nextAtts = (s.attachments || []).map((att, aIdx) => {
-          if (aIdx !== attachIndex) return att;
-          return { ...att, comment };
-        });
-        return {
-          ...s,
-          attachments: nextAtts,
-        };
-      });
-    });
-  };
-
-  const handleStepPaste = (stepIndex: number, e: React.ClipboardEvent) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf('image') !== -1) {
-        const file = items[i].getAsFile();
-        if (file) {
-          e.preventDefault();
-          handleAddStepFiles(stepIndex, [file]);
-        }
-      }
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -557,7 +454,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
               <AlertCircle className="w-6 h-6 mx-auto mb-2 opacity-30 text-slate-400" />
               <p>Henüz tanımlanmış bir test adımı bulunmuyor.</p>
               <p className="text-[10px] mt-1 text-slate-500">
-                "Adım Ekle" butonunu kullanarak Test Case adımlarını ve her adıma özel ekran görüntülerini tanımlayabilirsiniz.
+                "Adım Ekle" butonunu kullanarak Test Case adımlarını tanımlayabilirsiniz.
               </p>
             </div>
           ) : (
@@ -573,10 +470,8 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                 {steps.map((step, idx) => (
                   <div
                     key={idx}
-                    onPaste={(e) => handleStepPaste(idx, e)}
-                    className="p-3.5 space-y-3 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
+                    className="p-3.5 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
                   >
-                    {/* Top Row: Action & Expected Result */}
                     <div className="grid grid-cols-12 gap-2 items-start text-xs">
                       <div className="col-span-1 text-center pt-2 font-mono font-bold text-slate-500 dark:text-slate-400">
                         {step.stepNumber}
@@ -612,104 +507,6 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                    </div>
-
-                    {/* Bottom Row: Step Multi-Attachments & Comments */}
-                    <div className="pl-4 sm:pl-8 pt-2 border-t border-slate-100 dark:border-slate-800/60 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <ImageIcon className="w-3.5 h-3.5 text-blue-500" />
-                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                            Adım Ekran Görüntüleri ({step.attachments?.length || 0}/{MAX_ATTACHMENTS_PER_STEP})
-                          </span>
-                        </div>
-
-                        <label className="flex items-center space-x-1.5 px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer text-[11px] font-semibold transition-all shadow-sm active:scale-95">
-                          <Upload className="w-3 h-3 text-blue-500" />
-                          <span>+ Görsel Ekle</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            className="hidden"
-                            onChange={(e) => {
-                              handleAddStepFiles(idx, e.target.files);
-                              e.target.value = '';
-                            }}
-                          />
-                        </label>
-                      </div>
-
-                      {/* Attachments Cards Grid */}
-                      {step.attachments && step.attachments.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-1">
-                          {step.attachments.map((att, attIdx) => (
-                            <div
-                              key={att.id || attIdx}
-                              className="group/att relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 rounded-xl p-2 space-y-2 shadow-sm transition-all flex flex-col justify-between"
-                            >
-                              {/* Thumbnail Container */}
-                              <div className="relative w-full h-28 rounded-lg overflow-hidden bg-slate-900/90 flex items-center justify-center border border-slate-200 dark:border-slate-800">
-                                <img
-                                  src={att.url}
-                                  alt={att.comment || `Adım ${step.stepNumber} Görsel ${attIdx + 1}`}
-                                  className="max-w-full max-h-full object-contain cursor-pointer transition-transform hover:scale-105"
-                                  onClick={() =>
-                                    setActiveLightbox({
-                                      url: att.url,
-                                      caption: att.comment || `Adım ${step.stepNumber} - Görsel #${attIdx + 1}`,
-                                    })
-                                  }
-                                />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/att:opacity-100 transition-opacity flex items-center justify-center space-x-2">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setActiveLightbox({
-                                        url: att.url,
-                                        caption: att.comment || `Adım ${step.stepNumber} - Görsel #${attIdx + 1}`,
-                                      })
-                                    }
-                                    className="p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow transition-transform hover:scale-105"
-                                    title="Tam Ekran İncele"
-                                  >
-                                    <Maximize2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveStepAttachment(idx, attIdx)}
-                                    className="p-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg shadow transition-transform hover:scale-105"
-                                    title="Görseli Sil"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Comment / Caption Input */}
-                              <div className="space-y-1">
-                                <div className="flex items-center space-x-1 text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
-                                  <MessageSquare className="w-3 h-3 text-blue-500" />
-                                  <span>Görsel Yorumu:</span>
-                                </div>
-                                <input
-                                  type="text"
-                                  value={att.comment || ''}
-                                  onChange={(e) => handleStepAttachmentCommentChange(idx, attIdx, e.target.value)}
-                                  placeholder="Bu görsel için açıklama/yorum ekle..."
-                                  className="w-full text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="p-2.5 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center text-[11px] text-slate-400 dark:text-slate-500 bg-slate-50/40 dark:bg-slate-950/20">
-                          <span>Bu adıma görsel eklemek için yukarıdaki <strong>"+ Görsel Ekle"</strong> butonunu kullanabilir veya panodan </span>
-                          <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-mono text-[10px] shadow-sm">Ctrl + V</kbd>
-                          <span> ile yapıştırabilirsiniz. (Maks. 10 görsel, 5MB/dosya)</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
