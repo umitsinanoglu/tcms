@@ -167,6 +167,27 @@ export class TestRunsService {
         _count: {
           select: { results: true },
         },
+        results: {
+          include: {
+            testCase: {
+              select: {
+                id: true,
+                code: true,
+                title: true,
+                type: true,
+                priority: true,
+                suiteId: true,
+                suite: {
+                  select: {
+                    id: true,
+                    name: true,
+                    parentId: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -233,7 +254,23 @@ export class TestRunsService {
         results: {
           include: {
             testCase: {
-              select: { id: true, code: true, title: true, type: true, priority: true, jiraStoryKey: true, jiraIssueUrl: true },
+              select: {
+                id: true,
+                code: true,
+                title: true,
+                type: true,
+                priority: true,
+                jiraStoryKey: true,
+                jiraIssueUrl: true,
+                suiteId: true,
+                suite: {
+                  select: {
+                    id: true,
+                    name: true,
+                    parentId: true,
+                  },
+                },
+              },
             },
           },
         },

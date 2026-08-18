@@ -118,7 +118,18 @@ export class TestCasesService {
         },
         results: {
           orderBy: { executedAt: 'desc' },
-          take: 1,
+          include: {
+            testRun: {
+              select: {
+                id: true,
+                title: true,
+                version: true,
+                environment: true,
+                status: true,
+                executedBy: true,
+              },
+            },
+          },
         },
       },
     });
@@ -134,12 +145,28 @@ export class TestCasesService {
     const testCase = await this.prisma.testCase.findUnique({
       where: { code },
       include: {
+        suite: {
+          include: {
+            project: true,
+          },
+        },
         steps: {
           orderBy: { stepNumber: 'asc' },
         },
         results: {
           orderBy: { executedAt: 'desc' },
-          take: 1,
+          include: {
+            testRun: {
+              select: {
+                id: true,
+                title: true,
+                version: true,
+                environment: true,
+                status: true,
+                executedBy: true,
+              },
+            },
+          },
         },
       },
     });

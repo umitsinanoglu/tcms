@@ -54,6 +54,11 @@ export interface TestCase {
   preconditions?: string;
   orderIndex?: number;
   suiteId?: string | null;
+  suite?: {
+    id: string;
+    name: string;
+    parentId?: string | null;
+  };
   projectId?: string;
   jiraStoryKey?: string;
   jiraIssueUrl?: string;
@@ -90,6 +95,7 @@ export interface TreeResponse {
 export interface TestResult {
   id?: string;
   testRunId?: string;
+  testRun?: Partial<TestRun>;
   testCaseId: string;
   testCase?: Partial<TestCase>;
   status: ResultStatus;
