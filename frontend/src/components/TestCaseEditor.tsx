@@ -222,10 +222,10 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
   };
 
   return (
-    <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-[#090d16] text-slate-800 dark:text-slate-100 p-6 space-y-6 transition-colors duration-200">
+    <main className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-50 dark:bg-[#090d16] text-slate-800 dark:text-slate-100 p-4 sm:p-6 space-y-6 transition-colors duration-200 min-w-0">
       {/* Editor Header */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
           <div className="space-y-2 max-w-2xl w-full">
             <div className="flex items-center space-x-2 flex-wrap gap-y-1">
               {onBack && (

@@ -210,12 +210,15 @@ export class TestRunsService {
 
     const bugUrl = dto.jiraBugUrl || (dto.jiraBugKey ? `https://company.atlassian.net/browse/${dto.jiraBugKey}` : null);
 
+    const version = dto.version?.trim() || 'v1.0.0';
+    const environment = dto.environment?.trim() || 'STAGING';
+
     const testRun = await this.prisma.testRun.create({
       data: {
         projectId,
-        title: `Quick Run - ${testCase.code}`,
-        version: 'v1.0.0',
-        environment: 'STAGING',
+        title: `Run - ${testCase.code} (${version} / ${environment})`,
+        version,
+        environment,
         executedBy: dto.executedBy || 'QA Tester',
         testerEmail: 'tester@company.com',
         status: RunStatus.COMPLETED,

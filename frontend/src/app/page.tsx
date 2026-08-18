@@ -119,6 +119,8 @@ export default function Home() {
   const [isManualRunOpen, setIsManualRunOpen] = useState(false);
   const [isQuickRunOpen, setIsQuickRunOpen] = useState(false);
   const [activeQuickRunCase, setActiveQuickRunCase] = useState<TestCase | null>(null);
+  const [activeQuickRunVersion, setActiveQuickRunVersion] = useState<string>('v1.0.0');
+  const [activeQuickRunEnvironment, setActiveQuickRunEnvironment] = useState<string>('STAGING');
   const [activeSuiteRunCases, setActiveSuiteRunCases] = useState<TestCase[] | null>(null);
   const [activeParentSuiteId, setActiveParentSuiteId] = useState<string | null>(null);
 
@@ -542,8 +544,10 @@ export default function Home() {
     if (selectedProject) await loadTree(selectedProject.id);
   };
 
-  const handleRunCase = (tc: TestCase) => {
+  const handleRunCase = (tc: TestCase, version?: string, environment?: string) => {
     setActiveQuickRunCase(tc);
+    if (version) setActiveQuickRunVersion(version);
+    if (environment) setActiveQuickRunEnvironment(environment);
     setIsQuickRunOpen(true);
   };
 
@@ -678,7 +682,6 @@ export default function Home() {
                   setIsNewCaseOpen(true);
                 }}
                 onRunCase={handleRunCase}
-                onRunSuite={handleRunSuite}
                 onClose={handleCloseSuite}
                 onBack={goBack}
               />
@@ -803,6 +806,8 @@ export default function Home() {
         }}
         projectId={selectedProject?.id || ''}
         testCase={activeQuickRunCase}
+        initialVersion={activeQuickRunVersion}
+        initialEnvironment={activeQuickRunEnvironment}
         onSuccess={handleQuickRunSuccess}
       />
 

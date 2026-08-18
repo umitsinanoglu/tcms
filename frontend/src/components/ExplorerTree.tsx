@@ -364,19 +364,6 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
               <Plus className="w-3 h-3" />
             </button>
 
-            {onRunSuite && node.testCases.length > 0 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRunSuite(node);
-                }}
-                title="Suite İçindeki Tüm Test Case'leri Koştur (Run Suite)"
-                className="p-1 rounded hover:bg-slate-300 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 font-bold"
-              >
-                <Play className="w-3 h-3 fill-current" />
-              </button>
-            )}
-
             {onEditSuite && (
               <button
                 onClick={(e) => {

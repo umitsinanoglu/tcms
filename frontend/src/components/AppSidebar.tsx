@@ -403,19 +403,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
           {/* Quick Suite Actions */}
           <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-            {onRunSuite && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRunSuite(node);
-                }}
-                className="p-1 rounded hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                title="Suite Testlerini Koştur"
-              >
-                <Play className="w-3 h-3 fill-emerald-500" />
-              </button>
-            )}
             <button
               type="button"
               onClick={(e) => {

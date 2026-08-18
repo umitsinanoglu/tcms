@@ -185,7 +185,7 @@ export const TestRunsService = {
     api.post<TestRun>(`/projects/${projectId}/runs/${runId}/results`, data).then((res) => res.data),
   completeRun: (runId: string, status: RunStatus = 'COMPLETED') =>
     api.patch<TestRun>(`/runs/${runId}/complete`, { status }).then((res) => res.data),
-  quickRun: (projectId: string, data: { testCaseId: string; status: ResultStatus; errorMessage?: string; jiraBugKey?: string; jiraBugUrl?: string; screenshotUrl?: string; executedBy?: string }) =>
+  quickRun: (projectId: string, data: { testCaseId: string; status: ResultStatus; version?: string; environment?: string; errorMessage?: string; jiraBugKey?: string; jiraBugUrl?: string; screenshotUrl?: string; executedBy?: string }) =>
     api.post<TestResult>(`/projects/${projectId}/quick-run`, data).then((res) => res.data),
   getRuns: (projectId: string) =>
     api.get<TestRun[]>(`/projects/${projectId}/runs`).then((res) => res.data),

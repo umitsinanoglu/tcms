@@ -32,6 +32,16 @@ export class QuickRunDto {
   @IsOptional()
   executedBy?: string;
 
+  @ApiPropertyOptional({ description: 'Test versiyonu (Örn: v1.0.0)' })
+  @IsString()
+  @IsOptional()
+  version?: string;
+
+  @ApiPropertyOptional({ description: 'Test ortamı (Örn: STAGING, PROD, DEV, QA)' })
+  @IsString()
+  @IsOptional()
+  environment?: string;
+
   @ApiPropertyOptional({ description: 'Ekran görüntüsü (URL veya Base64)' })
   @IsString()
   @IsOptional()

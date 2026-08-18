@@ -26,6 +26,8 @@ interface QuickRunModalProps {
   onClose: () => void;
   projectId: string;
   testCase: TestCase | null;
+  initialVersion?: string;
+  initialEnvironment?: string;
   onSuccess: () => void;
 }
 
@@ -34,8 +36,13 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   onClose,
   projectId,
   testCase,
+  initialVersion = 'v1.0.0',
+  initialEnvironment = 'STAGING',
   onSuccess,
 }) => {
+  const [version, setVersion] = useState(initialVersion);
+  const [environment, setEnvironment] = useState(initialEnvironment);
+  const [executedBy, setExecutedBy] = useState('QA Tester');
   const [status, setStatus] = useState<ResultStatus>('PASSED');
   const [errorMessage, setErrorMessage] = useState('');
   const [jiraBugKey, setJiraBugKey] = useState('');
@@ -53,10 +60,12 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
       setJiraBugKey(lastResult?.jiraBugKey || '');
       setJiraBugUrl(lastResult?.jiraBugUrl || '');
       setScreenshotUrl(lastResult?.screenshotUrl || testCase.screenshotUrl || '');
+      setVersion(initialVersion || 'v1.0.0');
+      setEnvironment(initialEnvironment || 'STAGING');
       setLightboxImage(null);
       setErrorMsg('');
     }
-  }, [isOpen, testCase]);
+  }, [isOpen, testCase, initialVersion, initialEnvironment]);
 
   // Support pasting screenshot from clipboard (Ctrl+V / Cmd+V)
   useEffect(() => {
@@ -101,11 +110,13 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
       await TestRunsService.quickRun(projectId, {
         testCaseId: testCase.id,
         status,
+        version: version.trim() || 'v1.0.0',
+        environment: environment.trim() || 'STAGING',
         errorMessage: errorMessage.trim() ? errorMessage.trim() : undefined,
         jiraBugKey: status === 'FAILED' ? jiraBugKey : undefined,
         jiraBugUrl: status === 'FAILED' ? jiraBugUrl : undefined,
         screenshotUrl: screenshotUrl || undefined,
-        executedBy: 'QA Tester',
+        executedBy: executedBy || 'QA Tester',
       });
 
       if (status === 'PASSED') {
@@ -132,10 +143,10 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl my-auto max-h-[92vh] flex flex-col overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
+        <div className="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80 shrink-0">
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
               <Play className="w-4 h-4 fill-current" />
@@ -157,9 +168,9 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
         )}
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[calc(92vh-75px)]">
           {/* Test Case Overview */}
-          <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5 shadow-sm">
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5 shadow-sm">
             <div className="flex items-center space-x-2">
               <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center space-x-1">
                 <FileCode2 className="w-3 h-3" />
@@ -173,6 +184,39 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
             {testCase.description && (
               <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{testCase.description}</p>
             )}
+          </div>
+
+          {/* Test Run Parameters: Version & Environment */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl">
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center space-x-1">
+                <span>Versiyon Numarası:</span>
+              </label>
+              <input
+                type="text"
+                value={version}
+                onChange={(e) => setVersion(e.target.value)}
+                placeholder="Örn: v1.0.0, v2.1.0"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center space-x-1">
+                <span>Test Ortamı (Environment):</span>
+              </label>
+              <select
+                value={environment}
+                onChange={(e) => setEnvironment(e.target.value)}
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+              >
+                <option value="STAGING">STAGING</option>
+                <option value="DEV">DEV (Geliştirme)</option>
+                <option value="TEST">TEST / QA</option>
+                <option value="UAT">UAT (Kullanıcı Kabul)</option>
+                <option value="PROD">PROD (Canlı)</option>
+              </select>
+            </div>
           </div>
 
           {/* Test Steps Preview */}
