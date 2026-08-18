@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Revised UI Design System, Theme Tokens, and AI Rules to Enterprise SDLC Edition v2
 - Test planı başlığı dinamik yapıldı, gereksiz butonlar kaldırıldı
 - Top navigasyon header sadeleştirildi, 2. görseldeki minimalist tasarıma uyarlanarak gereksiz butonlar kaldırıldı
 - Header top navigation menu update with Project Combobox, Explorer tab, and Quick Action buttons (Yeni Suite, Yeni Case, Test Koşusu) with empty database support

@@ -1,8 +1,8 @@
 {
   "project": "TCMS",
-  "generatedAt": "2026-08-17T17:54:39.682101",
-  "totalChunks": 87,
-  "totalTokensEstimate": 97232,
+  "generatedAt": "2026-08-18T10:02:11.387714",
+  "totalChunks": 88,
+  "totalTokensEstimate": 97629,
   "chunks": [
     {
       "id": "prisma-enum-testtype",
@@ -977,35 +977,51 @@
       }
     },
     {
-      "id": "frontend-designtokens-10",
+      "id": "frontend-statustoken-10",
+      "file": "frontend/src/theme/tokens.ts",
+      "type": "interface",
+      "symbol": "StatusToken",
+      "title": "FRONTEND interface: StatusToken",
+      "content": "export interface StatusToken {\n  bg: string;\n  text: string;\n  border: string;\n}\n",
+      "tokens": 20,
+      "metadata": {
+        "layer": "frontend",
+        "file": "frontend/src/theme/tokens.ts",
+        "symbol": "StatusToken",
+        "start_line": 10,
+        "end_line": 15
+      }
+    },
+    {
+      "id": "frontend-designtokens-16",
       "file": "frontend/src/theme/tokens.ts",
       "type": "interface",
       "symbol": "DesignTokens",
       "title": "FRONTEND interface: DesignTokens",
-      "content": "export interface DesignTokens {\n  colors: {\n    background: string;\n    surface: string;\n    surfaceSecondary: string;\n    border: string;\n    textMain: string;\n    textMuted: string;\n    accentPrimary: string;\n    accentGradient: string;\n    accentHover: string;\n    glassPanelBg: string;\n    glassPanelBorder: string;\n    scrollbarTrack: string;\n    scrollbarThumb: string;\n  };\n  radii: {\n    card: string;\n    button: string;\n    pill: string;\n  };\n  shadows: {\n    sm: string;\n    md: string;\n    lg: string;\n    accentGlow: string;\n  };\n}\n",
-      "tokens": 136,
+      "content": "export interface DesignTokens {\n  colors: {\n    background: string;\n    surface: string;\n    surfaceSecondary: string;\n    border: string;\n    textMain: string;\n    textMuted: string;\n    accentPrimary: string;\n    accentDark: string;\n    accentGradient: string;\n    accentHover: string;\n    glassPanelBg: string;\n    glassPanelBorder: string;\n    scrollbarTrack: string;\n    scrollbarThumb: string;\n  };\n  status: {\n    passed: StatusToken;\n    failed: StatusToken;\n    blocked: StatusToken;\n    inProgress: StatusToken;\n    draft: StatusToken;\n  };\n  radii: {\n    sm: string;\n    card: string;\n    button: string;\n    container: string;\n    pill: string;\n  };\n  shadows: {\n    xs: string;\n    sm: string;\n    md: string;\n    lg: string;\n    xl: string;\n    accentGlow: string;\n  };\n}\n",
+      "tokens": 196,
       "metadata": {
         "layer": "frontend",
         "file": "frontend/src/theme/tokens.ts",
         "symbol": "DesignTokens",
-        "start_line": 10,
-        "end_line": 38
+        "start_line": 16,
+        "end_line": 56
       }
     },
     {
-      "id": "frontend-theme_metadata-39",
+      "id": "frontend-theme_metadata-57",
       "file": "frontend/src/theme/tokens.ts",
       "type": "const",
       "symbol": "THEME_METADATA",
       "title": "FRONTEND const: THEME_METADATA",
-      "content": "export const THEME_METADATA: Record<ThemeId, ThemeMeta> = {\n  'crimson-dark': {\n    id: 'crimson-dark',\n    name: 'Crimson Coral (Koyu)',\n    description: 'Derin arduvaz fon ve canl\u0131 mercan-k\u0131rm\u0131z\u0131 gradyanl\u0131 koyu aray\u00fcz',\n    swatchColors: ['#191e28', '#ff4b6e', '#222938'],\n  },\n  'crimson-light': {\n    id: 'crimson-light',\n    name: 'Crimson Coral (A\u00e7\u0131k)',\n    description: 'A\u00e7\u0131k pastel fon ve canl\u0131 mercan-k\u0131rm\u0131z\u0131 vurgulu a\u00e7\u0131k aray\u00fcz',\n    swatchColors: ['#f0f3f8', '#ff4b6e', '#ffffff'],\n  },\n};",
-      "tokens": 125,
+      "content": "export const THEME_METADATA: Record<ThemeId, ThemeMeta> = {\n  'crimson-dark': {\n    id: 'crimson-dark',\n    name: 'Crimson Coral (Koyu)',\n    description: 'Derin arduvaz zemin ve canl\u0131 mercan-k\u0131rm\u0131z\u0131 vurgulu kurumsal koyu tema',\n    swatchColors: ['#191e28', '#ff4b6e', '#222938'],\n  },\n  'crimson-light': {\n    id: 'crimson-light',\n    name: 'Crimson Coral (A\u00e7\u0131k)',\n    description: 'A\u00e7\u0131k kurumsal zemin ve canl\u0131 mercan-k\u0131rm\u0131z\u0131 vurgulu ayd\u0131nl\u0131k tema',\n    swatchColors: ['#f0f3f8', '#ff4b6e', '#ffffff'],\n  },\n};",
+      "tokens": 128,
       "metadata": {
         "layer": "frontend",
         "file": "frontend/src/theme/tokens.ts",
         "symbol": "THEME_METADATA",
-        "start_line": 39,
-        "end_line": 52
+        "start_line": 57,
+        "end_line": 70
       }
     },
     {
@@ -1014,14 +1030,14 @@
       "type": "const",
       "symbol": "themePresets",
       "title": "FRONTEND const: themePresets",
-      "content": "export const themePresets: Record<ThemeId, DesignTokens> = {\n  'crimson-dark': {\n    colors: {\n      background: '#191e28',\n      surface: '#222938',\n      surfaceSecondary: '#2b3447',\n      border: '#333f54',\n      textMain: '#f8fafc',\n      textMuted: '#94a3b8',\n      accentPrimary: '#ff4b6e',\n      accentGradient: 'linear-gradient(135deg, #ff4b6e 0%, #d82b4b 100%)',\n      accentHover: '#ff6b87',\n      glassPanelBg: 'rgba(34, 41, 56, 0.85)',\n      glassPanelBorder: 'rgba(255, 75, 110, 0.18)',\n      scrollbarTrack: '#141822',\n      scrollbarThumb: '#2d374a',\n    },\n    radii: {\n      card: '14px',\n      button: '10px',\n      pill: '9999px',\n    },\n    shadows: {\n      sm: '0 1px 3px rgba(0, 0, 0, 0.4)',\n      md: '0 4px 12px rgba(0, 0, 0, 0.35)',\n      lg: '0 12px 24px rgba(0, 0, 0, 0.45)',\n      accentGlow: '0 0 25px rgba(255, 75, 110, 0.45)',\n    },\n  },\n  'crimson-light': {\n    colors: {\n      background: '#f0f3f8',\n      surface: '#ffffff',\n      surfaceSecondary: '#e8ecf3',\n      border: '#d5ddea',\n      textMain: '#191e28',\n      textMuted: '#64748b',\n      accentPrimary: '#ff4b6e',\n      accentGradient: 'linear-gradient(135deg, #ff4b6e 0%, #d82b4b 100%)',\n      accentHover: '#e6385b',\n      glassPanelBg: 'rgba(255, 255, 255, 0.9)',\n      glassPanelBorder: 'rgba(255, 75, 110, 0.2)',\n      scrollbarTrack: '#e8ecf3',\n      scrollbarThumb: '#cbd5e1',\n    },\n    radii: {\n      card: '14px',\n      button: '10px',\n      pill: '9999px',\n    },\n    shadows: {\n      sm: '0 1px 2px rgba(255, 75, 110, 0.05)',\n      md: '0 4px 12px rgba(25, 30, 40, 0.08)',\n      lg: '0 12px 24px rgba(25, 30, 40, 0.12)',\n      accentGlow: '0 0 20px rgba(255, 75, 110, 0.35)',\n    },\n  },\n};",
-      "tokens": 423,
+      "content": "export const themePresets: Record<ThemeId, DesignTokens> = {\n  'crimson-dark': {\n    colors: {\n      background: '#191e28',\n      surface: '#222938',\n      surfaceSecondary: '#2b3447',\n      border: '#333f54',\n      textMain: '#f8fafc',\n      textMuted: '#94a3b8',\n      accentPrimary: '#ff4b6e',\n      accentDark: '#d82b4b',\n      accentGradient: 'linear-gradient(135deg, #ff4b6e 0%, #d82b4b 100%)',\n      accentHover: '#ff6b87',\n      glassPanelBg: 'rgba(34, 41, 56, 0.85)',\n      glassPanelBorder: 'rgba(255, 75, 110, 0.18)',\n      scrollbarTrack: '#141822',\n      scrollbarThumb: '#2d374a',\n    },\n    status: {\n      passed: { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', border: 'rgba(16, 185, 129, 0.30)' },\n      failed: { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', border: 'rgba(239, 68, 68, 0.30)' },\n      blocked: { bg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24', border: 'rgba(245, 158, 11, 0.30)' },\n      inProgress: { bg: 'rgba(59, 130, 246, 0.15)', text: '#60a5fa', border: 'rgba(59, 130, 246, 0.30)' },\n      draft: { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8', border: 'rgba(148, 163, 184, 0.30)' },\n    },\n    radii: {\n      sm: '8px',\n      button: '10px',\n      card: '14px',\n      container: '16px',\n      pill: '9999px',\n    },\n    shadows: {\n      xs: '0 1px 2px 0 rgba(0, 0, 0, 0.25)',\n      sm: '0 2px 4px 0 rgba(0, 0, 0, 0.30)',\n      md: '0 4px 12px 0 rgba(0, 0, 0, 0.40)',\n      lg: '0 10px 25px -5px rgba(0, 0, 0, 0.50)',\n      xl: '0 20px 40px -10px rgba(0, 0, 0, 0.65)',\n      accentGlow: '0 0 20px rgba(255, 75, 110, 0.45)',\n    },\n  },\n  'crimson-light': {\n    colors: {\n      background: '#f0f3f8',\n      surface: '#ffffff',\n      surfaceSecondary: '#e8ecf3',\n      border: '#d5ddea',\n      textMain: '#0f172a',\n      textMuted: '#64748b',\n      accentPrimary: '#ff4b6e',\n      accentDark: '#d82b4b',\n      accentGradient: 'linear-gradient(135deg, #ff4b6e 0%, #d82b4b 100%)',\n      accentHover: '#e6385b',\n      glassPanelBg: 'rgba(255, 255, 255, 0.90)',\n      glassPanelBorder: 'rgba(255, 75, 110, 0.20)',\n      scrollbarTrack: '#e8ecf3',\n      scrollbarThumb: '#cbd5e1',\n    },\n    status: {\n      passed: { bg: '#d1fae5', text: '#059669', border: '#a7f3d0' },\n      failed: { bg: '#fee2e2', text: '#dc2626', border: '#fecaca' },\n      blocked: { bg: '#fef3c7', text: '#d97706', border: '#fde68a' },\n      inProgress: { bg: '#dbeafe', text: '#2563eb', border: '#bfdbfe' },\n      draft: { bg: '#f1f5f9', text: '#64748b', border: '#e2e8f0' },\n    },\n    radii: {\n      sm: '8px',\n      button: '10px',\n      card: '14px',\n      container: '16px',\n      pill: '9999px',\n    },\n    shadows: {\n      xs: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',\n      sm: '0 2px 4px 0 rgba(0, 0, 0, 0.06)',\n      md: '0 4px 12px 0 rgba(0, 0, 0, 0.08)',\n      lg: '0 10px 25px -5px rgba(0, 0, 0, 0.10)',\n      xl: '0 20px 40px -10px rgba(0, 0, 0, 0.15)',\n      accentGlow: '0 0 20px rgba(255, 75, 110, 0.25)',\n    },\n  },\n};",
+      "tokens": 737,
       "metadata": {
         "layer": "frontend",
         "file": "frontend/src/theme/themes.ts",
         "symbol": "themePresets",
         "start_line": 3,
-        "end_line": 60
+        "end_line": 84
       }
     },
     {
