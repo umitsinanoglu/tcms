@@ -207,6 +207,21 @@ export class TestCasesService {
         steps: {
           orderBy: { stepNumber: 'asc' },
         },
+        results: {
+          orderBy: { executedAt: 'desc' },
+          include: {
+            testRun: {
+              select: {
+                id: true,
+                title: true,
+                version: true,
+                environment: true,
+                status: true,
+                executedBy: true,
+              },
+            },
+          },
+        },
       },
     });
   }

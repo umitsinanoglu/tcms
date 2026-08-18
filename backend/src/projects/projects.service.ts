@@ -100,7 +100,18 @@ export class ProjectsService {
         },
         results: {
           orderBy: { executedAt: 'desc' },
-          take: 1,
+          include: {
+            testRun: {
+              select: {
+                id: true,
+                title: true,
+                version: true,
+                environment: true,
+                status: true,
+                executedBy: true,
+              },
+            },
+          },
         },
       },
       orderBy: { createdAt: 'asc' },

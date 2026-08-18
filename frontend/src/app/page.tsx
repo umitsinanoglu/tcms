@@ -192,6 +192,15 @@ export default function Home() {
       setActiveTab('EXPLORER');
       localStorage.setItem('tcms_active_tab', 'EXPLORER');
 
+      // Asynchronously fetch fresh details with all historical results and runs
+      TestCasesService.getOne(tc.id)
+        .then((fresh) => {
+          if (fresh) {
+            setSelectedCase(fresh);
+          }
+        })
+        .catch(() => {});
+
       if (shouldPushState) {
         pushState({
           tab: 'EXPLORER',
@@ -382,7 +391,13 @@ export default function Home() {
   const handleSaveCase = async (updatedCase: Partial<TestCase>) => {
     if (!updatedCase.id) return;
     const res = await TestCasesService.update(updatedCase.id, updatedCase);
-    setSelectedCase(res);
+    setSelectedCase((prev) => {
+      const mergedResults = res.results && res.results.length > 0 ? res.results : (prev?.id === res.id ? prev.results : []);
+      return {
+        ...res,
+        results: mergedResults,
+      };
+    });
     if (selectedProject) await loadTree(selectedProject.id);
   };
 
@@ -418,10 +433,13 @@ export default function Home() {
     if (selectedProject) {
       await loadTree(selectedProject.id);
     }
-    if (selectedCase && activeQuickRunCase && selectedCase.id === activeQuickRunCase.id) {
+    const targetCaseId = activeQuickRunCase?.id || selectedCase?.id;
+    if (targetCaseId) {
       try {
-        const updatedCase = await TestCasesService.getOne(selectedCase.id);
-        setSelectedCase(updatedCase);
+        const updatedCase = await TestCasesService.getOne(targetCaseId);
+        if (selectedCase && selectedCase.id === targetCaseId) {
+          setSelectedCase(updatedCase);
+        }
       } catch (err) {
         console.error(err);
       }
@@ -655,10 +673,18 @@ export default function Home() {
 
       <ManualRunModal
         isOpen={isManualRunOpen}
-        onClose={() => {
+        onClose={async () => {
           setIsManualRunOpen(false);
           setActiveSuiteRunCases(null);
-          if (selectedProject) loadTree(selectedProject.id);
+          if (selectedProject) await loadTree(selectedProject.id);
+          if (selectedCase) {
+            try {
+              const updatedCase = await TestCasesService.getOne(selectedCase.id);
+              setSelectedCase(updatedCase);
+            } catch (err) {
+              console.error(err);
+            }
+          }
         }}
         projectId={selectedProject?.id || ''}
         testCases={activeSuiteRunCases || allCases}

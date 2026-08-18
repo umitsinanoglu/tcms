@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Değişiklikleri Kaydet & Koşum Geçmişi Koruma Düzeltmesi**: `TestCasesService.update` backend metoduna `results` ve `testRun` ilişkileri dahil edildi ve `page.tsx`'teki `handleSaveCase`, `handleQuickRunSuccess` ile `ManualRunModal` `onClose` akışları iyileştirildi; böylece bir test senaryosunda değişiklik kaydedildiğinde veya yeni bir koşu yapıldığında tüm önceki koşum kayıtları, test notları ve ekran görüntüleri eksiksiz korunarak anında güncellenmesi sağlandı.
+- **Test Koşum Geçmişi ve Kanıt Görselleri Düzeltmesi**: `ProjectsService.getTree` API'sindeki `take: 1` sınırlandırması kaldırılarak ve `testRun` ilişkisi dahil edilerek tüm geçmiş koşuların (`results`), koşu başlıklarının (`testRun.title`), bağımsız test notlarının/yorumlarının ve kanıt ekran görüntülerinin (`screenshotUrl`) `TestCaseEditor` içindeki "Koşum Geçmişi & Tüm Tekrar Koşuları" bölümünde eksiksiz görüntülenmesi ve Lightbox ile büyütülebilmesi sağlandı.
 - Navigasyon geçmişi yöneticisinde (`NavigationContext`) state kilitlenmesi ve closure gecikmesi giderildi; senkron ref takibi ve akıllı fallback mekanizması ile "Geri" butonunun tüm sayfalarda kesintisiz çalışması sağlandı.
 - Dashboard üzerindeki Suite klasör kartlarına ("123", "abc", "Data" vb.) tıklandığında veya "Klasörü Aç" butonuna basıldığında ilgili Suite görünümüne girilmesi ve Suite içinde alt klasörlerin (sub-suites) hiyerarşik kartlar olarak gösterilmesi sağlandı.
 - Fix QuickRun DTO validation 500 error, test case code collision logic, and implement full Test Plan CRUD with EditProjectModal

@@ -2,8 +2,50 @@ import { PrismaClient, TestType, Priority, RunStatus, ResultStatus } from '@pris
 
 const prisma = new PrismaClient();
 
+function createEvidenceScreenshot(
+  type: 'PASSED' | 'FAILED' | 'BLOCKED' | 'SKIPPED',
+  title: string,
+  subtitle: string,
+  details: string[]
+): string {
+  const badgeBg = type === 'PASSED' ? '#10b981' : type === 'FAILED' ? '#f43f5e' : type === 'BLOCKED' ? '#a855f7' : '#64748b';
+  const headerBg = type === 'PASSED' ? '#064e3b' : type === 'FAILED' ? '#881337' : type === 'BLOCKED' ? '#581c87' : '#1e293b';
+
+  const detailLines = details
+    .map(
+      (d, i) =>
+        `<text x="30" y="${180 + i * 24}" fill="#cbd5e1" font-family="monospace" font-size="12">${d
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')}</text>`
+    )
+    .join('');
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="700" height="380" viewBox="0 0 700 380">
+    <rect width="100%" height="100%" fill="#0f172a" rx="12"/>
+    <rect x="0" y="0" width="700" height="42" fill="#1e293b" rx="12"/>
+    <circle cx="25" cy="21" r="6" fill="#ef4444"/>
+    <circle cx="45" cy="21" r="6" fill="#f59e0b"/>
+    <circle cx="65" cy="21" r="6" fill="#10b981"/>
+    <text x="90" y="26" fill="#94a3b8" font-family="sans-serif" font-size="12" font-weight="bold">TCMS Test Automation Execution Evidence</text>
+    
+    <rect x="20" y="60" width="660" height="60" fill="${headerBg}" rx="8" stroke="${badgeBg}" stroke-width="1.5"/>
+    <rect x="35" y="74" width="84" height="32" fill="${badgeBg}" rx="6"/>
+    <text x="77" y="95" fill="#ffffff" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">${type}</text>
+    <text x="135" y="88" fill="#ffffff" font-family="sans-serif" font-size="14" font-weight="bold">${title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text>
+    <text x="135" y="108" fill="#e2e8f0" font-family="sans-serif" font-size="12">${subtitle.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text>
+    
+    <rect x="20" y="135" width="660" height="225" fill="#020617" rx="8" stroke="#334155" stroke-width="1"/>
+    <text x="30" y="158" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="bold">&gt; EXECUTION LOGS &amp; STEP ASSERTIONS:</text>
+    ${detailLines}
+    <text x="670" y="348" fill="#64748b" font-family="monospace" font-size="10" text-anchor="end">TIMESTAMP: 2026-08-18 14:30 | TCMS AUTOMATION ENGINE</text>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 export async function seedPlans() {
-  console.log('🌱 Starting comprehensive data seed for Test Plan 1, 2, 3...');
+  console.log('🌱 Starting comprehensive data seed for Test Plan 1, 2, 3 with screenshots and notes...');
 
   // Delete existing conflicting projects to ensure clean idempotency
   const existingProjects = await prisma.project.findMany({
@@ -342,16 +384,139 @@ export async function seedPlans() {
 
   await prisma.testResult.createMany({
     data: [
-      { testRunId: run1_1.id, testCaseId: tc1_1.id, status: ResultStatus.PASSED, executionMs: 820, executedBy: 'Ahmet Yılmaz' },
-      { testRunId: run1_1.id, testCaseId: tc1_2.id, status: ResultStatus.PASSED, executionMs: 540, executedBy: 'Ahmet Yılmaz' },
-      { testRunId: run1_1.id, testCaseId: tc1_3.id, status: ResultStatus.PASSED, executionMs: 1200, executedBy: 'Ahmet Yılmaz' },
-      { testRunId: run1_1.id, testCaseId: tc1_4.id, status: ResultStatus.PASSED, executionMs: 950, executedBy: 'Ahmet Yılmaz' },
-      { testRunId: run1_1.id, testCaseId: tc1_5.id, status: ResultStatus.PASSED, executionMs: 640, executedBy: 'Ahmet Yılmaz' },
-      { testRunId: run1_1.id, testCaseId: tc1_6.id, status: ResultStatus.PASSED, executionMs: 780, executedBy: 'Ahmet Yılmaz' },
-      { testRunId: run1_1.id, testCaseId: tc1_7.id, status: ResultStatus.PASSED, executionMs: 2100, executedBy: 'Ahmet Yılmaz' },
-      { testRunId: run1_1.id, testCaseId: tc1_8.id, status: ResultStatus.FAILED, executionMs: 450, errorMessage: 'Beklenen hata bannerı yerine genel HTTP 500 sayfası döndü.', jiraBugKey: 'COMM-BUG-142', jiraBugUrl: 'https://jira.company.com/browse/COMM-BUG-142', executedBy: 'Ahmet Yılmaz' },
-      { testRunId: run1_1.id, testCaseId: tc1_9.id, status: ResultStatus.PASSED, executionMs: 1100, executedBy: 'Ahmet Yılmaz' },
-      { testRunId: run1_1.id, testCaseId: tc1_10.id, status: ResultStatus.SKIPPED, executionMs: 0, executedBy: 'Ahmet Yılmaz' },
+      {
+        testRunId: run1_1.id,
+        testCaseId: tc1_1.id,
+        status: ResultStatus.PASSED,
+        executionMs: 820,
+        errorMessage: 'Giriş işlemi başarıyla tamamlandı. JWT token local storage üzerinde saklandı ve dashboard yüklendi.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Giriş Başarılı (TP1-TC-1)', 'Oturum Token Doğrulandı & Dashboard Açıldı', [
+          '✔ POST /api/v1/auth/login => 200 OK',
+          '✔ Response body: { token: "eyJhbG...", user: "testuser" }',
+          '✔ Redirection to /dashboard completed in 820ms',
+          '✔ User profile avatar rendered successfully',
+        ]),
+        executedBy: 'Ahmet Yılmaz',
+      },
+      {
+        testRunId: run1_1.id,
+        testCaseId: tc1_2.id,
+        status: ResultStatus.PASSED,
+        executionMs: 540,
+        errorMessage: 'Hatalı şifre girişi sonrasında kırmızı uyarı bannerı ve kilitlenme sayacı başarıyla doğrulandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Hata Uyarısı Kontrolü (TP1-TC-2)', 'Kullanıcı Bildirim Bannerı Doğrulandı', [
+          '✔ POST /api/v1/auth/login => 401 Unauthorized',
+          '✔ Alert message: "E-posta veya şifre hatalı"',
+          '✔ Failed attempt counter incremented: attempt 1/5',
+        ]),
+        executedBy: 'Ahmet Yılmaz',
+      },
+      {
+        testRunId: run1_1.id,
+        testCaseId: tc1_3.id,
+        status: ResultStatus.PASSED,
+        executionMs: 1200,
+        errorMessage: 'Mail sunucusuna SMTP isteği başarıyla iletildi ve tek kullanımlık sıfırlama linki oluşturuldu.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Şifre Sıfırlama Maili (TP1-TC-3)', 'SMTP 250 OK & Reset Token Üretildi', [
+          '✔ POST /api/v1/auth/forgot-password => 200 OK',
+          '✔ Mail queued in Redis (Job ID: mail_job_881)',
+          '✔ Reset URL: https://shop.company.com/reset?token=a8f9c...',
+        ]),
+        executedBy: 'Ahmet Yılmaz',
+      },
+      {
+        testRunId: run1_1.id,
+        testCaseId: tc1_4.id,
+        status: ResultStatus.PASSED,
+        executionMs: 950,
+        errorMessage: 'Filtreleme kriterleri uygulandı, sayfalama ve fiyat aralığı doğru çalıştı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Katalog Filtreleme (TP1-TC-4)', 'Apple & 30k-70k TL Ürünleri Listelendi', [
+          '✔ GET /api/v1/products?brand=Apple&min=30000&max=70000 => 200 OK',
+          '✔ Returned items count: 14',
+          '✔ Price range validation: MIN=32.999 TL, MAX=68.999 TL',
+        ]),
+        executedBy: 'Ahmet Yılmaz',
+      },
+      {
+        testRunId: run1_1.id,
+        testCaseId: tc1_5.id,
+        status: ResultStatus.PASSED,
+        executionMs: 640,
+        errorMessage: 'Sepete ekleme animasyonu ve stok rezervasyonu senkron olarak tamamlandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Sepete Ekleme (TP1-TC-5)', 'Stok Rezervasyonu & Mini Sepet Güncellendi', [
+          '✔ POST /api/v1/cart/items => 200 OK',
+          '✔ Cart badge counter: 2',
+          '✔ Reserved stock lock duration: 15 minutes',
+        ]),
+        executedBy: 'Ahmet Yılmaz',
+      },
+      {
+        testRunId: run1_1.id,
+        testCaseId: tc1_6.id,
+        status: ResultStatus.PASSED,
+        executionMs: 780,
+        errorMessage: 'SUMMER2026 kuponu ile %20 sepet indirimi başarıyla hesaplandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Kupon İndirimi (TP1-TC-6)', '%20 İndirim Uygulandı', [
+          '✔ POST /api/v1/coupons/apply => 200 OK',
+          '✔ Subtotal: 10.000 TL, Discount: -2.000 TL, Total: 8.000 TL',
+          '✔ Free shipping rule activated',
+        ]),
+        executedBy: 'Ahmet Yılmaz',
+      },
+      {
+        testRunId: run1_1.id,
+        testCaseId: tc1_7.id,
+        status: ResultStatus.PASSED,
+        executionMs: 2100,
+        errorMessage: '3D Secure SMS OTP doğrulama ekranı sorunsuz tamamlandı ve sipariş kaydı oluştu.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', '3D Secure Ödeme (TP1-TC-7)', 'Banka OTP Onayı Alındı & Sipariş #89123', [
+          '✔ Bank 3D Secure Webhook Callback => 200 OK',
+          '✔ Transaction ID: TXN_99214710',
+          '✔ Order created: COMM-ORD-89123',
+        ]),
+        executedBy: 'Ahmet Yılmaz',
+      },
+      {
+        testRunId: run1_1.id,
+        testCaseId: tc1_8.id,
+        status: ResultStatus.FAILED,
+        executionMs: 450,
+        errorMessage: 'Kritik Hata: Banka POS API 51 (Yetersiz Bakiye) döndüğünde beklenen kullanıcı dostu uyarı yerine HTTP 500 Unhandled Exception sayfası gösterildi.',
+        screenshotUrl: createEvidenceScreenshot('FAILED', 'Yetersiz Bakiye Hatası (TP1-TC-8)', 'HTTP 500 Unhandled Exception & POS 51', [
+          '✖ POST /api/v1/checkout/pay => HTTP 500 Internal Server Error',
+          '✖ Error: POS Gateway returned code 51 (Insufficient Funds)',
+          '✖ Expected: Banner "Kartınızda yeterli bakiye bulunmamaktadır"',
+          '✖ Actual: Uncaught GatewayException at CheckoutController.ts:89',
+        ]),
+        jiraBugKey: 'COMM-BUG-142',
+        jiraBugUrl: 'https://jira.company.com/browse/COMM-BUG-142',
+        executedBy: 'Ahmet Yılmaz',
+      },
+      {
+        testRunId: run1_1.id,
+        testCaseId: tc1_9.id,
+        status: ResultStatus.PASSED,
+        executionMs: 1100,
+        errorMessage: 'Fatura PDF render motoru UBL-TR formatında faturayı oluşturdu ve indirme linki sağlandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'E-Fatura PDF İndirme (TP1-TC-9)', 'PDF 1.4 UBL-TR Belgesi Doğrulandı', [
+          '✔ GET /api/v1/invoices/COMM-ORD-89123/pdf => 200 OK',
+          '✔ Content-Type: application/pdf (142 KB)',
+          '✔ Invoice QR code & digital signature present',
+        ]),
+        executedBy: 'Ahmet Yılmaz',
+      },
+      {
+        testRunId: run1_1.id,
+        testCaseId: tc1_10.id,
+        status: ResultStatus.SKIPPED,
+        executionMs: 0,
+        errorMessage: 'Kargo entegrasyonu bakım çalışmasında olduğu için bu vaka sonraki koşuya ertelendi.',
+        screenshotUrl: createEvidenceScreenshot('SKIPPED', 'Sipariş İptal (TP1-TC-10)', 'Kargo Entegrasyon Bakımı Nedeniyle Atlandı', [
+          '⚠ Cargo API Mock Gateway is under maintenance',
+          '⚠ Test case skipped for v2.4.0-rc3 run',
+        ]),
+        executedBy: 'Ahmet Yılmaz',
+      },
     ],
   });
 
@@ -369,10 +534,55 @@ export async function seedPlans() {
 
   await prisma.testResult.createMany({
     data: [
-      { testRunId: run1_2.id, testCaseId: tc1_1.id, status: ResultStatus.PASSED, executionMs: 430, executedBy: 'Zeynep Kaya' },
-      { testRunId: run1_2.id, testCaseId: tc1_5.id, status: ResultStatus.PASSED, executionMs: 510, executedBy: 'Zeynep Kaya' },
-      { testRunId: run1_2.id, testCaseId: tc1_7.id, status: ResultStatus.PASSED, executionMs: 1850, executedBy: 'Zeynep Kaya' },
-      { testRunId: run1_2.id, testCaseId: tc1_9.id, status: ResultStatus.PASSED, executionMs: 890, executedBy: 'Zeynep Kaya' },
+      {
+        testRunId: run1_2.id,
+        testCaseId: tc1_1.id,
+        status: ResultStatus.PASSED,
+        executionMs: 430,
+        errorMessage: 'Production smoke testi başarılı. Login latency 430ms.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Canlı Giriş Doğrulama (TP1-TC-1)', 'Production Smoke Test PASSED', [
+          '✔ Live environment ping: 12ms',
+          '✔ JWT Authentication OK',
+          '✔ CDN assets loaded from Cloudflare',
+        ]),
+        executedBy: 'Zeynep Kaya',
+      },
+      {
+        testRunId: run1_2.id,
+        testCaseId: tc1_5.id,
+        status: ResultStatus.PASSED,
+        executionMs: 510,
+        errorMessage: 'Canlı ortamda sepete ekleme ve sepet tutarı doğrulaması tamamlandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Canlı Sepet Kontrolü (TP1-TC-5)', 'Sepete Ekleme & Fiyat Eşleşmesi OK', [
+          '✔ Product SKU-1092 added to cart',
+          '✔ VAT calculation: 20% verified',
+        ]),
+        executedBy: 'Zeynep Kaya',
+      },
+      {
+        testRunId: run1_2.id,
+        testCaseId: tc1_7.id,
+        status: ResultStatus.PASSED,
+        executionMs: 1850,
+        errorMessage: 'Canlı BKM / Banka sanal pos testi 1 TL test siparişi ile başarıyla sonuçlandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Canlı Ödeme Akışı (TP1-TC-7)', 'Banka 3D Secure Doğrulandı', [
+          '✔ 3D Secure SMS verified in Live Bank POS',
+          '✔ Test Order #PROD-10901 created',
+        ]),
+        executedBy: 'Zeynep Kaya',
+      },
+      {
+        testRunId: run1_2.id,
+        testCaseId: tc1_9.id,
+        status: ResultStatus.PASSED,
+        executionMs: 890,
+        errorMessage: 'Canlı sipariş faturası oluşturuldu ve görüntülendi.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Canlı Fatura Görüntüleme (TP1-TC-9)', 'GİB Onaylı E-Fatura Doğrulandı', [
+          '✔ E-Fatura UUID generated: 7b89...1102',
+          '✔ Invoice PDF download OK',
+        ]),
+        executedBy: 'Zeynep Kaya',
+      },
     ],
   });
 
@@ -390,8 +600,31 @@ export async function seedPlans() {
 
   await prisma.testResult.createMany({
     data: [
-      { testRunId: run1_3.id, testCaseId: tc1_7.id, status: ResultStatus.PASSED, executionMs: 1950, executedBy: 'Caner Erkin' },
-      { testRunId: run1_3.id, testCaseId: tc1_8.id, status: ResultStatus.PASSED, executionMs: 620, executedBy: 'Caner Erkin' },
+      {
+        testRunId: run1_3.id,
+        testCaseId: tc1_7.id,
+        status: ResultStatus.PASSED,
+        executionMs: 1950,
+        errorMessage: 'Yeni POS entegrasyonu 3D Secure akışı başarıyla test edildi.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Yeni POS 3D Secure (TP1-TC-7)', 'QA-Test-01 Ödeme Geçidi PASSED', [
+          '✔ Mock POS v2.4.1 connected',
+          '✔ 3D Secure response status: SUCCESS',
+        ]),
+        executedBy: 'Caner Erkin',
+      },
+      {
+        testRunId: run1_3.id,
+        testCaseId: tc1_8.id,
+        status: ResultStatus.PASSED,
+        executionMs: 620,
+        errorMessage: 'COMM-BUG-142 için uygulanan hotfix doğrulandı: POS 51 hatasında artık kullanıcıya açıklayıcı uyarı gösteriliyor.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Yetersiz Bakiye Hotfix Doğrulama (TP1-TC-8)', 'COMM-BUG-142 Hotfix Başarıyla Doğrulandı', [
+          '✔ POS 51 Insufficient Funds error intercepted cleanly',
+          '✔ User friendly alert displayed: "Yetersiz Bakiye"',
+          '✔ No 500 error logged',
+        ]),
+        executedBy: 'Caner Erkin',
+      },
     ],
   });
 
@@ -716,16 +949,135 @@ export async function seedPlans() {
 
   await prisma.testResult.createMany({
     data: [
-      { testRunId: run2_1.id, testCaseId: tc2_1.id, status: ResultStatus.PASSED, executionMs: 310, executedBy: 'Büşra Aydın' },
-      { testRunId: run2_1.id, testCaseId: tc2_2.id, status: ResultStatus.PASSED, executionMs: 1420, executedBy: 'Büşra Aydın' },
-      { testRunId: run2_1.id, testCaseId: tc2_3.id, status: ResultStatus.PASSED, executionMs: 980, executedBy: 'Büşra Aydın' },
-      { testRunId: run2_1.id, testCaseId: tc2_4.id, status: ResultStatus.BLOCKED, executionMs: 100, errorMessage: 'Test ortamındaki mock ATM servisi yanıt vermiyor (Timeout 504).', jiraBugKey: 'BANK-BUG-89', jiraBugUrl: 'https://jira.company.com/browse/BANK-BUG-89', executedBy: 'Büşra Aydın' },
-      { testRunId: run2_1.id, testCaseId: tc2_5.id, status: ResultStatus.PASSED, executionMs: 1250, executedBy: 'Büşra Aydın' },
-      { testRunId: run2_1.id, testCaseId: tc2_6.id, status: ResultStatus.PASSED, executionMs: 1100, executedBy: 'Büşra Aydın' },
-      { testRunId: run2_1.id, testCaseId: tc2_7.id, status: ResultStatus.PASSED, executionMs: 450, executedBy: 'Büşra Aydın' },
-      { testRunId: run2_1.id, testCaseId: tc2_8.id, status: ResultStatus.PASSED, executionMs: 820, executedBy: 'Büşra Aydın' },
-      { testRunId: run2_1.id, testCaseId: tc2_9.id, status: ResultStatus.PASSED, executionMs: 600, executedBy: 'Büşra Aydın' },
-      { testRunId: run2_1.id, testCaseId: tc2_10.id, status: ResultStatus.PASSED, executionMs: 490, executedBy: 'Büşra Aydın' },
+      {
+        testRunId: run2_1.id,
+        testCaseId: tc2_1.id,
+        status: ResultStatus.PASSED,
+        executionMs: 310,
+        errorMessage: 'LocalAuthentication FaceID mock doğrulaması 310ms içinde başarıyla sonuçlandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'FaceID ile Giriş (TP2-TC-1)', 'iOS LocalAuthentication PASSED', [
+          '✔ LAContext evaluatePolicy:deviceOwnerAuthenticationWithBiometrics => TRUE',
+          '✔ Keychain token retrieved in 45ms',
+          '✔ Dashboard rendered with balance summary',
+        ]),
+        executedBy: 'Büşra Aydın',
+      },
+      {
+        testRunId: run2_1.id,
+        testCaseId: tc2_2.id,
+        status: ResultStatus.PASSED,
+        executionMs: 1420,
+        errorMessage: 'TCMB FAST entegrasyonu 2500 TL transferini 1.4 saniyede onayladı ve FAST referans no alındı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'FAST Para Transferi (TP2-TC-2)', 'TCMB FAST 200 OK & Dekont Üretildi', [
+          '✔ POST /api/v1/transfers/fast => 200 OK',
+          '✔ FAST Ref No: FAST-20260818-881921',
+          '✔ Balance updated: -2.500,00 TL',
+        ]),
+        executedBy: 'Büşra Aydın',
+      },
+      {
+        testRunId: run2_1.id,
+        testCaseId: tc2_3.id,
+        status: ResultStatus.PASSED,
+        executionMs: 980,
+        errorMessage: 'KOLAS servisi telefon numarasını başarıyla eşleştirdi ve alıcı banka teyit edildi.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Kolay Adres Transferi (TP2-TC-3)', 'KOLAS Telefon Sorgusu Başarılı', [
+          '✔ KOLAS Query for 0532******* => TR440001...',
+          '✔ Receiver mask: A*** Y****** verified',
+          '✔ Transfer executed successfully',
+        ]),
+        executedBy: 'Büşra Aydın',
+      },
+      {
+        testRunId: run2_1.id,
+        testCaseId: tc2_4.id,
+        status: ResultStatus.BLOCKED,
+        executionMs: 100,
+        errorMessage: 'Engellenme: Test ortamındaki Mock ATM QR gateway sunucusu 504 Gateway Timeout verdi. Fiziksel donanım simülatörü yanıt vermiyor.',
+        screenshotUrl: createEvidenceScreenshot('BLOCKED', 'ATM QR Kod Para Çekme (TP2-TC-4)', 'Mock ATM Gateway Timeout (504)', [
+          '✖ POST /api/v1/atm/qr-session => HTTP 504 Gateway Timeout',
+          '✖ Reason: Mock ATM Terminal Hub unreachable on 10.200.4.15:8080',
+          '✖ Issue logged in Jira: BANK-BUG-89',
+        ]),
+        jiraBugKey: 'BANK-BUG-89',
+        jiraBugUrl: 'https://jira.company.com/browse/BANK-BUG-89',
+        executedBy: 'Büşra Aydın',
+      },
+      {
+        testRunId: run2_1.id,
+        testCaseId: tc2_5.id,
+        status: ResultStatus.PASSED,
+        executionMs: 1250,
+        errorMessage: '1.000 EUR döviz alış işlemi canlı kur üzerinden başarıyla gerçekleştirildi.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Döviz Alış EUR (TP2-TC-5)', '1.000 EUR Alış & Bakiye Güncellendi', [
+          '✔ Live FX Rate: 1 EUR = 38.45 TL',
+          '✔ Sold: 38.450,00 TL, Bought: 1.000,00 EUR',
+          '✔ Portfolio balance refreshed',
+        ]),
+        executedBy: 'Büşra Aydın',
+      },
+      {
+        testRunId: run2_1.id,
+        testCaseId: tc2_6.id,
+        status: ResultStatus.PASSED,
+        executionMs: 1100,
+        errorMessage: '100 USD satış ve TL vadesiz hesaba aktarım adımı doğrulandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Döviz Satış USD (TP2-TC-6)', '100 USD Satış Onaylandı', [
+          '✔ Live FX Rate: 1 USD = 35.10 TL',
+          '✔ Sold: 100,00 USD, Credited: 3.510,00 TL',
+          '✔ Transaction status: COMPLETED',
+        ]),
+        executedBy: 'Büşra Aydın',
+      },
+      {
+        testRunId: run2_1.id,
+        testCaseId: tc2_7.id,
+        status: ResultStatus.PASSED,
+        executionMs: 450,
+        errorMessage: 'Döviz çevirici çift yönlü kur değişimini ve komisyonsuz tutarı doğru hesapladı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Döviz Çevirici (TP2-TC-7)', '50.000 TL Kur Dönüşümü Doğrulandı', [
+          '✔ 50.000 TL = 1.300,39 EUR (@38.45)',
+          '✔ Switch calculation verified',
+        ]),
+        executedBy: 'Büşra Aydın',
+      },
+      {
+        testRunId: run2_1.id,
+        testCaseId: tc2_8.id,
+        status: ResultStatus.PASSED,
+        executionMs: 820,
+        errorMessage: 'İnternet alışveriş yetkisi kapatıldı, anında banka kart otorizasyon servisine iletildi.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Kart Güvenlik Ayarları (TP2-TC-8)', 'E-Ticaret Yetkisi Kapatıldı', [
+          '✔ PATCH /api/v1/cards/4543.../permissions => 200 OK',
+          '✔ eCommerceEnabled: FALSE',
+          '✔ Confirmation push notification sent',
+        ]),
+        executedBy: 'Büşra Aydın',
+      },
+      {
+        testRunId: run2_1.id,
+        testCaseId: tc2_9.id,
+        status: ResultStatus.PASSED,
+        executionMs: 600,
+        errorMessage: 'Dekont PDF oluşturuldu ve iOS UIActivityViewController paylaşıma açıldı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Dekont PDF İndirme (TP2-TC-9)', 'İmzalı Banka Dekontu Üretildi', [
+          '✔ PDF Generated: DEKONT_2026_08_18.pdf',
+          '✔ Digital signature verified',
+        ]),
+        executedBy: 'Büşra Aydın',
+      },
+      {
+        testRunId: run2_1.id,
+        testCaseId: tc2_10.id,
+        status: ResultStatus.PASSED,
+        executionMs: 490,
+        errorMessage: '75.000 TL transfer talebinde 50.000 TL limit aşım modalı ve geçici limit artırma linki başarıyla gösterildi.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Limit Aşım Uyarısı (TP2-TC-10)', 'FAST 50.000 TL Limit Uyarısı Verildi', [
+          '✔ Limit Check: Requested=75.000, Max=50.000',
+          '✔ Alert popup displayed correctly',
+        ]),
+        executedBy: 'Büşra Aydın',
+      },
     ],
   });
 
@@ -743,10 +1095,52 @@ export async function seedPlans() {
 
   await prisma.testResult.createMany({
     data: [
-      { testRunId: run2_2.id, testCaseId: tc2_2.id, status: ResultStatus.PASSED, executionMs: 1350, executedBy: 'Selim Çelik' },
-      { testRunId: run2_2.id, testCaseId: tc2_4.id, status: ResultStatus.PASSED, executionMs: 2100, executedBy: 'Selim Çelik' },
-      { testRunId: run2_2.id, testCaseId: tc2_7.id, status: ResultStatus.PASSED, executionMs: 410, executedBy: 'Selim Çelik' },
-      { testRunId: run2_2.id, testCaseId: tc2_10.id, status: ResultStatus.PASSED, executionMs: 530, executedBy: 'Selim Çelik' },
+      {
+        testRunId: run2_2.id,
+        testCaseId: tc2_2.id,
+        status: ResultStatus.PASSED,
+        executionMs: 1350,
+        errorMessage: 'Android 14 üzerinde FAST transferi sorunsuz tamamlandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Android FAST Transfer (TP2-TC-2)', 'Pixel 8 / Android 14 PASSED', [
+          '✔ Android BiometricPrompt OK',
+          '✔ FAST payment confirmed',
+        ]),
+        executedBy: 'Selim Çelik',
+      },
+      {
+        testRunId: run2_2.id,
+        testCaseId: tc2_4.id,
+        status: ResultStatus.PASSED,
+        executionMs: 2100,
+        errorMessage: 'CameraX kütüphanesi ile QR okuma ve mock ATM para çekme tamamlandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'CameraX QR Okuma (TP2-TC-4)', 'Android QR Scanner OK', [
+          '✔ QR Barcode scanned in 120ms',
+          '✔ Cash withdraw confirmed: 1.000 TL',
+        ]),
+        executedBy: 'Selim Çelik',
+      },
+      {
+        testRunId: run2_2.id,
+        testCaseId: tc2_7.id,
+        status: ResultStatus.PASSED,
+        executionMs: 410,
+        errorMessage: 'Döviz çevirici Android widget ve sayfa görünümü doğrulandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Android Döviz Çevirici (TP2-TC-7)', 'Android UI Responsive Test PASSED', [
+          '✔ Material 3 form fields verified',
+        ]),
+        executedBy: 'Selim Çelik',
+      },
+      {
+        testRunId: run2_2.id,
+        testCaseId: tc2_10.id,
+        status: ResultStatus.PASSED,
+        executionMs: 530,
+        errorMessage: 'Limit aşım uyarısı Android dialog bileşeni ile gösterildi.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Android Limit Dialog (TP2-TC-10)', 'Material AlertDialog Rendered', [
+          '✔ Daily limit exceeded dialog verified',
+        ]),
+        executedBy: 'Selim Çelik',
+      },
     ],
   });
 
@@ -764,8 +1158,28 @@ export async function seedPlans() {
 
   await prisma.testResult.createMany({
     data: [
-      { testRunId: run2_3.id, testCaseId: tc2_2.id, status: ResultStatus.PASSED, executionMs: 1200, executedBy: 'Gizem Arslan' },
-      { testRunId: run2_3.id, testCaseId: tc2_10.id, status: ResultStatus.PASSED, executionMs: 510, executedBy: 'Gizem Arslan' },
+      {
+        testRunId: run2_3.id,
+        testCaseId: tc2_2.id,
+        status: ResultStatus.PASSED,
+        executionMs: 1200,
+        errorMessage: 'FAST 20.000 TL üst limit transfer testi başarıyla onaylandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'FAST 20k Limit Testi (TP2-TC-2)', '20.000 TL FAST Başarılı', [
+          '✔ Amount: 20.000,00 TL processed without splitting',
+        ]),
+        executedBy: 'Gizem Arslan',
+      },
+      {
+        testRunId: run2_3.id,
+        testCaseId: tc2_10.id,
+        status: ResultStatus.PASSED,
+        executionMs: 510,
+        errorMessage: '20.001 TL ve üzeri taleplerin EFT saat kontrolüne yönlendirildiği doğrulandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'FAST Limit Sınırı Kontrolü (TP2-TC-10)', '20.001 TL EFT Yönlendirmesi OK', [
+          '✔ Routing rule: >20k TL => Standard EFT Protocol',
+        ]),
+        executedBy: 'Gizem Arslan',
+      },
     ],
   });
 
@@ -1086,16 +1500,128 @@ export async function seedPlans() {
 
   await prisma.testResult.createMany({
     data: [
-      { testRunId: run3_1.id, testCaseId: tc3_1.id, status: ResultStatus.PASSED, executionMs: 85, executedBy: 'DevOps k6 Runner' },
-      { testRunId: run3_1.id, testCaseId: tc3_2.id, status: ResultStatus.PASSED, executionMs: 42, executedBy: 'DevOps k6 Runner' },
-      { testRunId: run3_1.id, testCaseId: tc3_3.id, status: ResultStatus.PASSED, executionMs: 65, executedBy: 'DevOps k6 Runner' },
-      { testRunId: run3_1.id, testCaseId: tc3_4.id, status: ResultStatus.PASSED, executionMs: 340, executedBy: 'DevOps k6 Runner' },
-      { testRunId: run3_1.id, testCaseId: tc3_5.id, status: ResultStatus.PASSED, executionMs: 38, executedBy: 'DevOps k6 Runner' },
-      { testRunId: run3_1.id, testCaseId: tc3_6.id, status: ResultStatus.PASSED, executionMs: 120, executedBy: 'DevOps k6 Runner' },
-      { testRunId: run3_1.id, testCaseId: tc3_7.id, status: ResultStatus.PASSED, executionMs: 190, executedBy: 'DevOps k6 Runner' },
-      { testRunId: run3_1.id, testCaseId: tc3_8.id, status: ResultStatus.PASSED, executionMs: 410, executedBy: 'DevOps k6 Runner' },
-      { testRunId: run3_1.id, testCaseId: tc3_9.id, status: ResultStatus.PASSED, executionMs: 142, executedBy: 'DevOps k6 Runner' },
-      { testRunId: run3_1.id, testCaseId: tc3_10.id, status: ResultStatus.PASSED, executionMs: 25, executedBy: 'DevOps k6 Runner' },
+      {
+        testRunId: run3_1.id,
+        testCaseId: tc3_1.id,
+        status: ResultStatus.PASSED,
+        executionMs: 85,
+        errorMessage: 'OAuth2 Token alma süresi 85ms (hedef: <150ms). RSA-256 JWT imzası doğrulandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'OAuth2 Token Benchmark (TP3-TC-1)', 'Response Time: 85ms | Token Valid', [
+          '✔ POST /oauth/token => 200 OK (85ms)',
+          '✔ JWT Claims: { iss: "auth.gateway", sub: "b2b_client" }',
+          '✔ RSA-256 Signature verified',
+        ]),
+        executedBy: 'DevOps k6 Runner',
+      },
+      {
+        testRunId: run3_1.id,
+        testCaseId: tc3_2.id,
+        status: ResultStatus.PASSED,
+        executionMs: 42,
+        errorMessage: 'Süresi dolmuş token reddedildi ve 401 Unauthorized yanıtı 42ms içinde döndü.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Token Expiration Test (TP3-TC-2)', 'HTTP 401 Unauthorized Doğrulandı', [
+          '✔ GET /api/v2/protected => 401 Unauthorized',
+          '✔ Error payload: { error: "jwt expired" }',
+        ]),
+        executedBy: 'DevOps k6 Runner',
+      },
+      {
+        testRunId: run3_1.id,
+        testCaseId: tc3_3.id,
+        status: ResultStatus.PASSED,
+        executionMs: 65,
+        errorMessage: '100 req/min limiti aşıldığında 429 Too Many Requests ve Retry-After: 60 headerı döndü.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Rate Limiting Kontrolü (TP3-TC-3)', 'HTTP 429 & Retry-After Header OK', [
+          '✔ 101st Request => HTTP 429 Too Many Requests',
+          '✔ Response Header: Retry-After: 60',
+        ]),
+        executedBy: 'DevOps k6 Runner',
+      },
+      {
+        testRunId: run3_1.id,
+        testCaseId: tc3_4.id,
+        status: ResultStatus.PASSED,
+        executionMs: 340,
+        errorMessage: '1000 siparişlik bulk import jobı 340ms içinde kuyruğa alındı ve jobId üretildi.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Bulk Order Import (TP3-TC-4)', '1000 Kayıt BullMQ Kuyruğuna Alındı', [
+          '✔ POST /api/v2/orders/bulk => 202 Accepted',
+          '✔ Job ID: b2b_job_9981 (1000 items)',
+        ]),
+        executedBy: 'DevOps k6 Runner',
+      },
+      {
+        testRunId: run3_1.id,
+        testCaseId: tc3_5.id,
+        status: ResultStatus.PASSED,
+        executionMs: 38,
+        errorMessage: 'DTO class-validator validasyon hataları dizi formatında 400 Bad Request ile döndü.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'JSON Validasyon Hataları (TP3-TC-5)', 'HTTP 400 Bad Request Doğrulandı', [
+          '✔ POST /api/v2/orders => 400 Bad Request',
+          '✔ Validation errors: [taxId invalid, orderDate missing]',
+        ]),
+        executedBy: 'DevOps k6 Runner',
+      },
+      {
+        testRunId: run3_1.id,
+        testCaseId: tc3_6.id,
+        status: ResultStatus.PASSED,
+        executionMs: 120,
+        errorMessage: 'Stok güncellemesinde X-Hub-Signature-256 başlıklı Webhook event başarıyla fırlatıldı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Webhook HMAC İmzası (TP3-TC-6)', 'HMAC SHA-256 Signature Verified', [
+          '✔ Event: stock.updated dispatched',
+          '✔ Header: X-Hub-Signature-256: sha256=9f8a...',
+        ]),
+        executedBy: 'DevOps k6 Runner',
+      },
+      {
+        testRunId: run3_1.id,
+        testCaseId: tc3_7.id,
+        status: ResultStatus.PASSED,
+        executionMs: 190,
+        errorMessage: 'Hedef sunucu 503 döndüğünde backoff ile 3 retry kuyruğa yazıldı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Webhook Retry Mekanizması (TP3-TC-7)', 'Exponential Backoff 3x Retry OK', [
+          '✔ Retry queue scheduled: 1m, 5m, 15m',
+        ]),
+        executedBy: 'DevOps k6 Runner',
+      },
+      {
+        testRunId: run3_1.id,
+        testCaseId: tc3_8.id,
+        status: ResultStatus.PASSED,
+        executionMs: 410,
+        errorMessage: 'GİB UBL-TR 1.2.1 XML Schematron doğrulaması 0 hata ile onaylandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'E-Fatura Schematron Testi (TP3-TC-8)', 'UBL-TR 1.2.1 XML Valid', [
+          '✔ Schematron Engine: 0 errors, 0 warnings',
+          '✔ GİB Test Portal Approval Code: GIB-2026-9901',
+        ]),
+        executedBy: 'DevOps k6 Runner',
+      },
+      {
+        testRunId: run3_1.id,
+        testCaseId: tc3_9.id,
+        status: ResultStatus.PASSED,
+        executionMs: 142,
+        errorMessage: 'k6 1000 VU yük testi 5 dakika sürdü. p(95)=142ms (<200ms hedefi), Hata oranı: %0.00.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'k6 1000 VU Benchmark (TP3-TC-9)', 'p(95)=142ms | Error Rate: 0.00%', [
+          '✔ Virtual Users: 1000 VU for 5 minutes',
+          '✔ Total requests: 142.890 reqs (476 req/s)',
+          '✔ http_req_duration p(95)=142.4ms, p(99)=189.1ms',
+          '✔ http_req_failed: 0.00%',
+        ]),
+        executedBy: 'DevOps k6 Runner',
+      },
+      {
+        testRunId: run3_1.id,
+        testCaseId: tc3_10.id,
+        status: ResultStatus.PASSED,
+        executionMs: 25,
+        errorMessage: 'Circuit breaker 5 ardışık timeout sonrası OPEN durumuna geçti ve 25ms içinde cache yanıtı döndü.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Circuit Breaker Fallback (TP3-TC-10)', 'Circuit Breaker OPEN & Fast Fallback', [
+          '✔ 5 consecutive timeouts triggered Circuit Breaker OPEN',
+          '✔ Fallback cache response returned in 25ms',
+        ]),
+        executedBy: 'DevOps k6 Runner',
+      },
     ],
   });
 
@@ -1113,10 +1639,57 @@ export async function seedPlans() {
 
   await prisma.testResult.createMany({
     data: [
-      { testRunId: run3_2.id, testCaseId: tc3_1.id, status: ResultStatus.PASSED, executionMs: 95, executedBy: 'Emre Yıldız' },
-      { testRunId: run3_2.id, testCaseId: tc3_4.id, status: ResultStatus.PASSED, executionMs: 380, executedBy: 'Emre Yıldız' },
-      { testRunId: run3_2.id, testCaseId: tc3_6.id, status: ResultStatus.PASSED, executionMs: 130, executedBy: 'Emre Yıldız' },
-      { testRunId: run3_2.id, testCaseId: tc3_7.id, status: ResultStatus.FAILED, executionMs: 2200, errorMessage: 'DLQ kuyruğuna yazılırken Kafka topic erişim hatası oluştu (Broker Not Available).', jiraBugKey: 'GATEWAY-BUG-304', jiraBugUrl: 'https://jira.company.com/browse/GATEWAY-BUG-304', executedBy: 'Emre Yıldız' },
+      {
+        testRunId: run3_2.id,
+        testCaseId: tc3_1.id,
+        status: ResultStatus.PASSED,
+        executionMs: 95,
+        errorMessage: 'UAT ortamında B2B ERP client credentials token alımı doğrulandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'UAT Token Alımı (TP3-TC-1)', 'UAT Gateway 200 OK', [
+          '✔ ERP Client ID: erp_uat_client_99',
+          '✔ Token expires in 3600s',
+        ]),
+        executedBy: 'Emre Yıldız',
+      },
+      {
+        testRunId: run3_2.id,
+        testCaseId: tc3_4.id,
+        status: ResultStatus.PASSED,
+        executionMs: 380,
+        errorMessage: 'UAT ERP sipariş aktarımı başarıyla kuyruğa alındı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'UAT Sipariş Aktarımı (TP3-TC-4)', 'B2B Siparişler Kuyruğa Alındı', [
+          '✔ Batch size: 500 items processed',
+        ]),
+        executedBy: 'Emre Yıldız',
+      },
+      {
+        testRunId: run3_2.id,
+        testCaseId: tc3_6.id,
+        status: ResultStatus.PASSED,
+        executionMs: 130,
+        errorMessage: 'ERP Webhook alıcısına stok güncelleme bildirimi iletildi.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'ERP Webhook Teslimi (TP3-TC-6)', 'Webhook Receiver 200 OK', [
+          '✔ Webhook URL: https://erp-uat.company.com/webhook',
+          '✔ Response 200 OK (130ms)',
+        ]),
+        executedBy: 'Emre Yıldız',
+      },
+      {
+        testRunId: run3_2.id,
+        testCaseId: tc3_7.id,
+        status: ResultStatus.FAILED,
+        executionMs: 2200,
+        errorMessage: 'Hata: Dead Letter Queue (DLQ) Kafka topic bağlantı hatası nedeniyle 3. deneme sonrası mesaj kaydedilemedi (Broker Not Available).',
+        screenshotUrl: createEvidenceScreenshot('FAILED', 'DLQ Kafka Hatası (TP3-TC-7)', 'Kafka Broker Not Available Exception', [
+          '✖ Webhook 3x retry failed (503 Service Unavailable)',
+          '✖ Failed to write to topic "dlq-webhook-events"',
+          '✖ KafkaException: Broker: Leader not available for partition 0',
+          '✖ Issue logged in Jira: GATEWAY-BUG-304',
+        ]),
+        jiraBugKey: 'GATEWAY-BUG-304',
+        jiraBugUrl: 'https://jira.company.com/browse/GATEWAY-BUG-304',
+        executedBy: 'Emre Yıldız',
+      },
     ],
   });
 
@@ -1134,13 +1707,43 @@ export async function seedPlans() {
 
   await prisma.testResult.createMany({
     data: [
-      { testRunId: run3_3.id, testCaseId: tc3_1.id, status: ResultStatus.PASSED, executionMs: 80, executedBy: 'Merve Demir' },
-      { testRunId: run3_3.id, testCaseId: tc3_2.id, status: ResultStatus.PASSED, executionMs: 45, executedBy: 'Merve Demir' },
-      { testRunId: run3_3.id, testCaseId: tc3_3.id, status: ResultStatus.PASSED, executionMs: 60, executedBy: 'Merve Demir' },
+      {
+        testRunId: run3_3.id,
+        testCaseId: tc3_1.id,
+        status: ResultStatus.PASSED,
+        executionMs: 80,
+        errorMessage: 'Staging ortamında stress altında token alma süresi 80ms.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Staging Token Stress (TP3-TC-1)', 'Response Time: 80ms', [
+          '✔ Token generation latency stable under 100 concurrent threads',
+        ]),
+        executedBy: 'Merve Demir',
+      },
+      {
+        testRunId: run3_3.id,
+        testCaseId: tc3_2.id,
+        status: ResultStatus.PASSED,
+        executionMs: 45,
+        errorMessage: 'Süresi dolan token istekleri beklenen 401 Unauthorized ile hızla reddedildi.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Expired Token Handling (TP3-TC-2)', '401 Unauthorized Fast Rejection', [
+          '✔ JWT verification middleware latency: 4ms',
+        ]),
+        executedBy: 'Merve Demir',
+      },
+      {
+        testRunId: run3_3.id,
+        testCaseId: tc3_3.id,
+        status: ResultStatus.PASSED,
+        executionMs: 60,
+        errorMessage: 'Rate limiter Redis Cluster testleri başarıyla sonuçlandı.',
+        screenshotUrl: createEvidenceScreenshot('PASSED', 'Redis Rate Limiter (TP3-TC-3)', 'Redis Sliding Window Throttle OK', [
+          '✔ Sliding window log algorithm functioning properly',
+        ]),
+        executedBy: 'Merve Demir',
+      },
     ],
   });
 
-  console.log('✅ Successfully seeded rich test data for Test Plan 1, 2, and 3!');
+  console.log('✅ Successfully seeded rich test data for Test Plan 1, 2, and 3 with screenshots and notes!');
 }
 
 if (require.main === module) {
