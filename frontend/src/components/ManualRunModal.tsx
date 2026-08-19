@@ -769,6 +769,118 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   </div>
                 )}
 
+                {/* SKIPPED Extra Fields: Reason/Comment & Screenshot */}
+                {currentResult?.status === 'SKIPPED' && (
+                  <div className="p-4 bg-slate-500/5 dark:bg-slate-500/10 border border-slate-500/20 dark:border-slate-500/30 rounded-xl space-y-3.5 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
+                        <SkipForward className="w-4 h-4 text-slate-400" />
+                        <span>Atlanma (Skipped) Nedeni & Yorum</span>
+                      </span>
+
+                      {(currentResult.screenshotUrl || currentCase.screenshotUrl) && (
+                        <span className="text-[10px] bg-slate-500/20 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded font-mono font-semibold border border-slate-500/30">
+                          Görsel Ekli
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Comment / Reason for SKIPPED */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] text-slate-700 dark:text-slate-300 font-semibold flex items-center space-x-1.5">
+                        <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Atlanma Nedeni / Yorum (İsteğe bağlı):</span>
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={currentResult.errorMessage || ''}
+                        onChange={(e) => handleErrorMessageChange(currentCase.id, e.target.value)}
+                        placeholder="Örn: Test senaryosu bu sürümde kapsam dışı bırakıldı veya özellik aktif değil..."
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-500/30 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-500 shadow-sm"
+                      />
+                    </div>
+
+                    {/* Screenshot Upload / Paste */}
+                    <div className="space-y-1.5 pt-1 border-t border-slate-500/20">
+                      <label className="text-[11px] text-slate-600 dark:text-slate-300 font-bold flex items-center space-x-1.5 uppercase tracking-wider">
+                        <ImageIcon className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Ekran Görüntüsü / Kanıt (İsteğe bağlı)</span>
+                      </label>
+
+                      {currentResult.screenshotUrl || currentCase.screenshotUrl ? (
+                        <div className="relative group max-w-md overflow-hidden rounded-xl border border-slate-500/30 bg-white dark:bg-slate-900/60 p-2">
+                          <img
+                            src={currentResult.screenshotUrl || currentCase.screenshotUrl}
+                            alt="Skipped Ekran Görüntüsü"
+                            className="w-full max-h-48 object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => setLightboxImage(currentResult.screenshotUrl || currentCase.screenshotUrl || null)}
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 backdrop-blur-[2px] rounded-xl">
+                            <button
+                              type="button"
+                              onClick={() => setLightboxImage(currentResult.screenshotUrl || currentCase.screenshotUrl || null)}
+                              className="p-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-transform hover:scale-105"
+                              title="Büyüt / Tam Ekran"
+                            >
+                              <Maximize2 className="w-4 h-4" />
+                            </button>
+                            <label className="p-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 cursor-pointer transition-transform hover:scale-105" title="Görseli Değiştir">
+                              <Edit3 className="w-4 h-4 text-slate-300" />
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => handleScreenshotChange(currentCase.id, reader.result as string);
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => handleScreenshotChange(currentCase.id, '')}
+                              className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-transform hover:scale-105"
+                              title="Görseli Sil"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/40 text-center space-y-2">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Atlanma durumuna dair ekran görüntüsü ekleyebilirsiniz (İsteğe bağlı)
+                          </p>
+                          <div className="flex items-center justify-center space-x-2">
+                            <label className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-500/10 dark:bg-slate-500/20 hover:bg-slate-500/20 dark:hover:bg-slate-500/30 text-slate-600 dark:text-slate-300 border border-slate-500/30 dark:border-slate-500/40 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95">
+                              <Upload className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Ekran Görüntüsü Yükle</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => handleScreenshotChange(currentCase.id, reader.result as string);
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                            <span className="text-[11px] text-slate-400 font-mono">veya Ctrl+V ile yapıştırın</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* FAILED Extra Fields: Error Message & Create Jira Bug Mock */}
                 {currentResult?.status === 'FAILED' && (
                   <div className="p-4 bg-red-500/5 dark:bg-red-500/10 border border-red-500/20 dark:border-red-500/30 rounded-xl space-y-3 animate-fadeIn">

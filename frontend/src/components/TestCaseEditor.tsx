@@ -76,6 +76,23 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
     return [];
   };
 
+  const parseScreenshots = (raw?: string | null): string[] => {
+    if (!raw) return [];
+    if (typeof raw !== 'string') return [];
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((item): item is string => typeof item === 'string' && item.length > 0);
+        }
+      } catch {
+        // not json
+      }
+    }
+    return [trimmed];
+  };
+
   useEffect(() => {
     if (testCase) {
       // Only reload form state if the selected testCase ID changed
@@ -711,51 +728,62 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                       </div>
                     )}
 
-                    {/* Independent Screenshot */}
-                    {res.screenshotUrl && (
-                      <div className="space-y-1.5 pt-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
-                          <ImageIcon className="w-3.5 h-3.5 text-indigo-500" />
-                          <span>Koşum Ekran Görüntüsü / Kanıt</span>
-                        </span>
-                        <div className="relative group max-w-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1.5 shadow-sm">
-                          <img
-                            src={res.screenshotUrl}
-                            alt="Koşum Ekran Görüntüsü"
-                            className="w-full max-h-44 object-contain rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                            onClick={() =>
-                              setActiveLightbox({
-                                url: res.screenshotUrl!,
-                                caption: `${runTitle} - ${res.status} (${res.executedAt ? new Date(res.executedAt).toLocaleString('tr-TR') : ''}) ${res.errorMessage ? `\n${res.errorMessage}` : ''}`,
-                              })
-                            }
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 backdrop-blur-[1px] rounded-lg">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setActiveLightbox({
-                                  url: res.screenshotUrl!,
-                                  caption: `${runTitle} - ${res.status} ${res.errorMessage ? `- ${res.errorMessage}` : ''}`,
-                                })
-                              }
-                              className="p-1.5 bg-slate-900/90 text-white rounded-lg hover:bg-slate-800 transition-transform hover:scale-105"
-                              title="Büyüt / İncele"
-                            >
-                              <Maximize2 className="w-4 h-4" />
-                            </button>
-                            <a
-                              href={res.screenshotUrl}
-                              download={`${testCase.code}-run-${runNumber}.png`}
-                              className="p-1.5 bg-slate-900/90 text-white rounded-lg hover:bg-slate-800 transition-transform hover:scale-105"
-                              title="İndir"
-                            >
-                              <Download className="w-4 h-4" />
-                            </a>
+                    {/* Independent Screenshot / Multiple Screenshots */}
+                    {(() => {
+                      const screenList = parseScreenshots(res.screenshotUrl);
+                      if (screenList.length === 0) return null;
+                      return (
+                        <div className="space-y-1.5 pt-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
+                            <ImageIcon className="w-3.5 h-3.5 text-indigo-500" />
+                            <span>Koşum Ekran Görüntüleri ({screenList.length})</span>
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {screenList.map((imgUrl, imgIdx) => (
+                              <div
+                                key={imgIdx}
+                                className="relative group w-36 h-24 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1 shadow-sm shrink-0"
+                              >
+                                <img
+                                  src={imgUrl}
+                                  alt={`Koşum Ekran Görüntüsü ${imgIdx + 1}`}
+                                  className="w-full h-full object-contain rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
+                                  onClick={() =>
+                                    setActiveLightbox({
+                                      url: imgUrl,
+                                      caption: `${runTitle} - ${res.status} #${imgIdx + 1} (${res.executedAt ? new Date(res.executedAt).toLocaleString('tr-TR') : ''}) ${res.errorMessage ? `\n${res.errorMessage}` : ''}`,
+                                    })
+                                  }
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-1.5 backdrop-blur-[1px] rounded-lg">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setActiveLightbox({
+                                        url: imgUrl,
+                                        caption: `${runTitle} - ${res.status} #${imgIdx + 1} ${res.errorMessage ? `- ${res.errorMessage}` : ''}`,
+                                      })
+                                    }
+                                    className="p-1 bg-slate-900/90 text-white rounded-lg hover:bg-slate-800 transition-transform hover:scale-105"
+                                    title="Büyüt / İncele"
+                                  >
+                                    <Maximize2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <a
+                                    href={imgUrl}
+                                    download={`${testCase.code}-run-${runNumber}-${imgIdx + 1}.png`}
+                                    className="p-1 bg-slate-900/90 text-white rounded-lg hover:bg-slate-800 transition-transform hover:scale-105"
+                                    title="İndir"
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                  </a>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 );
               })}

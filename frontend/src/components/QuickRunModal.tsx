@@ -17,9 +17,36 @@ import {
   Upload,
   Trash2,
   Maximize2,
-  Edit3,
   MessageSquare,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Download,
 } from 'lucide-react';
+
+export const parseScreenshots = (raw?: string | null): string[] => {
+  if (!raw) return [];
+  if (typeof raw !== 'string') return [];
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item): item is string => typeof item === 'string' && item.length > 0);
+      }
+    } catch {
+      // not json, return single string
+    }
+  }
+  return [trimmed];
+};
+
+export const formatScreenshots = (list: string[]): string | undefined => {
+  const filtered = list.filter((s) => s && s.trim().length > 0);
+  if (filtered.length === 0) return undefined;
+  if (filtered.length === 1) return filtered[0];
+  return JSON.stringify(filtered);
+};
 
 interface QuickRunModalProps {
   isOpen: boolean;
@@ -47,8 +74,8 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [jiraBugKey, setJiraBugKey] = useState('');
   const [jiraBugUrl, setJiraBugUrl] = useState('');
-  const [screenshotUrl, setScreenshotUrl] = useState('');
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -59,10 +86,13 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
       setErrorMessage(lastResult?.errorMessage || '');
       setJiraBugKey(lastResult?.jiraBugKey || '');
       setJiraBugUrl(lastResult?.jiraBugUrl || '');
-      setScreenshotUrl(lastResult?.screenshotUrl || testCase.screenshotUrl || '');
+      
+      const rawScreenshots = lastResult?.screenshotUrl || testCase.screenshotUrl || '';
+      setScreenshots(parseScreenshots(rawScreenshots));
+      
       setVersion(initialVersion || 'v1.0.0');
       setEnvironment(initialEnvironment || 'STAGING');
-      setLightboxImage(null);
+      setLightboxIndex(null);
       setErrorMsg('');
     }
   }, [isOpen, testCase, initialVersion, initialEnvironment]);
@@ -80,7 +110,10 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
           if (blob) {
             const reader = new FileReader();
             reader.onloadend = () => {
-              setScreenshotUrl(reader.result as string);
+              if (typeof reader.result === 'string') {
+                const newImg = reader.result;
+                setScreenshots((prev) => [...prev, newImg]);
+              }
             };
             reader.readAsDataURL(blob);
           }
@@ -92,7 +125,53 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
     return () => window.removeEventListener('paste', handlePaste);
   }, [isOpen]);
 
+  // Lightbox keyboard navigation (Arrow keys + Esc)
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxIndex(null);
+      } else if (e.key === 'ArrowLeft') {
+        setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : (screenshots.length - 1)));
+      } else if (e.key === 'ArrowRight') {
+        setLightboxIndex((prev) => (prev !== null && prev < screenshots.length - 1 ? prev + 1 : 0));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, screenshots.length]);
+
   if (!isOpen || !testCase) return null;
+
+  const handleFilesSelected = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (fileArray.length === 0) return;
+
+    fileArray.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          const res = reader.result;
+          setScreenshots((prev) => [...prev, res]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoveScreenshot = (indexToRemove: number) => {
+    setScreenshots((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    if (lightboxIndex !== null) {
+      if (screenshots.length <= 1) {
+        setLightboxIndex(null);
+      } else if (lightboxIndex >= indexToRemove && lightboxIndex > 0) {
+        setLightboxIndex(lightboxIndex - 1);
+      }
+    }
+  };
 
   const handleCreateJiraBugMock = () => {
     const bugNum = Math.floor(Math.random() * 800) + 100;
@@ -107,6 +186,8 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
     setIsSubmitting(true);
     setErrorMsg('');
     try {
+      const formattedScreenshot = formatScreenshots(screenshots);
+
       await TestRunsService.quickRun(projectId, {
         testCaseId: testCase.id,
         status,
@@ -115,7 +196,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
         errorMessage: errorMessage.trim() ? errorMessage.trim() : undefined,
         jiraBugKey: status === 'FAILED' ? jiraBugKey : undefined,
         jiraBugUrl: status === 'FAILED' ? jiraBugUrl : undefined,
-        screenshotUrl: screenshotUrl || undefined,
+        screenshotUrl: formattedScreenshot,
         executedBy: executedBy || 'QA Tester',
       });
 
@@ -131,7 +212,12 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error('Error submitting quick run:', err);
-      if (err?.response?.status === 413 || err?.message?.includes('413') || err?.message?.toLowerCase().includes('payload too large') || err?.message?.toLowerCase().includes('too large')) {
+      if (
+        err?.response?.status === 413 ||
+        err?.message?.includes('413') ||
+        err?.message?.toLowerCase().includes('payload too large') ||
+        err?.message?.toLowerCase().includes('too large')
+      ) {
         setErrorMsg('Boyut limiti hatası (413 Payload Too Large): Ekran görüntüsü veya veri boyutu sınırı aştı. Lütfen daha küçük görsel yükleyin.');
       } else {
         const message = err?.response?.data?.message || err?.message || 'Hızlı koşu kaydedilirken bir hata oluştu.';
@@ -142,9 +228,161 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
     }
   };
 
+  // Reusable multi-screenshot gallery section
+  const renderScreenshotUploader = (theme: 'emerald' | 'red' | 'slate' | 'purple', label: string) => {
+    const colors = {
+      emerald: {
+        border: 'border-emerald-500/30',
+        badge: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+        uploadBtn: 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+        icon: 'text-emerald-500',
+        focus: 'focus:ring-emerald-500',
+        activeBtn: 'bg-emerald-600 hover:bg-emerald-500 text-white',
+      },
+      red: {
+        border: 'border-red-500/30',
+        badge: 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30',
+        uploadBtn: 'bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30',
+        icon: 'text-red-500',
+        focus: 'focus:ring-red-500',
+        activeBtn: 'bg-red-600 hover:bg-red-500 text-white',
+      },
+      slate: {
+        border: 'border-slate-500/30',
+        badge: 'bg-slate-500/20 text-slate-600 dark:text-slate-300 border-slate-500/30',
+        uploadBtn: 'bg-slate-500/10 hover:bg-slate-500/20 text-slate-600 dark:text-slate-300 border-slate-500/30',
+        icon: 'text-slate-400',
+        focus: 'focus:ring-slate-500',
+        activeBtn: 'bg-slate-700 hover:bg-slate-600 text-white',
+      },
+      purple: {
+        border: 'border-purple-500/30',
+        badge: 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30',
+        uploadBtn: 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30',
+        icon: 'text-purple-500',
+        focus: 'focus:ring-purple-500',
+        activeBtn: 'bg-purple-600 hover:bg-purple-500 text-white',
+      },
+    }[theme];
+
+    return (
+      <div className={`space-y-2 pt-2 border-t ${colors.border}`}>
+        <div className="flex items-center justify-between">
+          <label className={`text-[11px] font-bold flex items-center space-x-1.5 uppercase tracking-wider ${colors.icon}`}>
+            <ImageIcon className="w-3.5 h-3.5" />
+            <span>{label}</span>
+          </label>
+          <div className="flex items-center space-x-2">
+            {screenshots.length > 0 && (
+              <>
+                <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-semibold border ${colors.badge}`}>
+                  {screenshots.length} Görsel Ekli
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setScreenshots([])}
+                  className="text-[10px] text-red-500 hover:text-red-600 hover:underline font-medium"
+                >
+                  Temizle
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {screenshots.length > 0 ? (
+          <div className="space-y-2">
+            {/* Gallery Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {screenshots.map((imgUrl, idx) => (
+                <div
+                  key={idx}
+                  className={`relative group rounded-xl overflow-hidden border ${colors.border} bg-white dark:bg-slate-900 p-1 shadow-sm aspect-video flex items-center justify-center`}
+                >
+                  <img
+                    src={imgUrl}
+                    alt={`Screenshot ${idx + 1}`}
+                    className="w-full h-full object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setLightboxIndex(idx)}
+                  />
+
+                  {/* Top-left number badge */}
+                  <span className="absolute top-1.5 left-1.5 bg-black/70 text-white text-[9px] font-mono px-1.5 py-0.5 rounded backdrop-blur-xs font-bold pointer-events-none">
+                    #{idx + 1}
+                  </span>
+
+                  {/* Hover Overlay Controls */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-1.5 backdrop-blur-[2px] rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setLightboxIndex(idx)}
+                      className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-transform hover:scale-110 shadow"
+                      title="Büyüt / İncele"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveScreenshot(idx)}
+                      className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-transform hover:scale-110 shadow"
+                      title="Görseli Kaldır"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Add More Slot */}
+              <label
+                className={`flex flex-col items-center justify-center border-2 border-dashed ${colors.border} rounded-xl aspect-video cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors p-2 text-center group`}
+                title="Yeni Görsel Ekle"
+              >
+                <Plus className="w-5 h-5 text-slate-400 group-hover:scale-110 transition-transform mb-1" />
+                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">Görsel Ekle</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFilesSelected(e.target.files)}
+                />
+              </label>
+            </div>
+
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 italic text-right">
+              İpucu: Ekran görüntüsü yapıştırmak için Ctrl+V tuşlarına basabilirsiniz
+            </p>
+          </div>
+        ) : (
+          /* Empty State Dropzone */
+          <div className={`p-3.5 border-2 border-dashed ${colors.border} rounded-xl bg-white/60 dark:bg-slate-900/60 text-center space-y-2 shadow-sm`}>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Birden fazla ekran görüntüsü veya koşu kanıtı ekleyebilirsiniz
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <label className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95 border ${colors.uploadBtn}`}>
+                <Upload className="w-3.5 h-3.5" />
+                <span>Ekran Görüntüsü Yükle (Çoklu)</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFilesSelected(e.target.files)}
+                />
+              </label>
+              <span className="text-[11px] text-slate-400 font-mono">veya Ctrl+V ile yapıştırın</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl my-auto max-h-[92vh] flex flex-col overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl shadow-2xl my-auto max-h-[94vh] flex flex-col overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
         {/* Modal Header */}
         <div className="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80 shrink-0">
           <div className="flex items-center space-x-2.5">
@@ -168,7 +406,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
         )}
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[calc(92vh-75px)]">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[calc(94vh-75px)]">
           {/* Test Case Overview */}
           <div className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5 shadow-sm">
             <div className="flex items-center space-x-2">
@@ -225,7 +463,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
               <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Adımlar ({testCase.steps.length})
               </label>
-              <div className="max-h-40 overflow-y-auto space-y-2 bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 text-xs">
+              <div className="max-h-36 overflow-y-auto space-y-2 bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 text-xs">
                 {testCase.steps.map((step, idx) => (
                   <div key={idx} className="space-y-1 pb-1 border-b border-slate-200/50 dark:border-slate-800/50 last:border-none last:pb-0">
                     <div className="flex items-start space-x-2 text-slate-700 dark:text-slate-300">
@@ -323,7 +561,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
             </div>
           </div>
 
-          {/* PASSED Status Screenshot Upload & Comment */}
+          {/* PASSED Status: Comment & Multi-Screenshot */}
           {status === 'PASSED' && (
             <div className="p-3.5 bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 dark:border-emerald-500/30 rounded-xl space-y-3 animate-fadeIn">
               <div className="space-y-1">
@@ -340,96 +578,18 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-1 border-t border-emerald-500/20">
-                <label className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center space-x-1.5 uppercase tracking-wider">
-                  <ImageIcon className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Ekran Görüntüsü (Başarı / Koşu Kanıtı)</span>
-                </label>
-                {screenshotUrl && (
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-mono font-semibold border border-emerald-500/30">
-                    Görsel Ekli
-                  </span>
-                )}
-              </div>
-
-              {screenshotUrl ? (
-                <div className="relative group max-w-md overflow-hidden rounded-xl border border-emerald-500/30 bg-white dark:bg-slate-900 p-2 shadow-sm">
-                  <img
-                    src={screenshotUrl}
-                    alt="Success Screenshot"
-                    className="w-full max-h-40 object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => setLightboxImage(screenshotUrl)}
-                  />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 backdrop-blur-[2px] rounded-xl">
-                    <button
-                      type="button"
-                      onClick={() => setLightboxImage(screenshotUrl)}
-                      className="p-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-transform hover:scale-105"
-                      title="Büyüt / Tam Ekran"
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </button>
-                    <label className="p-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 cursor-pointer transition-transform hover:scale-105" title="Görseli Değiştir">
-                      <Edit3 className="w-4 h-4 text-emerald-400" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => setScreenshotUrl(reader.result as string);
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setScreenshotUrl('')}
-                      className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-transform hover:scale-105"
-                      title="Görseli Sil"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-3 border-2 border-dashed border-emerald-500/30 rounded-xl bg-white dark:bg-slate-900 text-center space-y-1.5 shadow-sm">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Başarılı test koşusuna ait ekran görüntüsü veya kanıt ekleyin (İsteğe bağlı)
-                  </p>
-                  <div className="flex items-center justify-center space-x-2">
-                    <label className="inline-flex items-center space-x-1.5 px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95">
-                      <Upload className="w-3.5 h-3.5 text-emerald-500" />
-                      <span>Ekran Görüntüsü Yükle</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => setScreenshotUrl(reader.result as string);
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                    </label>
-                    <span className="text-[11px] text-slate-400 font-mono">veya Ctrl+V ile yapıştırın</span>
-                  </div>
-                </div>
-              )}
+              {renderScreenshotUploader('emerald', 'Ekran Görüntüleri (Başarı / Koşu Kanıtı)')}
             </div>
           )}
 
-          {/* FAILED Status Fields */}
+          {/* FAILED Status: Comment / Details, Jira Bug Mock & Multi-Screenshot */}
           {status === 'FAILED' && (
             <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl space-y-3 animate-fadeIn">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-red-600 dark:text-red-300">Hata Mesajı / Detay:</label>
+                <label className="text-xs font-semibold text-red-600 dark:text-red-300 flex items-center space-x-1">
+                  <XCircle className="w-3.5 h-3.5 text-red-500" />
+                  <span>Hata Mesajı / Detay:</span>
+                </label>
                 <textarea
                   rows={2}
                   value={errorMessage}
@@ -469,179 +629,49 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                 </div>
               )}
 
-              {/* Manual Screenshot Upload for FAIL status */}
-              <div className="space-y-2 pt-2 border-t border-red-500/20">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] text-red-600 dark:text-red-300 font-bold flex items-center space-x-1.5 uppercase tracking-wider">
-                    <ImageIcon className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
-                    <span>Manuel Ekran Görüntüsü (Fail Kanıtı)</span>
-                  </label>
-                  {screenshotUrl && (
-                    <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-mono font-semibold border border-emerald-500/20">
-                      Görsel Ekli
-                    </span>
-                  )}
-                </div>
-
-                {screenshotUrl ? (
-                  <div className="relative group max-w-md overflow-hidden rounded-xl border border-red-500/30 bg-white dark:bg-slate-900 p-2 shadow-sm">
-                    <img
-                      src={screenshotUrl}
-                      alt="Fail Screenshot"
-                      className="w-full max-h-40 object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => setLightboxImage(screenshotUrl)}
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 backdrop-blur-[2px] rounded-xl">
-                      <button
-                        type="button"
-                        onClick={() => setLightboxImage(screenshotUrl)}
-                        className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-transform hover:scale-105"
-                        title="Büyüt / Tam Ekran"
-                      >
-                        <Maximize2 className="w-4 h-4" />
-                      </button>
-                      <label className="p-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 cursor-pointer transition-transform hover:scale-105" title="Görseli Değiştir">
-                        <Edit3 className="w-4 h-4 text-blue-400" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => setScreenshotUrl(reader.result as string);
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setScreenshotUrl('')}
-                        className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-transform hover:scale-105"
-                        title="Görseli Sil"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-3 border-2 border-dashed border-red-500/30 rounded-xl bg-white dark:bg-slate-900 text-center space-y-1.5 shadow-sm">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      FAIL durumu için ekran görüntüsü kanıtı yükleyin
-                    </p>
-                    <div className="flex items-center justify-center space-x-2">
-                      <label className="inline-flex items-center space-x-1.5 px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-600 dark:text-red-300 border border-red-500/40 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95">
-                        <Upload className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
-                        <span>Ekran Görüntüsü Yükle</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => setScreenshotUrl(reader.result as string);
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                      </label>
-                      <span className="text-[11px] text-slate-400 font-mono">veya Ctrl+V ile yapıştırın</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {renderScreenshotUploader('red', 'Ekran Görüntüleri (Fail / Hata Kanıtı)')}
             </div>
           )}
 
-          {/* BLOCKED / SKIPPED Screenshot Upload */}
-          {(status === 'BLOCKED' || status === 'SKIPPED') && (
+          {/* SKIPPED Status: Comment & Multi-Screenshot */}
+          {status === 'SKIPPED' && (
             <div className="p-3.5 bg-slate-500/5 dark:bg-slate-500/10 border border-slate-500/20 dark:border-slate-500/30 rounded-xl space-y-3 animate-fadeIn">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] text-slate-600 dark:text-slate-300 font-bold flex items-center space-x-1.5 uppercase tracking-wider">
-                  <ImageIcon className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Ekran Görüntüsü / Kanıt (İsteğe Bağlı)</span>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center space-x-1">
+                  <SkipForward className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Atlanma Nedeni / Yorum (İsteğe bağlı):</span>
                 </label>
-                {screenshotUrl && (
-                  <span className="text-[10px] bg-slate-500/20 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded font-mono font-semibold border border-slate-500/30">
-                    Görsel Ekli
-                  </span>
-                )}
+                <textarea
+                  rows={2}
+                  value={errorMessage}
+                  onChange={(e) => setErrorMessage(e.target.value)}
+                  placeholder="Test senaryosunun neden atlandığını veya pas geçildiğini yazın..."
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-500/30 rounded-lg p-2 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-500 shadow-sm"
+                />
               </div>
 
-              {screenshotUrl ? (
-                <div className="relative group max-w-md overflow-hidden rounded-xl border border-slate-500/30 bg-white dark:bg-slate-900 p-2 shadow-sm">
-                  <img
-                    src={screenshotUrl}
-                    alt="Execution Screenshot"
-                    className="w-full max-h-40 object-contain rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => setLightboxImage(screenshotUrl)}
-                  />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 backdrop-blur-[2px] rounded-xl">
-                    <button
-                      type="button"
-                      onClick={() => setLightboxImage(screenshotUrl)}
-                      className="p-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-transform hover:scale-105"
-                      title="Büyüt / Tam Ekran"
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </button>
-                    <label className="p-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 cursor-pointer transition-transform hover:scale-105" title="Görseli Değiştir">
-                      <Edit3 className="w-4 h-4 text-purple-400" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => setScreenshotUrl(reader.result as string);
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setScreenshotUrl('')}
-                      className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-transform hover:scale-105"
-                      title="Görseli Sil"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-center space-y-1.5 shadow-sm">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Durumu açıklayan ekran görüntüsü ekleyebilirsiniz
-                  </p>
-                  <div className="flex items-center justify-center space-x-2">
-                    <label className="inline-flex items-center space-x-1.5 px-3 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95">
-                      <Upload className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Ekran Görüntüsü Yükle</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => setScreenshotUrl(reader.result as string);
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                    </label>
-                    <span className="text-[11px] text-slate-400 font-mono">veya Ctrl+V ile yapıştırın</span>
-                  </div>
-                </div>
-              )}
+              {renderScreenshotUploader('slate', 'Ekran Görüntüleri / Kanıt (İsteğe Bağlı)')}
+            </div>
+          )}
+
+          {/* BLOCKED Status: Reason / Comment & Multi-Screenshot */}
+          {status === 'BLOCKED' && (
+            <div className="p-3.5 bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/20 dark:border-purple-500/30 rounded-xl space-y-3 animate-fadeIn">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-purple-600 dark:text-purple-300 flex items-center space-x-1">
+                  <Slash className="w-3.5 h-3.5 text-purple-500" />
+                  <span>Engellenme Nedeni / Blocker Detayı (İsteğe bağlı):</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={errorMessage}
+                  onChange={(e) => setErrorMessage(e.target.value)}
+                  placeholder="Testin engellenme nedenini ve blocker detaylarını yazın (örn: Bağımlı servis çalışmıyor)..."
+                  className="w-full bg-white dark:bg-slate-900 border border-purple-500/30 rounded-lg p-2 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-purple-500 shadow-sm"
+                />
+              </div>
+
+              {renderScreenshotUploader('purple', 'Ekran Görüntüleri / Blocker Kanıtı (İsteğe Bağlı)')}
             </div>
           )}
 
@@ -667,34 +697,108 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
         </form>
       </div>
 
-      {/* Lightbox Modal for Fullscreen Image View */}
-      {lightboxImage && (
+      {/* Lightbox Modal with Multi-Image Carousel / Zoom View */}
+      {lightboxIndex !== null && screenshots[lightboxIndex] && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fadeIn">
-          <div className="absolute top-4 right-4 flex items-center space-x-3">
-            <a
-              href={lightboxImage}
-              download={`${testCase.code}-${status.toLowerCase()}-screenshot.png`}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg border border-slate-700 transition-colors"
-            >
-              İndir
-            </a>
-            <button
-              onClick={() => setLightboxImage(null)}
-              className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+          {/* Top Bar Controls */}
+          <div className="absolute top-4 inset-x-4 flex items-center justify-between z-10">
+            <div className="flex items-center space-x-2">
+              <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-800/90 text-slate-200 border border-slate-700">
+                {testCase.code} - {status}
+              </span>
+              {screenshots.length > 1 && (
+                <span className="text-xs font-mono bg-blue-600/30 text-blue-300 border border-blue-500/40 px-2.5 py-1 rounded-lg">
+                  {lightboxIndex + 1} / {screenshots.length}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <a
+                href={screenshots[lightboxIndex]}
+                download={`${testCase.code}-${status.toLowerCase()}-screenshot-${lightboxIndex + 1}.png`}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg border border-slate-700 transition-colors"
+                title="Görseli İndir"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">İndir</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => handleRemoveScreenshot(lightboxIndex)}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-red-600/80 hover:bg-red-600 text-white text-xs font-semibold rounded-lg border border-red-500/50 transition-colors"
+                title="Görseli Sil"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sil</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLightboxIndex(null)}
+                className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 transition-colors"
+                title="Kapat (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-          <div className="max-w-5xl max-h-[85vh] p-2 overflow-auto">
+
+          {/* Carousel Left Arrow */}
+          {screenshots.length > 1 && (
+            <button
+              type="button"
+              onClick={() =>
+                setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : screenshots.length - 1))
+              }
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-700 backdrop-blur-sm transition-transform hover:scale-110 z-10"
+              title="Önceki Görsel (←)"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+          )}
+
+          {/* Image Container */}
+          <div className="max-w-5xl max-h-[85vh] p-2 flex items-center justify-center overflow-auto">
             <img
-              src={lightboxImage}
-              alt="Full Screenshot"
+              src={screenshots[lightboxIndex]}
+              alt={`Full Screenshot ${lightboxIndex + 1}`}
               className="max-w-full max-h-[80vh] object-contain rounded-xl border border-slate-800 shadow-2xl"
             />
           </div>
+
+          {/* Carousel Right Arrow */}
+          {screenshots.length > 1 && (
+            <button
+              type="button"
+              onClick={() =>
+                setLightboxIndex((prev) => (prev !== null && prev < screenshots.length - 1 ? prev + 1 : 0))
+              }
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-700 backdrop-blur-sm transition-transform hover:scale-110 z-10"
+              title="Sonraki Görsel (→)"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          )}
+
+          {/* Bottom Thumbnails Navigation */}
+          {screenshots.length > 1 && (
+            <div className="absolute bottom-4 flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-800 backdrop-blur-md max-w-[90vw] overflow-x-auto">
+              {screenshots.map((thumb, tIdx) => (
+                <button
+                  key={tIdx}
+                  type="button"
+                  onClick={() => setLightboxIndex(tIdx)}
+                  className={`w-12 h-9 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
+                    tIdx === lightboxIndex ? 'border-blue-500 scale-105 shadow-md' : 'border-slate-700 opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img src={thumb} alt={`Thumb ${tIdx + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 };
-

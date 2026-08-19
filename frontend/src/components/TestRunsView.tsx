@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { TestRun, TestRunsService, RunStatus, ResultStatus, TestCase, ReportsService } from '@/services/api';
+import { parseScreenshots } from './QuickRunModal';
 import {
   Play,
   CheckCircle2,
@@ -693,16 +694,30 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                         </div>
                       )}
 
-                      {res.screenshotUrl && (
-                        <div className="pt-1">
-                          <img
-                            src={res.screenshotUrl}
-                            alt="Execution Screenshot"
-                            className="max-h-36 rounded-lg border border-slate-700 object-contain cursor-pointer hover:opacity-90"
-                            onClick={() => window.open(res.screenshotUrl, '_blank')}
-                          />
-                        </div>
-                      )}
+                      {(() => {
+                        const screenList = parseScreenshots(res.screenshotUrl);
+                        if (screenList.length === 0) return null;
+                        return (
+                          <div className="pt-1.5 space-y-1">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center space-x-1">
+                              <ImageIcon className="w-3 h-3 text-indigo-400" />
+                              <span>Ekran Görüntüleri ({screenList.length})</span>
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              {screenList.map((imgUrl, imgIdx) => (
+                                <img
+                                  key={imgIdx}
+                                  src={imgUrl}
+                                  alt={`Execution Screenshot ${imgIdx + 1}`}
+                                  className="max-h-28 rounded-lg border border-slate-700 object-contain cursor-pointer hover:opacity-90 transition-opacity bg-black/20"
+                                  onClick={() => window.open(imgUrl, '_blank')}
+                                  title="Tam boyutta aç"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
