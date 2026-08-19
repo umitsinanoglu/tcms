@@ -338,7 +338,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                 title="Bu Test Case'i Koştur"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Run Case</span>
+                <span>Test Case Koştur</span>
               </button>
             )}
 
