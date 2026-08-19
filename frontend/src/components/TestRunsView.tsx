@@ -233,26 +233,6 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Header Action Buttons */}
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          <button
-            onClick={() => setIsAutomationModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition-all"
-          >
-            <Code className="w-3.5 h-3.5 text-blue-500" />
-            <span className="hidden sm:inline">Otomasyon API Entegrasyonu</span>
-            <span className="sm:hidden">Otomasyon API</span>
-          </button>
-
-          <button
-            onClick={onOpenManualRun}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/20 transition-all active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Yeni Manuel Koşu</span>
-          </button>
-        </div>
       </div>
 
       {/* KPI Cards Row */}

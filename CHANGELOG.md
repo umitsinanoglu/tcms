@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- **Test Koşuları Sayfası Başlık Butonları**: Test Koşumları sayfasının sağ üst kısmında yer alan "Yeni Manuel Koşu" ve "Otomasyon API Entegrasyonu" butonları kaldırıldı.
 - **Test Planı Başlığı**: Dashboard ve Header başlıkları seçili Test Planı adına (`[KEY] Plan Adı`) dinamik olarak bağlandı.
 - **Test Koşuları Sayfası Revizyonu**: Test Koşuları tablosuna ve detay modalına test case'lerin bağlı olduğu **Ebeveyn Nesne / Modül (Parent Suite)** ve **Ürün Tipi (WEB, MOBILE, IOS, ANDROID, API)** sütunları ve rozetleri eklendi.
 - Sol üstteki genel geri butonu kaldırıldı; test planı etiket alanı yerine arama destekli, açılır menülü ve hızlı geçiş sağlayan Test Planı Navigasyon Combobox bileşeni entegre edildi.
