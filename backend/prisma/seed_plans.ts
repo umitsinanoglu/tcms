@@ -8,7 +8,7 @@ console.log(`🌱 Seeding database target: [${dbConfig.environment}]`);
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: dbConfig.databaseUrl,
+      url: dbConfig.directUrl || dbConfig.databaseUrl,
     },
   },
 });

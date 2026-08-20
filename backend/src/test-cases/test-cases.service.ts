@@ -179,50 +179,50 @@ export class TestCasesService {
   }
 
   async update(id: string, updateTestCaseDto: UpdateTestCaseDto) {
-    await this.findOne(id);
-
     const { steps, ...caseData } = updateTestCaseDto;
 
-    // If steps are provided, replace existing steps
-    if (steps) {
-      await this.prisma.testStep.deleteMany({
-        where: { testCaseId: id },
-      });
-    }
+    return this.prisma.$transaction(async (tx) => {
+      // If steps are provided, replace existing steps
+      if (steps) {
+        await tx.testStep.deleteMany({
+          where: { testCaseId: id },
+        });
+      }
 
-    return this.prisma.testCase.update({
-      where: { id },
-      data: {
-        ...caseData,
-        steps: steps ? {
-          create: steps.map((step, idx) => ({
-            stepNumber: step.stepNumber || idx + 1,
-            action: step.action,
-            expectedResult: step.expectedResult || '',
-            attachments: step.attachments ? JSON.parse(JSON.stringify(step.attachments)) : [],
-          })),
-        } : undefined,
-      },
-      include: {
-        steps: {
-          orderBy: { stepNumber: 'asc' },
+      return tx.testCase.update({
+        where: { id },
+        data: {
+          ...caseData,
+          steps: steps ? {
+            create: steps.map((step, idx) => ({
+              stepNumber: step.stepNumber || idx + 1,
+              action: step.action,
+              expectedResult: step.expectedResult || '',
+              attachments: step.attachments ? JSON.parse(JSON.stringify(step.attachments)) : [],
+            })),
+          } : undefined,
         },
-        results: {
-          orderBy: { executedAt: 'desc' },
-          include: {
-            testRun: {
-              select: {
-                id: true,
-                title: true,
-                version: true,
-                environment: true,
-                status: true,
-                executedBy: true,
+        include: {
+          steps: {
+            orderBy: { stepNumber: 'asc' },
+          },
+          results: {
+            orderBy: { executedAt: 'desc' },
+            include: {
+              testRun: {
+                select: {
+                  id: true,
+                  title: true,
+                  version: true,
+                  environment: true,
+                  status: true,
+                  executedBy: true,
+                },
               },
             },
           },
         },
-      },
+      });
     });
   }
 

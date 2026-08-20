@@ -70,6 +70,58 @@ export default function Home() {
     return null;
   };
 
+  // Helper to update a test case in tree nodes recursively without full DB refetch
+  const updateCaseInTreeNodes = (nodes: SuiteTreeNode[], updated: TestCase): SuiteTreeNode[] => {
+    return nodes.map((node) => {
+      const hasCase = node.testCases?.some((tc) => tc.id === updated.id);
+      const newCases = hasCase
+        ? node.testCases.map((tc) => (tc.id === updated.id ? { ...tc, ...updated } : tc))
+        : node.testCases || [];
+      const newChildren = node.children && node.children.length > 0
+        ? updateCaseInTreeNodes(node.children, updated)
+        : node.children;
+      return {
+        ...node,
+        testCases: newCases,
+        children: newChildren,
+      };
+    });
+  };
+
+  // Helper to add a test case into tree nodes recursively
+  const addCaseToTreeNodes = (nodes: SuiteTreeNode[], newCase: TestCase): SuiteTreeNode[] => {
+    return nodes.map((node) => {
+      if (node.id === newCase.suiteId) {
+        return {
+          ...node,
+          testCases: [...(node.testCases || []), newCase],
+        };
+      }
+      if (node.children && node.children.length > 0) {
+        return {
+          ...node,
+          children: addCaseToTreeNodes(node.children, newCase),
+        };
+      }
+      return node;
+    });
+  };
+
+  // Helper to remove a test case from tree nodes recursively
+  const removeCaseFromTreeNodes = (nodes: SuiteTreeNode[], caseId: string): SuiteTreeNode[] => {
+    return nodes.map((node) => {
+      const newCases = (node.testCases || []).filter((tc) => tc.id !== caseId);
+      const newChildren = node.children && node.children.length > 0
+        ? removeCaseFromTreeNodes(node.children, caseId)
+        : node.children;
+      return {
+        ...node,
+        testCases: newCases,
+        children: newChildren,
+      };
+    });
+  };
+
   // Helper for Session State Persistence
   interface SavedSessionState {
     projectId: string | null;
@@ -518,21 +570,58 @@ export default function Home() {
   // Handlers for TestCase actions
   const handleCreateCase = async (data: Partial<TestCase>) => {
     const created = await TestCasesService.create(data);
-    if (selectedProject) await loadTree(selectedProject.id);
+    if (created.suiteId) {
+      setTree((prevTree) => addCaseToTreeNodes(prevTree, created));
+    } else {
+      setRootCases((prevRoots) => [...prevRoots, created]);
+    }
+    setSelectedSuite((prevSuite) => {
+      if (prevSuite && prevSuite.id === created.suiteId) {
+        return {
+          ...prevSuite,
+          testCases: [...(prevSuite.testCases || []), created],
+        };
+      }
+      return prevSuite;
+    });
     handleSelectCase(created);
   };
 
   const handleSaveCase = async (updatedCase: Partial<TestCase>) => {
     if (!updatedCase.id) return;
     const res = await TestCasesService.update(updatedCase.id, updatedCase);
-    setSelectedCase((prev) => {
-      const mergedResults = res.results && res.results.length > 0 ? res.results : (prev?.id === res.id ? prev.results : []);
+    const mergedResults =
+      res.results && res.results.length > 0
+        ? res.results
+        : selectedCase?.id === res.id
+        ? selectedCase.results
+        : [];
+
+    const fullUpdatedCase: TestCase = {
+      ...res,
+      results: mergedResults,
+    };
+
+    setSelectedCase(fullUpdatedCase);
+
+    // Update local tree & root cases in React state without full remote DB refetch
+    setTree((prevTree) => updateCaseInTreeNodes(prevTree, fullUpdatedCase));
+    setRootCases((prevRoots) =>
+      prevRoots.map((tc) => (tc.id === fullUpdatedCase.id ? { ...tc, ...fullUpdatedCase } : tc))
+    );
+
+    // Also update selectedSuite testCases in-memory if active
+    setSelectedSuite((prevSuite) => {
+      if (!prevSuite) return null;
+      const hasCase = prevSuite.testCases?.some((tc) => tc.id === fullUpdatedCase.id);
+      if (!hasCase) return prevSuite;
       return {
-        ...res,
-        results: mergedResults,
+        ...prevSuite,
+        testCases: prevSuite.testCases.map((tc) =>
+          tc.id === fullUpdatedCase.id ? { ...tc, ...fullUpdatedCase } : tc
+        ),
       };
     });
-    if (selectedProject) await loadTree(selectedProject.id);
   };
 
   const handleDeleteCase = async (caseId: string) => {
@@ -541,7 +630,16 @@ export default function Home() {
       setSelectedCase(null);
       saveSessionState({ caseId: null });
     }
-    if (selectedProject) await loadTree(selectedProject.id);
+    // Update local tree & root cases in React state without full remote DB refetch
+    setTree((prevTree) => removeCaseFromTreeNodes(prevTree, caseId));
+    setRootCases((prevRoots) => prevRoots.filter((tc) => tc.id !== caseId));
+    setSelectedSuite((prevSuite) => {
+      if (!prevSuite) return null;
+      return {
+        ...prevSuite,
+        testCases: (prevSuite.testCases || []).filter((tc) => tc.id !== caseId),
+      };
+    });
   };
 
   const handleRunCase = (tc: TestCase, version?: string, environment?: string) => {
