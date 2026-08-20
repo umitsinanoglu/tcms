@@ -141,6 +141,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
   const [collapsedProjectsMap, setCollapsedProjectsMap] = useState<Record<string, boolean>>({});
 
+  // Automatically expand the active selected project whenever it changes
+  useEffect(() => {
+    if (selectedProject?.id) {
+      setCollapsedProjectsMap((prev) => ({
+        ...prev,
+        [selectedProject.id]: false,
+      }));
+    }
+  }, [selectedProject?.id]);
+
   const toggleExpand = (suiteId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setExpandedMap((prev) => {

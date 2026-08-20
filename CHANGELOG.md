@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- **Yeni Test Planı Sol Menü Ağacı İzolasyonu Düzeltmesi**: Yeni bir Test Planı oluşturulduğunda sol menüde (`AppSidebar`) önceki/ilk plana ait klasör ve senaryoların kalması engellendi; oluşturulan yeni plan anında seçilerek ağaç yapısı temizlendi, otomatik genişletildi ve içi tamamen boş ("Henüz suite veya case eklenmedi.") olarak listelenmesi sağlandı.
 - Top navigation sağ üst alana Swagger Docs butonu eklendi
 - **Değişiklikleri Kaydet & Koşum Geçmişi Koruma Düzeltmesi**: `TestCasesService.update` backend metoduna `results` ve `testRun` ilişkileri dahil edildi ve `page.tsx`'teki `handleSaveCase`, `handleQuickRunSuccess` ile `ManualRunModal` `onClose` akışları iyileştirildi; böylece bir test senaryosunda değişiklik kaydedildiğinde veya yeni bir koşu yapıldığında tüm önceki koşum kayıtları, test notları ve ekran görüntüleri eksiksiz korunarak anında güncellenmesi sağlandı.
 - **Test Koşum Geçmişi ve Kanıt Görselleri Düzeltmesi**: `ProjectsService.getTree` API'sindeki `take: 1` sınırlandırması kaldırılarak ve `testRun` ilişkisi dahil edilerek tüm geçmiş koşuların (`results`), koşu başlıklarının (`testRun.title`), bağımsız test notlarının/yorumlarının ve kanıt ekran görüntülerinin (`screenshotUrl`) `TestCaseEditor` içindeki "Koşum Geçmişi & Tüm Tekrar Koşuları" bölümünde eksiksiz görüntülenmesi ve Lightbox ile büyütülebilmesi sağlandı.

@@ -236,17 +236,20 @@ export default function Home() {
 
   // Handle Project Selection with Navigation Push
   const handleSelectProject = useCallback(
-    (p: Project, shouldPushState = true) => {
+    async (p: Project, shouldPushState = true) => {
       setSelectedCase(null);
       setSelectedSuite(null);
       setSelectedProject(p);
-      loadTree(p.id);
+      setTree([]);
+      setRootCases([]);
       saveSessionState({
         projectId: p.id,
         tab: activeTab,
         suiteId: null,
         caseId: null,
       });
+
+      const loaded = await loadTree(p.id);
 
       if (shouldPushState) {
         pushState({
@@ -257,6 +260,7 @@ export default function Home() {
           label: `Plan: [${p.key}] ${p.name}`,
         });
       }
+      return loaded;
     },
     [activeTab, loadTree, pushState]
   );
@@ -505,15 +509,27 @@ export default function Home() {
   // Handlers for Project actions
   const handleCreateProject = async (data: { name: string; key: string; description?: string; jiraProjectKey?: string }) => {
     const newProj = await ProjectsService.create(data);
-    await loadProjects();
+    const dataProjects = await ProjectsService.getAll();
+    const sorted = [...dataProjects].sort((a, b) =>
+      a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
+    );
+    const targetProj = sorted.find((p) => p.id === newProj.id) || newProj;
+
+    setProjects(sorted);
     setSelectedCase(null);
     setSelectedSuite(null);
-    setSelectedProject(newProj);
+    setTree([]);
+    setRootCases([]);
+    await handleSelectProject(targetProj);
   };
 
   const handleUpdateProject = async (id: string, data: { name?: string; key?: string; description?: string; jiraProjectKey?: string }) => {
     const updated = await ProjectsService.update(id, data);
-    await loadProjects();
+    const dataProjects = await ProjectsService.getAll();
+    const sorted = [...dataProjects].sort((a, b) =>
+      a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
+    );
+    setProjects(sorted);
     setSelectedProject((prev) => (prev?.id === id ? { ...prev, ...updated } : prev));
     if (selectedProject?.id === id) {
       await loadTree(id);
@@ -528,16 +544,10 @@ export default function Home() {
     setProjects(updatedList);
     if (selectedProject?.id === id) {
       const next = updatedList.length > 0 ? updatedList[0] : null;
-      setSelectedProject(next);
       if (next) {
-        await loadTree(next.id);
-        saveSessionState({
-          projectId: next.id,
-          tab: 'DASHBOARD',
-          suiteId: null,
-          caseId: null,
-        });
+        await handleSelectProject(next);
       } else {
+        setSelectedProject(null);
         setTree([]);
         setRootCases([]);
         localStorage.removeItem('tcms_session_state');
