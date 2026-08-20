@@ -15,6 +15,8 @@ import {
   Check,
   Search,
   X,
+  ExternalLink,
+  BookOpen,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -275,8 +277,25 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
       )}
 
-      {/* Right: Theme Switcher & Primary Action Button */}
-      <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+      {/* Right: Theme Switcher, Swagger Docs & Primary Action Button */}
+      <div className="flex items-center space-x-2 sm:space-x-2.5 shrink-0">
+        {/* Swagger / OpenAPI Docs Link */}
+        <a
+          href={
+            process.env.NEXT_PUBLIC_API_URL
+              ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/v1\/?$/, '/api/docs')
+              : 'http://localhost:3001/api/docs'
+          }
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-rose-50/80 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800/50 rounded-xl transition-all shadow-sm shrink-0"
+          title="OpenAPI / Swagger API Dokümantasyonunu Aç (Yeni Sekme)"
+        >
+          <BookOpen className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+          <span className="hidden md:inline font-semibold">Swagger Docs</span>
+          <ExternalLink className="w-3 h-3 opacity-50 shrink-0 ml-0.5" />
+        </a>
+
         <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 shrink-0 hidden sm:block" />
 
         {/* Theme Selector Component */}
@@ -285,7 +304,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Primary Action Button: 'Yeni Test Planı' */}
         <button
           onClick={onOpenNewProject}
-          className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 rounded-lg text-white transition-all shadow-md shadow-rose-600/20 active:scale-95 shrink-0 cursor-pointer"
+          className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 rounded-xl text-white transition-all shadow-md shadow-rose-600/20 active:scale-95 shrink-0 cursor-pointer"
           title="Yeni Test Planı / Proje Oluştur"
         >
           <PlusCircle className="w-4 h-4 shrink-0" />

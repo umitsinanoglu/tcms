@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Top navigation sağ üst alana Swagger Docs butonu eklendi
 - **Değişiklikleri Kaydet & Koşum Geçmişi Koruma Düzeltmesi**: `TestCasesService.update` backend metoduna `results` ve `testRun` ilişkileri dahil edildi ve `page.tsx`'teki `handleSaveCase`, `handleQuickRunSuccess` ile `ManualRunModal` `onClose` akışları iyileştirildi; böylece bir test senaryosunda değişiklik kaydedildiğinde veya yeni bir koşu yapıldığında tüm önceki koşum kayıtları, test notları ve ekran görüntüleri eksiksiz korunarak anında güncellenmesi sağlandı.
 - **Test Koşum Geçmişi ve Kanıt Görselleri Düzeltmesi**: `ProjectsService.getTree` API'sindeki `take: 1` sınırlandırması kaldırılarak ve `testRun` ilişkisi dahil edilerek tüm geçmiş koşuların (`results`), koşu başlıklarının (`testRun.title`), bağımsız test notlarının/yorumlarının ve kanıt ekran görüntülerinin (`screenshotUrl`) `TestCaseEditor` içindeki "Koşum Geçmişi & Tüm Tekrar Koşuları" bölümünde eksiksiz görüntülenmesi ve Lightbox ile büyütülebilmesi sağlandı.
 - Navigasyon geçmişi yöneticisinde (`NavigationContext`) state kilitlenmesi ve closure gecikmesi giderildi; senkron ref takibi ve akıllı fallback mekanizması ile "Geri" butonunun tüm sayfalarda kesintisiz çalışması sağlandı.
