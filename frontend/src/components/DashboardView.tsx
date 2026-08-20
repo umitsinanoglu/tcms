@@ -285,81 +285,114 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* KPI Cards Summary Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Cards Summary Row - Compact Modern Design */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Total Cases */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span className="text-xs font-medium uppercase tracking-wider">Toplam Test Case</span>
-            <FileCheck className="w-4 h-4 text-blue-500" />
+        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-2 hover:border-blue-500/30 transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+              Toplam Test Case
+            </span>
+            <div className="p-1 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
+              <FileCheck className="w-3.5 h-3.5" />
+            </div>
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold font-mono tracking-tight">{totalCases}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">
+            <span className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100 tracking-tight">
+              {totalCases}
+            </span>
+            <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
               {automatedRatio}% Otomatik
             </span>
           </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-blue-500 h-full rounded-full" style={{ width: `${automatedRatio}%` }} />
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden">
+            <div className="bg-blue-500 h-full rounded-full transition-all duration-300" style={{ width: `${automatedRatio}%` }} />
           </div>
         </div>
 
         {/* Card 2: Pass Rate */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span className="text-xs font-medium uppercase tracking-wider">Genel Başarı Oranı</span>
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
+        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-2 hover:border-emerald-500/30 transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+              Genel Başarı Oranı
+            </span>
+            <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-500 shrink-0">
+              <TrendingUp className="w-3.5 h-3.5" />
+            </div>
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 tracking-tight">
-              {passRate}%
+            <span className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 tracking-tight">
+              %{passRate}
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+            <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
               {passedCount}/{executedCount || 1} Koşuldu
             </span>
           </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${passRate}%` }} />
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden">
+            <div className="bg-emerald-500 h-full rounded-full transition-all duration-300" style={{ width: `${passRate}%` }} />
           </div>
         </div>
 
         {/* Card 3: Failed & Blocked */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span className="text-xs font-medium uppercase tracking-wider">Hata & Engel (Fail/Block)</span>
-            <XCircle className="w-4 h-4 text-rose-500" />
+        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-2 hover:border-[#b83a4b]/30 transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+              Hata & Engel
+            </span>
+            <div className="p-1 rounded-lg bg-[#b83a4b]/10 text-[#b83a4b] shrink-0">
+              <XCircle className="w-3.5 h-3.5" />
+            </div>
           </div>
           <div className="flex items-baseline justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-3xl font-extrabold font-mono text-rose-600 dark:text-rose-400 tracking-tight">
+            <div className="flex items-center space-x-1.5 font-mono">
+              <span className={`text-xl font-bold tracking-tight ${failedCount > 0 ? 'text-[#b83a4b]' : 'text-slate-700 dark:text-slate-300'}`}>
                 {failedCount}
               </span>
-              <span className="text-xs text-slate-400">Fail</span>
+              <span className="text-[10px] text-slate-400 font-sans">Fail</span>
+              {blockedCount > 0 && (
+                <>
+                  <span className="text-slate-300 dark:text-slate-700">•</span>
+                  <span className="text-sm font-bold text-purple-600 dark:text-purple-400">{blockedCount}</span>
+                  <span className="text-[10px] text-slate-400 font-sans">Block</span>
+                </>
+              )}
             </div>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-medium">
-              {blockedCount} Blocked
+            <span
+              className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border ${
+                failedCount + blockedCount === 0
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                  : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+              }`}
+            >
+              {failedCount + blockedCount === 0 ? 'Sorun Yok' : `${blockedCount} Blocked`}
             </span>
           </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden flex">
-            <div className="bg-rose-500 h-full" style={{ width: `${executedCount ? (failedCount / executedCount) * 100 : 0}%` }} />
-            <div className="bg-purple-500 h-full" style={{ width: `${executedCount ? (blockedCount / executedCount) * 100 : 0}%` }} />
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden flex">
+            <div className="bg-[#b83a4b] h-full transition-all duration-300" style={{ width: `${executedCount ? (failedCount / executedCount) * 100 : 0}%` }} />
+            <div className="bg-purple-500 h-full transition-all duration-300" style={{ width: `${executedCount ? (blockedCount / executedCount) * 100 : 0}%` }} />
           </div>
         </div>
 
         {/* Card 4: Total Suites */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span className="text-xs font-medium uppercase tracking-wider">Test Suite Sayısı</span>
-            <FolderKanban className="w-4 h-4 text-amber-500" />
+        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-2 hover:border-amber-500/30 transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+              Test Suite Sayısı
+            </span>
+            <div className="p-1 rounded-lg bg-amber-500/10 text-amber-500 shrink-0">
+              <FolderKanban className="w-3.5 h-3.5" />
+            </div>
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold font-mono tracking-tight">{flattenedSuites.length}</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+            <span className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100 tracking-tight">
+              {flattenedSuites.length}
+            </span>
+            <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
               {traceabilityRatio}% Jira Bağlı
             </span>
           </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-amber-500 h-full rounded-full" style={{ width: `${traceabilityRatio}%` }} />
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden">
+            <div className="bg-amber-500 h-full rounded-full transition-all duration-300" style={{ width: `${traceabilityRatio}%` }} />
           </div>
         </div>
       </div>
@@ -556,99 +589,99 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Main Content Tab 2: METRICS & RECENT ACTIVITY */}
       {dashboardTab === 'METRICS' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Status Distribution */}
-            <div className="lg:col-span-2 p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
-                  <Activity className="w-4 h-4 text-blue-500" />
+            <div className="lg:col-span-2 p-4 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
+                  <Activity className="w-3.5 h-3.5 text-blue-500" />
                   <span>Test Durumu Genel Dağılımı</span>
                 </h3>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{totalCases} Test Case</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{totalCases} Test Case</span>
               </div>
 
-              {/* Big Progress Bar */}
+              {/* Progress Bar */}
               <div className="space-y-2">
-                <div className="w-full bg-slate-100 dark:bg-slate-800 h-4 rounded-xl overflow-hidden flex shadow-inner">
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden flex shadow-inner">
                   <div className="bg-emerald-500 h-full" style={{ width: `${totalCases ? (passedCount / totalCases) * 100 : 0}%` }} title={`Passed: ${passedCount}`} />
-                  <div className="bg-rose-500 h-full" style={{ width: `${totalCases ? (failedCount / totalCases) * 100 : 0}%` }} title={`Failed: ${failedCount}`} />
+                  <div className="bg-[#b83a4b] h-full" style={{ width: `${totalCases ? (failedCount / totalCases) * 100 : 0}%` }} title={`Failed: ${failedCount}`} />
                   <div className="bg-purple-500 h-full" style={{ width: `${totalCases ? (blockedCount / totalCases) * 100 : 0}%` }} title={`Blocked: ${blockedCount}`} />
                   <div className="bg-slate-400 h-full" style={{ width: `${totalCases ? (skippedCount / totalCases) * 100 : 0}%` }} title={`Skipped: ${skippedCount}`} />
                 </div>
 
                 {/* Badges Legend */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                    <div className="flex items-center justify-center space-x-1 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+                  <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
+                    <div className="flex items-center justify-center space-x-1 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
+                      <CheckCircle2 className="w-3 h-3" />
                       <span>PASSED</span>
                     </div>
-                    <span className="text-lg font-mono font-extrabold text-emerald-700 dark:text-emerald-300">{passedCount}</span>
+                    <span className="text-base font-mono font-extrabold text-emerald-700 dark:text-emerald-300">{passedCount}</span>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center">
-                    <div className="flex items-center justify-center space-x-1 text-rose-600 dark:text-rose-400 font-bold text-xs">
-                      <XCircle className="w-3.5 h-3.5" />
+                  <div className="p-2 rounded-lg bg-[#b83a4b]/10 border border-[#b83a4b]/20 text-center">
+                    <div className="flex items-center justify-center space-x-1 text-[#b83a4b] dark:text-[#d66b7a] font-bold text-[10px]">
+                      <XCircle className="w-3 h-3" />
                       <span>FAILED</span>
                     </div>
-                    <span className="text-lg font-mono font-extrabold text-rose-700 dark:text-rose-300">{failedCount}</span>
+                    <span className="text-base font-mono font-extrabold text-[#b83a4b] dark:text-[#d66b7a]">{failedCount}</span>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-center">
-                    <div className="flex items-center justify-center space-x-1 text-purple-600 dark:text-purple-400 font-bold text-xs">
-                      <Slash className="w-3.5 h-3.5" />
+                  <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-center">
+                    <div className="flex items-center justify-center space-x-1 text-purple-600 dark:text-purple-400 font-bold text-[10px]">
+                      <Slash className="w-3 h-3" />
                       <span>BLOCKED</span>
                     </div>
-                    <span className="text-lg font-mono font-extrabold text-purple-700 dark:text-purple-300">{blockedCount}</span>
+                    <span className="text-base font-mono font-extrabold text-purple-700 dark:text-purple-300">{blockedCount}</span>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-slate-500/10 border border-slate-500/20 text-center">
-                    <div className="flex items-center justify-center space-x-1 text-slate-600 dark:text-slate-400 font-bold text-xs">
-                      <Clock className="w-3.5 h-3.5" />
+                  <div className="p-2 rounded-lg bg-slate-500/10 border border-slate-500/20 text-center">
+                    <div className="flex items-center justify-center space-x-1 text-slate-600 dark:text-slate-400 font-bold text-[10px]">
+                      <Clock className="w-3 h-3" />
                       <span>UNTESTED</span>
                     </div>
-                    <span className="text-lg font-mono font-extrabold text-slate-700 dark:text-slate-300">{untestedCount}</span>
+                    <span className="text-base font-mono font-extrabold text-slate-700 dark:text-slate-300">{untestedCount}</span>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-center">
-                    <div className="flex items-center justify-center space-x-1 text-blue-600 dark:text-blue-400 font-bold text-xs">
-                      <Zap className="w-3.5 h-3.5" />
+                  <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                    <div className="flex items-center justify-center space-x-1 text-blue-600 dark:text-blue-400 font-bold text-[10px]">
+                      <Zap className="w-3 h-3" />
                       <span>KOŞULDU</span>
                     </div>
-                    <span className="text-lg font-mono font-extrabold text-blue-700 dark:text-blue-300">{executedCount}</span>
+                    <span className="text-base font-mono font-extrabold text-blue-700 dark:text-blue-300">{executedCount}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Priority & Platform Type breakdown */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 pb-2">
                 Öncelik & Platform Dağılımı
               </h3>
 
-              <div className="space-y-3 text-xs">
+              <div className="space-y-2.5 text-xs">
                 {/* Priority Bars */}
                 <div>
-                  <div className="flex justify-between text-slate-500 dark:text-slate-400 mb-1">
+                  <div className="flex justify-between text-slate-500 dark:text-slate-400 text-[11px] mb-1">
                     <span>Blocker & Critical</span>
-                    <span className="font-mono font-bold text-rose-500">{blockerCount + criticalCount} case</span>
+                    <span className="font-mono font-bold text-[#b83a4b]">{blockerCount + criticalCount} case</span>
                   </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                     <div
-                      className="bg-rose-500 h-full rounded-full"
+                      className="bg-[#b83a4b] h-full rounded-full"
                       style={{ width: `${totalCases ? ((blockerCount + criticalCount) / totalCases) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-slate-500 dark:text-slate-400 mb-1">
+                  <div className="flex justify-between text-slate-500 dark:text-slate-400 text-[11px] mb-1">
                     <span>Normal & Low</span>
                     <span className="font-mono font-bold text-blue-500">{normalCount + lowCount} case</span>
                   </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                     <div
                       className="bg-blue-500 h-full rounded-full"
                       style={{ width: `${totalCases ? ((normalCount + lowCount) / totalCases) * 100 : 0}%` }}
@@ -657,23 +690,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Platform types */}
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-2 text-center">
-                  <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
-                    <Globe className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold">Web</span>
-                    <p className="font-mono font-bold">{webCount}</p>
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-1.5 text-center">
+                  <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
+                    <Globe className="w-3.5 h-3.5 text-emerald-500 mx-auto mb-0.5" />
+                    <span className="text-[9px] text-slate-400 uppercase font-semibold">Web</span>
+                    <p className="font-mono font-bold text-xs">{webCount}</p>
                   </div>
 
-                  <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
-                    <Smartphone className="w-4 h-4 text-purple-500 mx-auto mb-1" />
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold">Mobile</span>
-                    <p className="font-mono font-bold">{mobileCount}</p>
+                  <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
+                    <Smartphone className="w-3.5 h-3.5 text-purple-500 mx-auto mb-0.5" />
+                    <span className="text-[9px] text-slate-400 uppercase font-semibold">Mobile</span>
+                    <p className="font-mono font-bold text-xs">{mobileCount}</p>
                   </div>
 
-                  <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
-                    <Code className="w-4 h-4 text-cyan-500 mx-auto mb-1" />
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold">API</span>
-                    <p className="font-mono font-bold">{apiCount}</p>
+                  <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
+                    <Code className="w-3.5 h-3.5 text-cyan-500 mx-auto mb-0.5" />
+                    <span className="text-[9px] text-slate-400 uppercase font-semibold">API</span>
+                    <p className="font-mono font-bold text-xs">{apiCount}</p>
                   </div>
                 </div>
               </div>
@@ -681,35 +714,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Bottom Section: Recent Execution Feed */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-indigo-500" />
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
+                <Clock className="w-3.5 h-3.5 text-indigo-500" />
                 <span>Son Test Koşuları Aktivitesi</span>
               </h3>
-              <span className="text-xs text-slate-500 dark:text-slate-400">Son {latestActivity.length} aktivite</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">Son {latestActivity.length} aktivite</span>
             </div>
 
             {latestActivity.length === 0 ? (
-              <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs">
+              <div className="text-center py-6 text-slate-400 dark:text-slate-500 text-xs">
                 Henüz test koşusu yapılmadı. "Test Run" butonu ile ilk test koşunuzu başlatabilirsiniz.
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {latestActivity.map(({ testCase, result }, idx) => (
                   <div
                     key={idx}
                     onClick={() => onSelectCase && onSelectCase(testCase)}
-                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/50 transition-colors cursor-pointer text-xs"
+                    className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/50 transition-colors cursor-pointer text-xs"
                   >
-                    <div className="flex items-center space-x-3 min-w-0">
+                    <div className="flex items-center space-x-2.5 min-w-0">
                       {result.status === 'PASSED' && (
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px] shrink-0">
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[9px] shrink-0">
                           PASS
                         </span>
                       )}
                       {result.status === 'FAILED' && (
-                        <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-600 dark:text-rose-400 font-mono font-bold text-[10px] shrink-0">
+                        <span className="px-1.5 py-0.5 rounded bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a] font-mono font-bold text-[9px] shrink-0">
                           FAIL
                         </span>
                       )}
