@@ -10,6 +10,4 @@ echo "🚀 TCMS Backend ve Frontend servisleri başlatılıyor..."
 ./stop.sh 2>/dev/null
 
 echo "▶️ Backend (port 3001) ve Frontend (port 3000) çalıştırılıyor..."
-npx concurrently -k -n "BACKEND,FRONTEND" -c "cyan.bold,magenta.bold" \
-  "cd backend && npm run start:dev" \
-  "cd frontend && npm run dev"
+npx concurrently --kill-others-on-fail -n "BACKEND,FRONTEND" -c "cyan.bold,magenta.bold" "cd backend && npm run start:dev" "cd frontend && npm run dev"

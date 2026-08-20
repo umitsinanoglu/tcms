@@ -33,8 +33,8 @@ export const TTBLogo: React.FC<TTBLogoProps> = ({
     if (colorMode === 'coral') return '/brand/ttb-emblem-coral.png';
     if (colorMode === 'white') return '/brand/ttb-emblem-white.png';
     if (colorMode === 'slate') return '/brand/ttb-emblem-slate.png';
-    // Auto Mode: Coral red in Dark mode, Deep Brand Red in Light mode
-    return isDark ? '/brand/ttb-emblem-coral.png' : '/brand/ttb-emblem-red.png';
+    // Auto Mode: Official Corporate Red Emblem
+    return '/brand/ttb-emblem-red.png';
   };
 
   const getTextSrc = () => {
@@ -42,7 +42,7 @@ export const TTBLogo: React.FC<TTBLogoProps> = ({
     if (colorMode === 'coral') return '/brand/ttb-text-coral.png';
     if (colorMode === 'white') return '/brand/ttb-text-white.png';
     if (colorMode === 'slate') return '/brand/ttb-text-slate.png';
-    // Auto Mode: In dark mode, crisp white typography stands out cleanly; in light mode, brand red or dark slate
+    // Auto Mode: In dark mode, crisp white typography stands out cleanly; in light mode, brand red
     return isDark ? '/brand/ttb-text-white.png' : '/brand/ttb-text-red.png';
   };
 
@@ -96,7 +96,7 @@ export const TTBLogo: React.FC<TTBLogoProps> = ({
 
           {showSubtitle && (
             <div className="flex items-center space-x-1.5 mt-0.5">
-              <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wider uppercase px-1.5 py-0.2 bg-rose-500/15 text-rose-600 dark:text-rose-400 rounded border border-rose-500/20 font-mono leading-tight">
+              <span className="text-[9px] sm:text-[10px] font-bold tracking-wider uppercase px-1.5 py-0.2 bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] rounded border border-[#b83a4b]/25 font-mono leading-tight">
                 TCMS
               </span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono hidden sm:inline leading-tight">
@@ -113,7 +113,7 @@ export const TTBLogo: React.FC<TTBLogoProps> = ({
   return (
     <div className={`flex items-center space-x-2.5 select-none ${className}`}>
       <div
-        className="relative shrink-0 rounded-xl p-1 bg-gradient-to-br from-rose-500/10 via-pink-500/5 to-transparent border border-rose-500/20 dark:border-rose-500/30 shadow-sm flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
+        className="relative shrink-0 rounded-xl p-1 bg-[#b83a4b]/10 border border-[#b83a4b]/20 shadow-sm flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
         style={{ height: `${height}px`, width: `${height}px` }}
       >
         <img
@@ -129,7 +129,7 @@ export const TTBLogo: React.FC<TTBLogoProps> = ({
           <span className="text-base font-extrabold tracking-tight bg-gradient-to-r from-slate-950 via-slate-800 to-slate-700 dark:from-white dark:via-slate-100 dark:to-slate-300 bg-clip-text text-transparent leading-none">
             TCMS
           </span>
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25 uppercase tracking-wide leading-none font-mono">
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/25 uppercase tracking-wide leading-none font-mono">
             TTB
           </span>
         </div>

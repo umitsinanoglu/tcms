@@ -92,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'ADMIN':
         return {
           label: 'ADMIN',
-          bg: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
+          bg: 'bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border-[#b83a4b]/30',
         };
       case 'TEST_LEAD':
         return {
@@ -141,15 +141,15 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setIsDropdownOpen((prev) => !prev)}
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all duration-150 cursor-pointer select-none ${
               isDropdownOpen
-                ? 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-500/50 text-rose-700 dark:text-rose-300 ring-2 ring-rose-500/20 shadow-sm'
+                ? 'bg-[#b83a4b]/10 dark:bg-[#b83a4b]/20 border-[#b83a4b]/40 text-[#b83a4b] dark:text-[#d66b7a] ring-2 ring-[#b83a4b]/20 shadow-sm'
                 : 'bg-slate-100/90 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
             }`}
             title="Test Planı Seç / Değiştir"
           >
-            <FolderKanban className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+            <FolderKanban className="w-3.5 h-3.5 text-[#b83a4b] shrink-0" />
             {selectedProject ? (
               <div className="flex items-center space-x-1.5 min-w-0">
-                <span className="font-mono text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20 shrink-0">
+                <span className="font-mono text-[10px] font-bold text-[#b83a4b] dark:text-[#d66b7a] bg-[#b83a4b]/10 px-1.5 py-0.5 rounded border border-[#b83a4b]/20 shrink-0">
                   [{selectedProject.key}]
                 </span>
                 <span className="truncate max-w-[110px] sm:max-w-[160px] md:max-w-[200px] font-semibold text-slate-800 dark:text-slate-100">
@@ -161,7 +161,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
             <ChevronDown
               className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${
-                isDropdownOpen ? 'rotate-180 text-rose-500' : ''
+                isDropdownOpen ? 'rotate-180 text-[#b83a4b]' : ''
               }`}
             />
           </button>
@@ -179,7 +179,7 @@ export const Header: React.FC<HeaderProps> = ({
                     placeholder="Test planı ara..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 pl-8 pr-7 py-1.5 focus:outline-none focus:ring-1 focus:ring-rose-500 transition-colors"
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 pl-8 pr-7 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]/50 transition-colors"
                   />
                   {searchQuery && (
                     <button
@@ -214,16 +214,16 @@ export const Header: React.FC<HeaderProps> = ({
                         }}
                         className={`w-full text-left p-2 rounded-xl flex items-center justify-between transition-all group ${
                           isSelected
-                            ? 'bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-semibold'
+                            ? 'bg-[#b83a4b]/10 dark:bg-[#b83a4b]/15 border border-[#b83a4b]/30 text-[#b83a4b] dark:text-[#d66b7a] font-semibold'
                             : 'hover:bg-slate-100 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300 border border-transparent'
                         }`}
                       >
                         <div className="flex items-center space-x-2 min-w-0 pr-2">
-                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 shrink-0">
+                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/30 shrink-0">
                             [{p.key}]
                           </span>
                           <div className="min-w-0">
-                            <p className="text-xs truncate font-medium text-slate-800 dark:text-slate-200 group-hover:text-rose-500 transition-colors">
+                            <p className="text-xs truncate font-medium text-slate-800 dark:text-slate-200 group-hover:text-[#b83a4b] transition-colors">
                               {p.name}
                             </p>
                             {p.description && (
@@ -234,7 +234,7 @@ export const Header: React.FC<HeaderProps> = ({
                           </div>
                         </div>
 
-                        {isSelected && <Check className="w-3.5 h-3.5 text-rose-500 shrink-0 ml-1" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#b83a4b] shrink-0 ml-1" />}
                       </button>
                     );
                   })
@@ -250,7 +250,7 @@ export const Header: React.FC<HeaderProps> = ({
                       setIsDropdownOpen(false);
                       onOpenNewProject();
                     }}
-                    className="w-full flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    className="w-full flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold text-[#b83a4b] dark:text-[#d66b7a] hover:bg-[#b83a4b]/10 transition-colors"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
                     <span>Yeni Test Planı Oluştur</span>
@@ -270,7 +270,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => onTabChange('DASHBOARD')}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all ${
               activeView === 'DASHBOARD'
-                ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
+                ? 'bg-white dark:bg-slate-800 text-[#b83a4b] dark:text-[#d66b7a] shadow-sm border border-slate-200/60 dark:border-slate-700/60'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
             title={selectedProject ? `Dashboard: ${selectedProject.name}` : 'Test Planı Dashboard'}
@@ -284,7 +284,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => onTabChange('EXPLORER')}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all ${
               activeView === 'EXPLORER'
-                ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
+                ? 'bg-white dark:bg-slate-800 text-[#b83a4b] dark:text-[#d66b7a] shadow-sm border border-slate-200/60 dark:border-slate-700/60'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
             title="Test Case Explorer ve Ağaç Yapısı"
@@ -298,7 +298,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => onTabChange('RUNS')}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all ${
               activeView === 'RUNS'
-                ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
+                ? 'bg-white dark:bg-slate-800 text-[#b83a4b] dark:text-[#d66b7a] shadow-sm border border-slate-200/60 dark:border-slate-700/60'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
             title="Test Koşuları ve Yürütme"
@@ -312,12 +312,12 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => onTabChange('REPORTS')}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all ${
               activeView === 'REPORTS'
-                ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
+                ? 'bg-white dark:bg-slate-800 text-[#b83a4b] dark:text-[#d66b7a] shadow-sm border border-slate-200/60 dark:border-slate-700/60'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
             title="Raporlama ve Analitik Hub"
           >
-            <FileText className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+            <FileText className="w-3.5 h-3.5 shrink-0 text-[#b83a4b]" />
             <span className="hidden sm:inline">Raporlama</span>
           </button>
         </nav>
@@ -343,7 +343,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setIsUserDropdownOpen((prev) => !prev)}
             className={`flex items-center space-x-2 p-1 sm:px-2.5 sm:py-1 rounded-xl border text-xs font-medium transition-all ${
               isUserDropdownOpen
-                ? 'bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-600 ring-2 ring-rose-500/20 shadow-sm'
+                ? 'bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-600 ring-2 ring-[#b83a4b]/20 shadow-sm'
                 : 'bg-slate-100/90 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
             }`}
             title="Kullanıcı Profili"
@@ -355,7 +355,7 @@ export const Header: React.FC<HeaderProps> = ({
                 className="w-6 h-6 rounded-full object-cover border border-slate-300 dark:border-slate-600 shrink-0"
               />
             ) : (
-              <div className="w-6 h-6 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold flex items-center justify-center text-xs shrink-0">
+              <div className="w-6 h-6 rounded-full bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a] font-bold flex items-center justify-center text-xs shrink-0">
                 {currentUser?.name ? currentUser.name.charAt(0) : 'U'}
               </div>
             )}
@@ -375,7 +375,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             <ChevronDown
               className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${
-                isUserDropdownOpen ? 'rotate-180 text-rose-500' : ''
+                isUserDropdownOpen ? 'rotate-180 text-[#b83a4b]' : ''
               }`}
             />
           </button>
@@ -427,7 +427,7 @@ export const Header: React.FC<HeaderProps> = ({
                       setIsUserDropdownOpen(false);
                       onOpenUserManagement();
                     }}
-                    className="w-full flex items-center space-x-2 py-2 px-3 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    className="w-full flex items-center space-x-2 py-2 px-3 rounded-xl text-xs font-semibold text-[#b83a4b] dark:text-[#d66b7a] hover:bg-[#b83a4b]/10 transition-colors"
                   >
                     <Users className="w-4 h-4" />
                     <span>Kullanıcı & Rol Yönetimi</span>
@@ -443,7 +443,7 @@ export const Header: React.FC<HeaderProps> = ({
                     setIsUserDropdownOpen(false);
                     logout();
                   }}
-                  className="w-full flex items-center space-x-2 py-2 px-3 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  className="w-full flex items-center space-x-2 py-2 px-3 rounded-xl text-xs font-semibold text-[#b83a4b] dark:text-[#d66b7a] hover:bg-[#b83a4b]/10 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Çıkış Yap</span>
@@ -462,11 +462,11 @@ export const Header: React.FC<HeaderProps> = ({
           }
           target="_blank"
           rel="noopener noreferrer"
-          className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-rose-50/80 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800/50 rounded-xl transition-all shadow-sm shrink-0"
+          className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] bg-slate-100/90 dark:bg-slate-800/80 hover:bg-[#b83a4b]/10 dark:hover:bg-[#b83a4b]/15 border border-slate-200 dark:border-slate-700 hover:border-[#b83a4b]/30 dark:hover:border-[#b83a4b]/40 rounded-xl transition-all shadow-sm shrink-0"
           title="Swagger / OpenAPI API Dokümantasyonu (Yeni Sekme)"
           aria-label="Swagger API Docs"
         >
-          <BookOpen className="w-4 h-4 text-rose-500" />
+          <BookOpen className="w-4 h-4 text-[#b83a4b]" />
         </a>
 
         <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 shrink-0 hidden sm:block" />

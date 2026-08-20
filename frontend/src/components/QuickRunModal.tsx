@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { TestCase, ResultStatus, TestRunsService } from '@/services/api';
-import confetti from 'canvas-confetti';
 import {
   X,
   Play,
@@ -199,14 +198,6 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
         screenshotUrl: formattedScreenshot,
         executedBy: executedBy || 'QA Tester',
       });
-
-      if (status === 'PASSED') {
-        confetti({
-          particleCount: 60,
-          spread: 60,
-          origin: { y: 0.7 },
-        });
-      }
 
       onSuccess();
       onClose();

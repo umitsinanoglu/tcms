@@ -133,7 +133,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const getRoleBadgeStyle = (role: UserRole) => {
     switch (role) {
       case 'ADMIN':
-        return 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30';
+        return 'bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border-[#b83a4b]/30';
       case 'TEST_LEAD':
         return 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30';
       case 'TESTER':
@@ -151,13 +151,13 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-[#b83a4b]/15 border border-[#b83a4b]/30 flex items-center justify-center text-[#b83a4b] dark:text-[#d66b7a] shrink-0">
               <Users className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
                 <span>Kullanıcı & Rol Yönetimi (RBAC)</span>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/30">
                   Faz 1
                 </span>
               </h2>
@@ -182,7 +182,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
               onClick={() => setActiveTab('LIST')}
               className={`flex items-center space-x-2 pb-2.5 px-3 text-xs font-semibold border-b-2 transition-all ${
                 activeTab === 'LIST'
-                  ? 'border-rose-500 text-rose-600 dark:text-rose-400'
+                  ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a]'
                   : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
@@ -193,7 +193,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
               onClick={() => setActiveTab('CREATE')}
               className={`flex items-center space-x-2 pb-2.5 px-3 text-xs font-semibold border-b-2 transition-all ${
                 activeTab === 'CREATE'
-                  ? 'border-rose-500 text-rose-600 dark:text-rose-400'
+                  ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a]'
                   : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
@@ -211,7 +211,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </div>
         )}
         {errorMsg && (
-          <div className="mx-5 mt-3 p-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-xl flex items-center space-x-2 text-xs animate-in fade-in">
+          <div className="mx-5 mt-3 p-2.5 bg-[#b83a4b]/10 border border-[#b83a4b]/30 text-rose-300 rounded-xl flex items-center space-x-2 text-xs animate-in fade-in">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
@@ -220,17 +220,13 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
         {/* Body Content */}
         <div className="p-5 flex-1 overflow-y-auto">
           {activeTab === 'LIST' ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {users.map((u) => {
                 const isMe = u.id === currentUser?.id;
                 return (
                   <div
                     key={u.id}
-                    className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
-                      u.isActive
-                        ? 'bg-slate-50/70 dark:bg-[#141b27] border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
-                        : 'bg-slate-100/50 dark:bg-slate-900/30 border-dashed border-slate-300 dark:border-slate-800 opacity-60'
-                    }`}
+                    className="p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
                     {/* User Info */}
                     <div className="flex items-center space-x-3 min-w-0">
@@ -241,7 +237,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500 font-bold text-sm shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-sm shrink-0">
                           {u.name.charAt(0)}
                         </div>
                       )}
@@ -252,8 +248,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             {u.name}
                           </span>
                           {isMe && (
-                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30">
-                              SEN
+                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/30">
+                              BEN
                             </span>
                           )}
                           {!u.isActive && (
@@ -262,7 +258,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center space-x-1.5 mt-0.5">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center space-x-1.5 mt-0.5">
                           <span>{u.email}</span>
                           {u.department && (
                             <>
@@ -280,7 +276,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                         <select
                           value={u.role}
                           onChange={(e) => handleRoleChange(u.id, e.target.value as UserRole)}
-                          className={`text-xs font-bold font-mono px-2.5 py-1.5 rounded-xl border focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer ${getRoleBadgeStyle(
+                          className={`text-xs font-bold font-mono px-2.5 py-1.5 rounded-xl border focus:outline-none focus:ring-1 focus:ring-[#b83a4b] cursor-pointer ${getRoleBadgeStyle(
                             u.role,
                           )} bg-white dark:bg-slate-900`}
                         >
@@ -311,7 +307,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                         type="button"
                         onClick={() => handleDeleteUser(u)}
                         disabled={isMe}
-                        className={`p-1.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-colors ${
+                        className={`p-1.5 rounded-xl bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/20 hover:bg-[#b83a4b]/20 transition-colors ${
                           isMe ? 'opacity-40 cursor-not-allowed' : ''
                         }`}
                         title="Kullanıcıyı Sil"
@@ -327,7 +323,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
             <form onSubmit={handleCreateSubmit} className="space-y-4 max-w-xl mx-auto">
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Ad ve Soyad <span className="text-rose-500">*</span>
+                  Ad ve Soyad <span className="text-[#b83a4b]">*</span>
                 </label>
                 <div className="relative">
                   <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -337,14 +333,14 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     placeholder="Örn: Ahmet Yılmaz"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  E-Posta Adresi <span className="text-rose-500">*</span>
+                  E-Posta Adresi <span className="text-[#b83a4b]">*</span>
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -354,7 +350,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     placeholder="ahmet.yilmaz@ttb.com.tr"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
                   />
                 </div>
               </div>
@@ -362,12 +358,12 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Kullanıcı Rolü <span className="text-rose-500">*</span>
+                    Kullanıcı Rolü <span className="text-[#b83a4b]">*</span>
                   </label>
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-rose-500 font-medium"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] font-medium"
                   >
                     <option value="ADMIN">ADMIN (Sistem Yöneticisi)</option>
                     <option value="TEST_LEAD">TEST_LEAD (Test Lideri)</option>
@@ -387,7 +383,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                       placeholder="Örn: Dijital Bankacılık QA"
                       value={formData.department}
                       onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
                     />
                   </div>
                 </div>
@@ -402,7 +398,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   placeholder="https://..."
                   value={formData.avatarUrl}
                   onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
                 />
               </div>
 
@@ -417,7 +413,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 text-xs font-semibold bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white rounded-xl shadow-md shadow-rose-600/20 active:scale-95 transition-all disabled:opacity-50"
+                  className="px-5 py-2 text-xs font-semibold bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white rounded-xl shadow-md shadow-[#821c2b]/20 active:scale-95 transition-all disabled:opacity-50"
                 >
                   {isSubmitting ? 'Kaydediliyor...' : 'Kullanıcıyı Kaydet'}
                 </button>
@@ -430,7 +426,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
         <div className="p-3 sm:px-5 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold">Rol İzinleri:</span>
-            <span className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 font-mono font-bold text-[10px]">
+            <span className="px-1.5 py-0.5 rounded bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] font-mono font-bold text-[10px]">
               ADMIN: Tam Yetki + Kullanıcı Yönetimi
             </span>
             <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-mono font-bold text-[10px]">

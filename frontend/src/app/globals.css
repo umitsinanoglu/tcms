@@ -10,44 +10,44 @@
   --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Crimson Coral Dark Theme Variables */
-  --bg-background: #191e28;
-  --bg-surface: #222938;
-  --bg-surface-secondary: #2b3447;
-  --border-color: #333f54;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --accent-primary: #ff4b6e;
-  --accent-dark: #d82b4b;
-  --accent-gradient: linear-gradient(135deg, #ff4b6e 0%, #d82b4b 100%);
-  --accent-hover: #ff6b87;
-  --scrollbar-track: #141822;
-  --scrollbar-thumb: #2d374a;
-  --glass-panel-bg: rgba(34, 41, 56, 0.85);
-  --glass-panel-border: rgba(255, 75, 110, 0.18);
-  --accent-glow: rgba(255, 75, 110, 0.45);
+  /* Muted Corporate Crimson Dark Theme Variables */
+  --bg-background: #141821;
+  --bg-surface: #1d232f;
+  --bg-surface-secondary: #262e3d;
+  --border-color: #2e3748;
+  --text-main: #f1f5f9;
+  --text-muted: #8e9bb0;
+  --accent-primary: #b83a4b;
+  --accent-dark: #821c2b;
+  --accent-gradient: linear-gradient(135deg, #b83a4b 0%, #821c2b 100%);
+  --accent-hover: #c54859;
+  --scrollbar-track: #11141c;
+  --scrollbar-thumb: #28303e;
+  --glass-panel-bg: rgba(29, 35, 47, 0.88);
+  --glass-panel-border: rgba(184, 58, 75, 0.16);
+  --accent-glow: rgba(184, 58, 75, 0.22);
 }
 
 [data-theme="crimson-light"] {
   --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Crimson Coral Light Theme Variables */
-  --bg-background: #f0f3f8;
+  /* Muted Corporate Crimson Light Theme Variables */
+  --bg-background: #f2f5f8;
   --bg-surface: #ffffff;
-  --bg-surface-secondary: #e8ecf3;
-  --border-color: #d5ddea;
+  --bg-surface-secondary: #e6ebf2;
+  --border-color: #d0d8e4;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  --accent-primary: #ff4b6e;
-  --accent-dark: #d82b4b;
-  --accent-gradient: linear-gradient(135deg, #ff4b6e 0%, #d82b4b 100%);
-  --accent-hover: #e6385b;
-  --scrollbar-track: #e8ecf3;
+  --accent-primary: #b83a4b;
+  --accent-dark: #821c2b;
+  --accent-gradient: linear-gradient(135deg, #b83a4b 0%, #821c2b 100%);
+  --accent-hover: #a12e3e;
+  --scrollbar-track: #e6ebf2;
   --scrollbar-thumb: #cbd5e1;
-  --glass-panel-bg: rgba(255, 255, 255, 0.90);
-  --glass-panel-border: rgba(255, 75, 110, 0.20);
-  --accent-glow: rgba(255, 75, 110, 0.25);
+  --glass-panel-bg: rgba(255, 255, 255, 0.92);
+  --glass-panel-border: rgba(184, 58, 75, 0.16);
+  --accent-glow: rgba(184, 58, 75, 0.15);
 }
 
 body {
@@ -93,12 +93,12 @@ body {
   background: var(--accent-gradient);
   color: #ffffff;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(255, 75, 110, 0.35);
+  box-shadow: 0 2px 6px rgba(130, 28, 43, 0.25);
 }
 
 .btn-crimson:hover {
-  filter: brightness(1.08);
-  box-shadow: 0 4px 14px rgba(255, 75, 110, 0.45);
+  filter: brightness(1.06);
+  box-shadow: 0 4px 12px rgba(130, 28, 43, 0.35);
   transform: translateY(-0.5px);
 }
 
@@ -115,7 +115,7 @@ body {
 
 .btn-secondary:hover {
   background-color: var(--bg-surface-secondary);
-  border-color: rgba(255, 75, 110, 0.35);
+  border-color: rgba(184, 58, 75, 0.30);
 }
 
 .btn-secondary:active {

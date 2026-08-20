@@ -56,7 +56,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
           <div className="flex items-center space-x-2.5">
-            <FolderKanban className="w-5 h-5 text-rose-500" />
+            <FolderKanban className="w-5 h-5 text-[#b83a4b]" />
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Yeni Test Planı Oluştur</h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg">
@@ -65,7 +65,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
         </div>
 
         {errorMsg && (
-          <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium">
+          <div className="mx-6 mt-4 p-3 bg-[#b83a4b]/10 border border-[#b83a4b]/30 rounded-xl text-xs text-rose-300 font-medium">
             {errorMsg}
           </div>
         )}
@@ -88,7 +88,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
                   setKey(suggested);
                 }
               }}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500 shadow-sm"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] shadow-sm"
             />
           </div>
 
@@ -104,7 +104,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
                 placeholder="Örn: PLAN"
                 value={key}
                 onChange={(e) => setKey(e.target.value.toUpperCase())}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-rose-600 dark:text-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-500 uppercase shadow-sm"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-[#b83a4b] dark:text-[#d66b7a] focus:outline-none focus:ring-1 focus:ring-[#b83a4b] uppercase shadow-sm"
               />
             </div>
 
@@ -134,7 +134,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
               placeholder="Test Planı hedefi, kapsamı ve detayları..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500 resize-none shadow-sm"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] resize-none shadow-sm"
             />
           </div>
 
@@ -150,7 +150,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || !name.trim() || !key.trim()}
-              className="flex items-center space-x-2 px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-rose-500/20 disabled:opacity-50"
+              className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white text-xs font-semibold rounded-xl shadow-md shadow-[#821c2b]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>{isSubmitting ? 'Oluşturuluyor...' : 'Test Planı Oluştur'}</span>

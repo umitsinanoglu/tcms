@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
+
 ### Fixed
 - Top navigation sağ üst alana Swagger Docs butonu eklendi
 - **Değişiklikleri Kaydet & Koşum Geçmişi Koruma Düzeltmesi**: `TestCasesService.update` backend metoduna `results` ve `testRun` ilişkileri dahil edildi ve `page.tsx`'teki `handleSaveCase`, `handleQuickRunSuccess` ile `ManualRunModal` `onClose` akışları iyileştirildi; böylece bir test senaryosunda değişiklik kaydedildiğinde veya yeni bir koşu yapıldığında tüm önceki koşum kayıtları, test notları ve ekran görüntüleri eksiksiz korunarak anında güncellenmesi sağlandı.
@@ -19,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Tüm Test Suite'leri görünümü kart ızgarasından detaylı ve veri yoğunluklu liste görünümüne dönüştürüldü.
+- Kurumsal renklere uygun mat, solgun ve göz yormayan crimson kırmızı renk paleti uyarlandı.
 - Tema seçici ikon görünümüne getirildi, Swagger butonu kompakt yapıldı, basit login (standart şifre: password1234, 24 saat session) eklendi, profil switch kaldırıldı, kullanıcı yönetimi sadece adminlere kısıtlandı, Yeni Test Planı butonu sol menü altına taşındı
 - Kök test case'ler ağaç yapısında en üstte gösterildi, suite altındaki case'ler bir tık girintiyle (indent) netleştirildi
 - Sol menü (AppSidebar) item yerleşimleri sola yaslandı, girintiler optimize edildi ve menü genişliği ferahlatıldı

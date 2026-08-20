@@ -152,14 +152,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
   };
 
-  // Calculate Metrics
+  // High-level statistics
   const totalCases = testCases.length;
-  const automatedCases = testCases.filter((tc) => tc.type !== 'MANUAL').length;
-  const automatedRatio = totalCases > 0 ? Math.round((automatedCases / totalCases) * 100) : 0;
-  const jiraLinkedCases = testCases.filter((tc) => Boolean(tc.jiraStoryKey)).length;
-  const traceabilityRatio = totalCases > 0 ? Math.round((jiraLinkedCases / totalCases) * 100) : 0;
-
-  // Status metrics from latest result
   let passedCount = 0;
   let failedCount = 0;
   let blockedCount = 0;
@@ -167,11 +161,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   let untestedCount = 0;
 
   testCases.forEach((tc) => {
-    const latest = tc.results && tc.results.length > 0 ? tc.results[0] : null;
-    if (!latest) {
+    const lastResult = tc.results && tc.results.length > 0 ? tc.results[0] : null;
+    if (!lastResult) {
       untestedCount++;
     } else {
-      switch (latest.status) {
+      switch (lastResult.status) {
         case 'PASSED':
           passedCount++;
           break;
@@ -186,13 +180,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           break;
         default:
           untestedCount++;
-          break;
       }
     }
   });
 
   const executedCount = passedCount + failedCount + blockedCount + skippedCount;
   const passRate = executedCount > 0 ? Math.round((passedCount / executedCount) * 100) : 0;
+  const automatedCount = testCases.filter((tc) => tc.type !== 'MANUAL').length;
+  const automatedRatio = totalCases > 0 ? Math.round((automatedCount / totalCases) * 100) : 0;
+
+  // Jira traceability ratio
+  const jiraLinkedCount = testCases.filter((tc) => !!tc.jiraStoryKey).length;
+  const traceabilityRatio = totalCases > 0 ? Math.round((jiraLinkedCount / totalCases) * 100) : 0;
 
   // Priority breakdown
   const blockerCount = testCases.filter((tc) => tc.priority === 'BLOCKER').length;
@@ -222,7 +221,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Top Banner / Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+          <div className="p-2.5 rounded-xl bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/20">
             <BarChart3 className="w-6 h-6" />
           </div>
           <div>
@@ -240,7 +239,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               onClick={() => setDashboardTab('SUITES')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all ${
                 dashboardTab === 'SUITES'
-                  ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
+                  ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white shadow-md shadow-[#821c2b]/20'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -251,7 +250,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               onClick={() => setDashboardTab('METRICS')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all ${
                 dashboardTab === 'METRICS'
-                  ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
+                  ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white shadow-md shadow-[#821c2b]/20'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -365,17 +364,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Main Content Tab 1: SUITE CARDS GRID VIEW */}
+      {/* Main Content Tab 1: SUITES LIST VIEW */}
       {dashboardTab === 'SUITES' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
-                <FolderKanban className="w-4 h-4 text-rose-500" />
-                <span>Tüm Test Suite'leri (Kart Görünümü)</span>
+                <FolderKanban className="w-4 h-4 text-[#b83a4b]" />
+                <span>Tüm Test Suite'leri (Liste Görünümü)</span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Projede tanımlı tüm suite'lerin test sayıları, durumları ve hızlı aksiyonları.
+                Projede tanımlı tüm suite'lerin test sayıları, durum dağılımları ve hızlı aksiyonları.
               </p>
             </div>
 
@@ -384,129 +383,172 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               placeholder="Suite adı veya yolu ile filtrele..."
               value={suiteSearch}
               onChange={(e) => setSuiteSearch(e.target.value)}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 w-full sm:w-64"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] w-full sm:w-64 shadow-xs"
             />
           </div>
 
           {filteredSuites.length === 0 ? (
             <div className="p-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900/40 text-slate-400 text-xs">
-              Kriterlere uygun test suite bulunamadı.
+              <FolderKanban className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
+              <p>Kriterlere uygun test suite bulunamadı.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredSuites.map((s) => {
-                // Calculate suite level stats
-                let sPassed = 0;
-                let sFailed = 0;
-                let sBlocked = 0;
-                let sSkipped = 0;
-                let sUntested = 0;
+            <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/75 dark:bg-slate-900/80 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      <th className="py-3 px-4 min-w-[220px]">Test Suite & Hiyerarşik Yol</th>
+                      <th className="py-3 px-3 text-center min-w-[90px]">Toplam Case</th>
+                      <th className="py-3 px-4 min-w-[200px]">Son Koşu Durumu</th>
+                      <th className="py-3 px-3 text-center min-w-[110px]">Başarı Oranı</th>
+                      <th className="py-3 px-3 text-center min-w-[110px]">Risk / Öncelik</th>
+                      <th className="py-3 px-4 text-right min-w-[140px]">Aksiyonlar</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                    {filteredSuites.map((s) => {
+                      // Calculate suite level stats
+                      let sPassed = 0;
+                      let sFailed = 0;
+                      let sBlocked = 0;
+                      let sSkipped = 0;
+                      let sUntested = 0;
 
-                s.allCases.forEach((tc) => {
-                  const lastRes = tc.results && tc.results.length > 0 ? tc.results[0] : null;
-                  if (!lastRes) sUntested++;
-                  else if (lastRes.status === 'PASSED') sPassed++;
-                  else if (lastRes.status === 'FAILED') sFailed++;
-                  else if (lastRes.status === 'BLOCKED') sBlocked++;
-                  else if (lastRes.status === 'SKIPPED') sSkipped++;
-                  else sUntested++;
-                });
+                      s.allCases.forEach((tc) => {
+                        const lastRes = tc.results && tc.results.length > 0 ? tc.results[0] : null;
+                        if (!lastRes) sUntested++;
+                        else if (lastRes.status === 'PASSED') sPassed++;
+                        else if (lastRes.status === 'FAILED') sFailed++;
+                        else if (lastRes.status === 'BLOCKED') sBlocked++;
+                        else if (lastRes.status === 'SKIPPED') sSkipped++;
+                        else sUntested++;
+                      });
 
-                const sTotal = s.allCases.length;
-                const sExecuted = sPassed + sFailed + sBlocked + sSkipped;
-                const sPassRate = sExecuted > 0 ? Math.round((sPassed / sExecuted) * 100) : 0;
-                const sBlockerCritical = s.allCases.filter((tc) => tc.priority === 'BLOCKER' || tc.priority === 'CRITICAL').length;
+                      const sTotal = s.allCases.length;
+                      const sExecuted = sPassed + sFailed + sBlocked + sSkipped;
+                      const sPassRate = sExecuted > 0 ? Math.round((sPassed / sExecuted) * 100) : 0;
+                      const sBlockerCritical = s.allCases.filter((tc) => tc.priority === 'BLOCKER' || tc.priority === 'CRITICAL').length;
 
-                return (
-                  <div
-                    key={s.id}
-                    onClick={() => handleOpenSuiteCard(s.id)}
-                    className="group bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 hover:border-rose-500/50 dark:hover:border-rose-500/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-4 cursor-pointer"
-                  >
-                    {/* Suite Header */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono text-rose-500 dark:text-rose-400 font-semibold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 truncate max-w-[200px]">
-                          {s.fullPath}
-                        </span>
-                        <span className="text-[11px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full shrink-0">
-                          {sTotal} Case
-                        </span>
-                      </div>
-
-                      <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 group-hover:text-rose-500 transition-colors flex items-center justify-between">
-                        <span>{s.name}</span>
-                      </h3>
-                    </div>
-
-                    {/* Progress Bar & Status Badges */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500 dark:text-slate-400 font-medium">Koşu Başarı Oranı</span>
-                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">%{sPassRate}</span>
-                      </div>
-
-                      <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden flex shadow-inner">
-                        <div className="bg-emerald-500 h-full" style={{ width: `${sTotal ? (sPassed / sTotal) * 100 : 0}%` }} title={`Passed: ${sPassed}`} />
-                        <div className="bg-rose-500 h-full" style={{ width: `${sTotal ? (sFailed / sTotal) * 100 : 0}%` }} title={`Failed: ${sFailed}`} />
-                        <div className="bg-purple-500 h-full" style={{ width: `${sTotal ? (sBlocked / sTotal) * 100 : 0}%` }} title={`Blocked: ${sBlocked}`} />
-                        <div className="bg-slate-400 h-full" style={{ width: `${sTotal ? (sSkipped / sTotal) * 100 : 0}%` }} title={`Skipped: ${sSkipped}`} />
-                      </div>
-
-                      {/* Suite Mini Legend */}
-                      <div className="grid grid-cols-4 gap-1.5 text-center text-[10px] font-mono pt-1">
-                        <div className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-1 rounded border border-emerald-500/20">
-                          <span className="font-bold">{sPassed}</span> Pass
-                        </div>
-                        <div className="bg-rose-500/10 text-rose-600 dark:text-rose-400 p-1 rounded border border-rose-500/20">
-                          <span className="font-bold">{sFailed}</span> Fail
-                        </div>
-                        <div className="bg-purple-500/10 text-purple-600 dark:text-purple-400 p-1 rounded border border-purple-500/20">
-                          <span className="font-bold">{sBlocked}</span> Block
-                        </div>
-                        <div className="bg-slate-500/10 text-slate-500 p-1 rounded border border-slate-500/20">
-                          <span className="font-bold">{sUntested}</span> Untested
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Suite Footer & Action Buttons */}
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                      <span className="text-[11px] text-slate-400 font-mono">
-                        {sBlockerCritical > 0 ? (
-                          <span className="text-rose-500 font-semibold">{sBlockerCritical} Kritik Case</span>
-                        ) : (
-                          'Normal Öncelik'
-                        )}
-                      </span>
-
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenSuiteCard(s.id);
-                          }}
-                          className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1"
+                      return (
+                        <tr
+                          key={s.id}
+                          onClick={() => handleOpenSuiteCard(s.id)}
+                          className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                         >
-                          <span>Klasörü Aç</span>
-                          <ChevronRight className="w-3 h-3" />
-                        </button>
+                          {/* Suite Name & Path */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-start space-x-2.5 min-w-0">
+                              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0 group-hover:scale-105 transition-transform">
+                                <FolderKanban className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-[#b83a4b] transition-colors truncate">
+                                  {s.name}
+                                </div>
+                                <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 truncate mt-0.5" title={s.fullPath}>
+                                  {s.fullPath}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
 
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOpenManualRun();
-                          }}
-                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-all flex items-center space-x-1"
-                        >
-                          <Play className="w-3 h-3 fill-current" />
-                          <span>Koştur</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                          {/* Case Count */}
+                          <td className="py-3.5 px-3 text-center">
+                            <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                              {sTotal}
+                            </span>
+                          </td>
+
+                          {/* Status Progress & Chips */}
+                          <td className="py-3.5 px-4">
+                            <div className="space-y-1.5 max-w-xs">
+                              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden flex shadow-inner">
+                                <div className="bg-emerald-500 h-full" style={{ width: `${sTotal ? (sPassed / sTotal) * 100 : 0}%` }} title={`Passed: ${sPassed}`} />
+                                <div className="bg-[#b83a4b] h-full" style={{ width: `${sTotal ? (sFailed / sTotal) * 100 : 0}%` }} title={`Failed: ${sFailed}`} />
+                                <div className="bg-amber-500 h-full" style={{ width: `${sTotal ? (sBlocked / sTotal) * 100 : 0}%` }} title={`Blocked: ${sBlocked}`} />
+                                <div className="bg-slate-400 h-full" style={{ width: `${sTotal ? (sSkipped / sTotal) * 100 : 0}%` }} title={`Skipped: ${sSkipped}`} />
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[9px] font-mono">
+                                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{sPassed} Pass</span>
+                                <span className="text-slate-300 dark:text-slate-600">•</span>
+                                <span className="text-[#b83a4b] dark:text-[#d66b7a] font-semibold">{sFailed} Fail</span>
+                                <span className="text-slate-300 dark:text-slate-600">•</span>
+                                <span className="text-amber-600 dark:text-amber-400 font-semibold">{sBlocked} Block</span>
+                                <span className="text-slate-300 dark:text-slate-600">•</span>
+                                <span className="text-slate-400">{sUntested} Beklemede</span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Pass Rate */}
+                          <td className="py-3.5 px-3 text-center">
+                            {sExecuted === 0 ? (
+                              <span className="text-[10px] font-mono text-slate-400 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
+                                Koşulmadı
+                              </span>
+                            ) : (
+                              <span
+                                className={`inline-flex items-center font-mono font-bold text-xs px-2 py-0.5 rounded-lg border ${
+                                  sPassRate >= 80
+                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                                    : sPassRate >= 50
+                                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                                    : 'bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border-[#b83a4b]/30'
+                                }`}
+                              >
+                                %{sPassRate}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Priority & Risk */}
+                          <td className="py-3.5 px-3 text-center">
+                            {sBlockerCritical > 0 ? (
+                              <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/30 font-mono">
+                                <span>{sBlockerCritical} Kritik</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-mono text-slate-400">Normal</span>
+                            )}
+                          </td>
+
+                          {/* Action Buttons */}
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="inline-flex items-center space-x-1.5">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenSuiteCard(s.id);
+                                }}
+                                className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1 cursor-pointer"
+                                title="Suite Detayına Git"
+                              >
+                                <span>Aç</span>
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onOpenManualRun();
+                                }}
+                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-all flex items-center space-x-1 cursor-pointer active:scale-95"
+                                title="Hızlı Koş"
+                              >
+                                <Play className="w-3 h-3 fill-current" />
+                                <span>Koş</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

@@ -30,7 +30,7 @@ export const ThemeSelector: React.FC = () => {
       case 'crimson-dark':
       default:
         return (
-          <Moon className="w-4 h-4 text-rose-400 transition-transform duration-200 group-hover:-rotate-12" />
+          <Moon className="w-4 h-4 text-[#b83a4b] dark:text-[#d66b7a] transition-transform duration-200 group-hover:-rotate-12" />
         );
     }
   };
@@ -43,7 +43,7 @@ export const ThemeSelector: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="group w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center rounded-xl bg-slate-100/90 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50 cursor-pointer shrink-0"
+        className="group w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center rounded-xl bg-slate-100/90 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#b83a4b]/40 cursor-pointer shrink-0"
         title={`Tema Seçici: ${activeThemeMeta.name}`}
         aria-label="Tema Seçici"
       >
@@ -55,12 +55,12 @@ export const ThemeSelector: React.FC = () => {
         <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl drop-shadow-2xl backdrop-blur-xl p-2 animate-in fade-in zoom-in-95 duration-150 z-[100]">
           <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Palette className="w-4 h-4 text-rose-500" />
+              <Palette className="w-4 h-4 text-[#b83a4b]" />
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                 Tema Tercihi
               </span>
             </div>
-            <span className="text-[10px] text-rose-500 font-mono font-semibold">Crimson Coral</span>
+            <span className="text-[10px] text-[#b83a4b] dark:text-[#d66b7a] font-mono font-semibold">Kurumsal Kırmızı</span>
           </div>
 
           <div className="mt-1 space-y-1">
@@ -75,7 +75,7 @@ export const ThemeSelector: React.FC = () => {
                   }}
                   className={`w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-all ${
                     isSelected
-                      ? 'bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/30 text-slate-900 dark:text-white'
+                      ? 'bg-[#b83a4b]/10 dark:bg-[#b83a4b]/15 border border-[#b83a4b]/30 text-slate-900 dark:text-white'
                       : 'hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-300 border border-transparent'
                   }`}
                 >
@@ -103,7 +103,7 @@ export const ThemeSelector: React.FC = () => {
                         />
                       ))}
                     </div>
-                    {isSelected && <Check className="w-4 h-4 text-rose-500 flex-shrink-0" />}
+                    {isSelected && <Check className="w-4 h-4 text-[#b83a4b] flex-shrink-0" />}
                   </div>
                 </button>
               );

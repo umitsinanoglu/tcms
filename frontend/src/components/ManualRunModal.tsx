@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { TestCase, TestRunsService, ResultStatus, TestRun } from '@/services/api';
-import confetti from 'canvas-confetti';
 import {
   X,
   Play,
@@ -245,14 +244,6 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
       setSummaryData({ total, passed, failed, skipped, blocked, passRate });
       setIsSubmitted(true);
-
-      if (passRate >= 70) {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
-      }
     } catch (err: any) {
       console.error('Error submitting run:', err);
       if (err?.response?.status === 413 || err?.message?.includes('413') || err?.message?.toLowerCase().includes('payload too large') || err?.message?.toLowerCase().includes('too large')) {

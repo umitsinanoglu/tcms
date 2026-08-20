@@ -66,12 +66,12 @@ export const LoginView: React.FC = () => {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 text-slate-100 relative overflow-hidden p-4 select-none">
       {/* Background Decorative Gradients & Grid */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-rose-900/20 via-slate-950 to-slate-950" />
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-[#821c2b]/20 via-slate-950 to-slate-950" />
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-[#821c2b]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-[#b83a4b]/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Login Card */}
-      <div className="relative w-full max-w-md bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl shadow-rose-950/20 z-10 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/60 z-10 animate-in fade-in zoom-in-95 duration-200">
         {/* Brand & Header */}
         <div className="flex flex-col items-center text-center mb-6">
           <div className="p-3 bg-white/5 rounded-2xl border border-white/10 mb-3 shadow-inner">
@@ -87,7 +87,7 @@ export const LoginView: React.FC = () => {
 
         {/* Error Alert */}
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs flex items-start space-x-2 animate-in fade-in slide-in-from-top-1">
+          <div className="mb-4 p-3 rounded-xl bg-[#b83a4b]/15 border border-[#b83a4b]/30 text-rose-300 text-xs flex items-start space-x-2 animate-in fade-in slide-in-from-top-1">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span className="flex-1">{errorMsg}</span>
           </div>
@@ -108,7 +108,7 @@ export const LoginView: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ornek@turkticaretbankasi.com.tr"
-                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500 transition-colors"
+                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#b83a4b]/50 focus:border-[#b83a4b] transition-colors"
               />
             </div>
           </div>
@@ -119,7 +119,7 @@ export const LoginView: React.FC = () => {
               <label className="text-xs font-semibold text-slate-300">
                 Şifre
               </label>
-              <span className="text-[10px] text-rose-400 font-mono">
+              <span className="text-[10px] text-[#d66b7a] font-mono">
                 Standart: {STANDARD_PASSWORD}
               </span>
             </div>
@@ -131,7 +131,7 @@ export const LoginView: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Şifrenizi giriniz..."
-                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500 transition-colors"
+                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#b83a4b]/50 focus:border-[#b83a4b] transition-colors"
               />
               <button
                 type="button"
@@ -150,7 +150,7 @@ export const LoginView: React.FC = () => {
 
           {/* Session Banner */}
           <div className="flex items-center space-x-2 py-2 px-3 bg-slate-800/50 border border-slate-700/60 rounded-xl text-[11px] text-slate-400">
-            <Clock className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+            <Clock className="w-3.5 h-3.5 text-[#d66b7a] shrink-0" />
             <span>Oturumunuz <strong>24 saat</strong> boyunca aktif kalacaktır.</span>
           </div>
 
@@ -158,7 +158,7 @@ export const LoginView: React.FC = () => {
           <button
             type="submit"
             disabled={isLoggingIn || isLoading}
-            className="w-full py-2.5 px-4 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white text-xs font-bold rounded-xl transition-all duration-150 shadow-lg shadow-rose-600/30 flex items-center justify-center space-x-2 active:scale-98 disabled:opacity-50 cursor-pointer"
+            className="w-full py-2.5 px-4 bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white text-xs font-bold rounded-xl transition-all duration-150 shadow-md shadow-[#821c2b]/30 flex items-center justify-center space-x-2 active:scale-98 disabled:opacity-50 cursor-pointer"
           >
             {isLoggingIn ? (
               <span>Giriş Yapılıyor...</span>
@@ -176,7 +176,7 @@ export const LoginView: React.FC = () => {
           <div className="mt-6 pt-5 border-t border-slate-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1">
-                <Users className="w-3 h-3 text-rose-500" />
+                <Users className="w-3 h-3 text-[#b83a4b]" />
                 <span>Kullanıcı Seç & Otomatik Doldur:</span>
               </span>
             </div>
@@ -190,7 +190,7 @@ export const LoginView: React.FC = () => {
                     onClick={() => handleSelectQuickUser(u.email)}
                     className={`text-left p-2 rounded-xl border flex items-center justify-between text-xs transition-all ${
                       isSelected
-                        ? 'bg-rose-500/15 border-rose-500/40 text-white'
+                        ? 'bg-[#b83a4b]/15 border-[#b83a4b]/40 text-white'
                         : 'bg-slate-800/50 hover:bg-slate-800 border-slate-700/60 text-slate-300'
                     }`}
                   >
@@ -227,7 +227,7 @@ export const LoginView: React.FC = () => {
 
         {/* Security Footer */}
         <div className="mt-5 text-center text-[10px] text-slate-500 flex items-center justify-center space-x-1">
-          <ShieldCheck className="w-3.5 h-3.5 text-rose-500/80" />
+          <ShieldCheck className="w-3.5 h-3.5 text-[#b83a4b]" />
           <span>Türk Ticaret Bankası BT Kalite Güvence & Test Güvenlik Standartları</span>
         </div>
       </div>
