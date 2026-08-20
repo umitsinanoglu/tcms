@@ -12,9 +12,12 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed"
+    "prisma": "node prisma/run-prisma.js",
+    "prisma:generate": "node prisma/run-prisma.js generate",
+    "prisma:push": "node prisma/run-prisma.js db push",
+    "prisma:migrate": "node prisma/run-prisma.js migrate dev",
+    "prisma:studio": "node prisma/run-prisma.js studio",
+    "prisma:seed": "ts-node prisma/seed.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

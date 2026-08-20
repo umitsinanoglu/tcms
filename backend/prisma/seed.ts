@@ -1,3 +1,4 @@
+import '../src/prisma/db-env';
 import { seedPlans } from './seed_plans';
 
 seedPlans()

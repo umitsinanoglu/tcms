@@ -1,9 +1,10 @@
-import 'dotenv/config';
+import './prisma/db-env';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
+import { resolveDatabaseEnv } from './prisma/db-env';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -44,7 +45,9 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
 
+  const dbConfig = resolveDatabaseEnv();
   console.log(`🚀 TCMS Backend Server running on: http://localhost:${port}`);
+  console.log(`🗄️ Active Database Environment: [${dbConfig.environment}]`);
   console.log(`📚 Swagger API Documentation available at: http://localhost:${port}/api/docs`);
 }
 bootstrap();

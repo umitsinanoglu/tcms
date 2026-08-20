@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Sol menü (AppSidebar) item yerleşimleri sola yaslandı, girintiler optimize edildi ve menü genişliği ferahlatıldı
 - **Test Case Koştur Modalı Yatay (Landscape) 2 Sütunlu Yerleşim**: QuickRunModal dikey sıkışık formdan çıkarılarak geniş yatay (max-w-5xl/6xl) 2 sütunlu ergonomik bir yerleşime geçirildi. Sol tarafta Test Case bilgileri, versiyon/ortam parametreleri ve kaydırılabilir test adımları/beklenen sonuçlar; sağ tarafta ise sonuç durumu kartları, koşu notları, Jira Mock entegrasyonu ve çoklu ekran görüntüsü kanıt yükleme alanı ayrıştırılarak kullanım kolaylığı sağlandı.
 - **Test Case Buton İsimlendirmesi**: Test Case detay editöründeki (TestCaseEditor) 'Run Case' butonu 'Test Case Koştur' olarak güncellendi.
 - **Test Koşuları Sayfası Başlık Butonları**: Test Koşumları sayfasının sağ üst kısmında yer alan "Yeni Manuel Koşu" ve "Otomasyon API Entegrasyonu" butonları kaldırıldı.
@@ -31,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manual Execution Dashboard (Manuel Test Koşum Paneli) modalı Türkçe diline çevrildi ve tema ile tam uyumlu hale getirildi.
 
 ### Added
+- Dinamik Database Environment desteği eklendi (ENVIRONMENT=supabase / ENVIRONMENT=local)
+- Kapsamlı kurumsal dummy test verisi (6 proje, 40+ suite, 120+ test case, 20+ test run) eklendi
 - **Test Case Koştur (QuickRunModal) Çoklu Ekran Görüntüsü & Skipped/Blocked Yorum Desteği**: Hızlı test koşturma modalına birden fazla ekran görüntüsü/kanıt yükleme (çoklu dosya seçimi ve panodan `Ctrl+V` ile yapıştırma), galeri görünümü, görsel silme/ekleme ve tam ekran Lightbox carousel desteği eklendi. Ayrıca SKIPPED (Atlanma) ve BLOCKED (Engellenme) durumları için detaylı açıklama/yorum giriş alanları entegre edildi.
 - **Test Plan 1, 2 ve 3 Kapsamlı Test Verileri & Koşum Geçmişi**: Uygulama testi için 3 farklı domainde (Web E-Ticaret Platformu [TP1], Mobil Bankacılık & Finansal İşlemler [TP2], B2B API Gateway & Entegrasyon Servisleri [TP3]) toplam 24 Suite/Sub-suite, 30 detaylı Test Case (adım adımlı adımlar, ön koşullar, Jira anahtarları, WEB/MOBILE/IOS/ANDROID/API/PERFORMANCE tipleri) ve 9 farklı Test Koşumu ile Passed/Failed/Blocked/Skipped koşum sonuçları yüklendi.
 - **Bağımsız Test Koşum Kayıtları & Koşum Geçmişi**: Her bir test koşumu bağımsız bir kayıt olarak geçmişte tutulacak şekilde backend ve frontend güncellendi; her koşum için bağımsız koşu notu/yorumu, kanıt ekran görüntüsü (lightbox önizlemeli), tester ve yürütme detayları TestCaseEditor "Koşum Geçmişi & Tüm Tekrar Koşuları" bölümünde listelendi.
