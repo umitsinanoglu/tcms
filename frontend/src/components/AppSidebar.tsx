@@ -1,7 +1,6 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import { SuiteTreeNode, TestCase, Project } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 import {
   Folder,
   FolderOpen,
@@ -83,6 +82,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onReorderSuite,
   isLoadingTree = false,
 }) => {
+  const { can, isViewer } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
@@ -408,29 +408,33 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
           {/* Quick Suite Actions */}
           <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddSubSuite(node.id);
-              }}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"
-              title="Alt Suite Ekle"
-            >
-              <FolderPlus className="w-3 h-3" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddCaseInSuite(node.id);
-              }}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"
-              title="Suite İçine Test Case Ekle"
-            >
-              <FilePlus className="w-3 h-3" />
-            </button>
-            {onEditSuite && (
+            {can('CREATE_SUITE') && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddSubSuite(node.id);
+                }}
+                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"
+                title="Alt Suite Ekle"
+              >
+                <FolderPlus className="w-3 h-3" />
+              </button>
+            )}
+            {can('CREATE_CASE') && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddCaseInSuite(node.id);
+                }}
+                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"
+                title="Suite İçine Test Case Ekle"
+              >
+                <FilePlus className="w-3 h-3" />
+              </button>
+            )}
+            {onEditSuite && can('EDIT_SUITE') && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -443,7 +447,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 <Pencil className="w-3 h-3" />
               </button>
             )}
-            {onDeleteSuite && (
+            {onDeleteSuite && can('DELETE_SUITE') && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -493,7 +497,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
                   <div className="flex items-center space-x-1 shrink-0 ml-1">
                     {getLatestStatusBadge(tc)}
-                    {onRunCase && (
+                    {onRunCase && can('EXECUTE_RUN') && (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -541,14 +545,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         </button>
 
         {/* Add Project Shortcut */}
-        <button
-          type="button"
-          onClick={onOpenNewProject}
-          className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors mb-3"
-          title="Yeni Test Planı Ekle"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
+        {can('CREATE_PROJECT') && (
+          <button
+            type="button"
+            onClick={onOpenNewProject}
+            className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors mb-3"
+            title="Yeni Test Planı Ekle"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        )}
 
         <div className="w-8 h-[1px] bg-slate-200 dark:bg-slate-800 my-1" />
 
@@ -596,14 +602,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         </div>
 
         <div className="flex items-center space-x-1 shrink-0">
-          <button
-            type="button"
-            onClick={onOpenNewProject}
-            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
-            title="Yeni Test Planı Oluştur"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+          {can('CREATE_PROJECT') && (
+            <button
+              type="button"
+              onClick={onOpenNewProject}
+              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
+              title="Yeni Test Planı Oluştur"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button
             type="button"
             onClick={toggleCollapsed}
@@ -703,7 +711,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     </div>
 
                     <div className="flex items-center space-x-0.5 shrink-0 ml-1">
-                      {onEditProject && (
+                      {onEditProject && can('EDIT_PROJECT') && (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -716,7 +724,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                           <Pencil className="w-3 h-3" />
                         </button>
                       )}
-                      {onDeleteProject && (
+                      {onDeleteProject && can('DELETE_PROJECT') && (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -768,7 +776,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                         </div>
 
                         <div className="flex items-center space-x-1">
-                          {onOpenNewSuite && (
+                          {onOpenNewSuite && can('CREATE_SUITE') && (
                             <button
                               type="button"
                               onClick={onOpenNewSuite}
@@ -779,7 +787,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                               <span>Suite</span>
                             </button>
                           )}
-                          {onOpenNewCase && (
+                          {onOpenNewCase && can('CREATE_CASE') && (
                             <button
                               type="button"
                               onClick={onOpenNewCase}

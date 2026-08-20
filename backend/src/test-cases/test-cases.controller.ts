@@ -1,23 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { TestCasesService } from './test-cases.service';
 import { CreateTestCaseDto } from './dto/create-test-case.dto';
 import { UpdateTestCaseDto } from './dto/update-test-case.dto';
-
 import { LinkJiraStoryDto } from './dto/jira-link.dto';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '@prisma/client';
 
 @ApiTags('Test Cases')
 @Controller('api/v1/test-cases')
+@UseGuards(RolesGuard)
 export class TestCasesController {
   constructor(private readonly testCasesService: TestCasesService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Yeni Test Case ve adımlarını oluştur (Kod otomatik uretilir: PRJ-TC-1 vb.)' })
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @ApiOperation({ summary: 'Yeni Test Case ve adımlarını oluştur (Admin, Lead, Tester)' })
   @ApiResponse({ status: 201, description: 'Test Case başarıyla oluşturuldu' })
   create(@Body() createTestCaseDto: CreateTestCaseDto) {
     return this.testCasesService.create(createTestCaseDto);
   }
-
 
   @Get()
   @ApiOperation({ summary: 'Bir Suite içindeki tüm Test Case\'leri listele' })
@@ -41,23 +44,27 @@ export class TestCasesController {
   }
 
   @Patch(':id/jira-link')
-  @ApiOperation({ summary: 'Test Case ile Jira Story ID eşleştir (Jira Link API)' })
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @ApiOperation({ summary: 'Test Case ile Jira Story ID eşleştir (Admin, Lead, Tester)' })
   @ApiParam({ name: 'id', description: 'TestCase UUID' })
   linkJiraStory(@Param('id') id: string, @Body() dto: LinkJiraStoryDto) {
     return this.testCasesService.linkJiraStory(id, dto.jiraStoryKey, dto.jiraIssueUrl);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Test Case ve adımlarını güncelle' })
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @ApiOperation({ summary: 'Test Case ve adımlarını güncelle (Admin, Lead, Tester)' })
   @ApiParam({ name: 'id', description: 'TestCase UUID' })
   update(@Param('id') id: string, @Body() updateTestCaseDto: UpdateTestCaseDto) {
     return this.testCasesService.update(id, updateTestCaseDto);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Test Case\'i sil' })
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @ApiOperation({ summary: 'Test Case\'i sil (Admin, Lead, Tester)' })
   @ApiParam({ name: 'id', description: 'TestCase UUID' })
   remove(@Param('id') id: string) {
     return this.testCasesService.remove(id);
   }
 }
+

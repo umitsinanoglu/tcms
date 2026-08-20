@@ -22,6 +22,7 @@ import { NewSuiteModal } from '@/components/NewSuiteModal';
 import { EditSuiteModal } from '@/components/EditSuiteModal';
 import { NewCaseModal } from '@/components/NewCaseModal';
 import { QuickRunModal } from '@/components/QuickRunModal';
+import { UserManagementModal } from '@/components/UserManagementModal';
 import { useNavigation, NavigationState } from '@/context/NavigationContext';
 import { ReportsView } from '@/components/ReportsView';
 
@@ -36,6 +37,7 @@ export default function Home() {
   const [selectedSuite, setSelectedSuite] = useState<SuiteTreeNode | null>(null);
   const [activeTab, setActiveTab] = useState<'EXPLORER' | 'DASHBOARD' | 'RUNS' | 'REPORTS'>('DASHBOARD');
   const [isLoadingTree, setIsLoadingTree] = useState(false);
+  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
 
   const projectsRef = useRef<Project[]>([]);
   projectsRef.current = projects;
@@ -705,6 +707,7 @@ export default function Home() {
           setActiveSuiteRunCases(null);
           setIsManualRunOpen(true);
         }}
+        onOpenUserManagement={() => setIsUserManagementOpen(true)}
       />
 
       {/* Main Workspace Layout with Persistent AppSidebar */}
@@ -926,6 +929,11 @@ export default function Home() {
         }}
         projectId={selectedProject?.id || ''}
         testCases={activeSuiteRunCases || allCases}
+      />
+
+      <UserManagementModal
+        isOpen={isUserManagementOpen}
+        onClose={() => setIsUserManagementOpen(false)}
       />
     </div>
   );

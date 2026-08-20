@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manual Execution Dashboard (Manuel Test Koşum Paneli) modalı Türkçe diline çevrildi ve tema ile tam uyumlu hale getirildi.
 
 ### Added
+- Faz 1 Rol Bazlı Kullanıcı Yönetimi (RBAC) ve Ekran Yetkilendirme Çerçevesi
 - Dinamik Database Environment desteği eklendi (ENVIRONMENT=supabase / ENVIRONMENT=local)
 - Kapsamlı kurumsal dummy test verisi (6 proje, 40+ suite, 120+ test case, 20+ test run) eklendi
 - **Test Case Koştur (QuickRunModal) Çoklu Ekran Görüntüsü & Skipped/Blocked Yorum Desteği**: Hızlı test koşturma modalına birden fazla ekran görüntüsü/kanıt yükleme (çoklu dosya seçimi ve panodan `Ctrl+V` ile yapıştırma), galeri görünümü, görsel silme/ekleme ve tam ekran Lightbox carousel desteği eklendi. Ayrıca SKIPPED (Atlanma) ve BLOCKED (Engellenme) durumları için detaylı açıklama/yorum giriş alanları entegre edildi.

@@ -1,7 +1,6 @@
-'use client';
-
 import React, { useState, useEffect, useRef } from 'react';
 import { TestCase, TestStep, StepAttachment, Priority, TestType } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 import {
   Save,
   Plus,
@@ -27,6 +26,7 @@ import {
   ExternalLink,
   Bug,
   RotateCcw,
+  Eye,
 } from 'lucide-react';
 
 interface TestCaseEditorProps {
@@ -46,10 +46,12 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
   onClose,
   onBack,
 }) => {
+  const { can, isViewer } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [executionType, setExecutionType] = useState<'MANUAL' | 'AUTOMATION'>('MANUAL');
   const [type, setType] = useState<TestType>('WEB');
+
 
   const [priority, setPriority] = useState<Priority>('NORMAL');
   const [jiraStoryKey, setJiraStoryKey] = useState('');
@@ -240,6 +242,16 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
 
   return (
     <main className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-50 dark:bg-[#090d16] text-slate-800 dark:text-slate-100 p-4 sm:p-6 space-y-6 transition-colors duration-200 min-w-0">
+      {/* Viewer Read-Only Banner */}
+      {isViewer && (
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center space-x-2 text-xs font-medium">
+          <Eye className="w-4 h-4 shrink-0" />
+          <span>
+            <strong>Gözlemci Modu (Salt Okunur):</strong> Bu test senaryosunda düzenleme veya silme yetkiniz bulunmamaktadır.
+          </span>
+        </div>
+      )}
+
       {/* Editor Header */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
@@ -267,6 +279,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
               {/* Execution Type Dropdown */}
               <select
                 value={executionType}
+                disabled={isViewer}
                 onChange={(e) => {
                   const newExec = e.target.value as 'MANUAL' | 'AUTOMATION';
                   setExecutionType(newExec);
@@ -274,7 +287,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                     setType('WEB');
                   }
                 }}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-md px-2.5 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-md px-2.5 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <option value="MANUAL">📋 MANUEL</option>
                 <option value="AUTOMATION">🤖 OTOMASYON</option>
@@ -283,8 +296,9 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
               {/* Test Type Dropdown */}
               <select
                 value={type}
+                disabled={isViewer}
                 onChange={(e) => setType(e.target.value as TestType)}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold rounded-md px-2.5 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold rounded-md px-2.5 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {executionType === 'MANUAL' ? (
                   <>
@@ -309,8 +323,9 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
               {/* Priority Badge Dropdown */}
               <select
                 value={priority}
+                disabled={isViewer}
                 onChange={(e) => setPriority(e.target.value as Priority)}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold rounded-md px-2.5 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold rounded-md px-2.5 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <option value="BLOCKER">🔴 BLOCKER</option>
                 <option value="CRITICAL">🟠 CRITICAL</option>
@@ -322,15 +337,16 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
             <input
               type="text"
               value={title}
+              disabled={isViewer}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Test Case Başlığı..."
-              className="w-full text-xl font-bold bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-800 focus:border-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 transition-colors py-1"
+              className="w-full text-xl font-bold bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-800 focus:border-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 transition-colors py-1 disabled:cursor-not-allowed"
             />
           </div>
 
           {/* Action Bar */}
           <div className="flex items-center space-x-2">
-            {onRun && (
+            {onRun && can('EXECUTE_RUN') && (
               <button
                 type="button"
                 onClick={() => onRun(testCase)}
@@ -353,33 +369,38 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm('Bu Test Case\'i silmek istediğinize emin misiniz?')) {
-                  onDelete(testCase.id);
-                }
-              }}
-              className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 transition-colors"
-              title="Test Case'i Sil"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            {can('DELETE_CASE') && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm('Bu Test Case\'i silmek istediğinize emin misiniz?')) {
+                    onDelete(testCase.id);
+                  }
+                }}
+                className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 transition-colors"
+                title="Test Case'i Sil"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
 
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-            >
-              {isSaving ? (
-                <Sparkles className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              <span>{isSaving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}</span>
-            </button>
+            {can('EDIT_CASE') && (
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+              >
+                {isSaving ? (
+                  <Sparkles className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>{isSaving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}</span>
+              </button>
+            )}
           </div>
         </div>
+
 
         {savedSuccess && (
           <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 text-xs animate-fadeIn">

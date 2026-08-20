@@ -1,7 +1,6 @@
-'use client';
-
 import React, { useState } from 'react';
 import { SuiteTreeNode, TestCase, Priority, TestType } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 import {
   FolderOpen,
   Folder,
@@ -56,8 +55,10 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
   onClose,
   onBack,
 }) => {
+  const { can, isViewer } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+
   const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
 
@@ -282,7 +283,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
               <span>Suite Raporu (CSV)</span>
             </button>
 
-            {onAddSubSuite && (
+            {onAddSubSuite && can('CREATE_SUITE') && (
               <button
                 type="button"
                 onClick={() => onAddSubSuite(suite.id)}
@@ -293,14 +294,16 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={() => onAddCaseInSuite(suite.id)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-rose-600/20 transition-all active:scale-95 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Yeni Case</span>
-            </button>
+            {can('CREATE_CASE') && (
+              <button
+                type="button"
+                onClick={() => onAddCaseInSuite(suite.id)}
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-rose-600/20 transition-all active:scale-95 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Yeni Case</span>
+              </button>
+            )}
 
             {onClose && (
               <button
@@ -689,7 +692,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                           </button>
 
                           {/* "Koştur" Butonu */}
-                          {onRunCase && (
+                          {onRunCase && can('EXECUTE_RUN') && (
                             <button
                               type="button"
                               onClick={() => handleRunTestCaseRow(tc)}

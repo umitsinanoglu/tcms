@@ -9,6 +9,22 @@ export const api = axios.create({
   },
 });
 
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const activeUserId = localStorage.getItem('tcms_active_user_id');
+    const activeUserRole = localStorage.getItem('tcms_active_user_role');
+    const activeUserEmail = localStorage.getItem('tcms_active_user_email');
+    const activeUserName = localStorage.getItem('tcms_active_user_name');
+
+    if (activeUserId) config.headers['x-user-id'] = activeUserId;
+    if (activeUserRole) config.headers['x-user-role'] = activeUserRole;
+    if (activeUserEmail) config.headers['x-user-email'] = activeUserEmail;
+    if (activeUserName) config.headers['x-user-name'] = encodeURIComponent(activeUserName);
+  }
+  return config;
+});
+
+
 export interface Project {
   id: string;
   name: string;
@@ -371,5 +387,46 @@ export const ReportsService = {
     window.URL.revokeObjectURL(downloadUrl);
   },
 };
+
+export type UserRole = 'ADMIN' | 'TEST_LEAD' | 'TESTER' | 'VIEWER';
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  department?: string | null;
+  avatarUrl?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateUserInput {
+  email: string;
+  name: string;
+  role?: UserRole;
+  department?: string;
+  avatarUrl?: string;
+}
+
+export interface UpdateUserInput {
+  email?: string;
+  name?: string;
+  role?: UserRole;
+  department?: string;
+  avatarUrl?: string;
+  isActive?: boolean;
+}
+
+export const UsersService = {
+  getUsers: () => api.get<User[]>('/users').then((res) => res.data),
+  getUser: (id: string) => api.get<User>(`/users/${id}`).then((res) => res.data),
+  getCurrentUser: () => api.get<any>('/users/me').then((res) => res.data),
+  createUser: (data: CreateUserInput) => api.post<User>('/users', data).then((res) => res.data),
+  updateUser: (id: string, data: UpdateUserInput) => api.patch<User>(`/users/${id}`, data).then((res) => res.data),
+  deleteUser: (id: string) => api.delete<{ message: string }>(`/users/${id}`).then((res) => res.data),
+};
+
 
 

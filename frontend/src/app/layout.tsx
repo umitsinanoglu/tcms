@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { NavigationProvider } from '@/context/NavigationContext';
+import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
   title: 'Türk Ticaret Bankası - Test Case Management System (TCMS)',
@@ -20,13 +21,16 @@ export default function RootLayout({
   return (
     <html lang="tr" className="dark">
       <body className="antialiased bg-background text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
-        <ThemeProvider>
-          <NavigationProvider>
-            {children}
-          </NavigationProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <NavigationProvider>
+              {children}
+            </NavigationProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
 }
+
 
