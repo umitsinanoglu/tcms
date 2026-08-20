@@ -28,7 +28,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { users, currentUser, refreshUsers } = useAuth();
+  const { users, currentUser, refreshUsers, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'LIST' | 'CREATE'>('LIST');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     avatarUrl: '',
   });
 
-  if (!isOpen) return null;
+  if (!isOpen || !isAdmin) return null;
 
   const showNotification = (type: 'SUCCESS' | 'ERROR', msg: string) => {
     if (type === 'SUCCESS') {

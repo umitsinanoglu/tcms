@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Tema seçici ikon görünümüne getirildi, Swagger butonu kompakt yapıldı, basit login (standart şifre: password1234, 24 saat session) eklendi, profil switch kaldırıldı, kullanıcı yönetimi sadece adminlere kısıtlandı, Yeni Test Planı butonu sol menü altına taşındı
 - Kök test case'ler ağaç yapısında en üstte gösterildi, suite altındaki case'ler bir tık girintiyle (indent) netleştirildi
 - Sol menü (AppSidebar) item yerleşimleri sola yaslandı, girintiler optimize edildi ve menü genişliği ferahlatıldı
 - **Test Case Koştur Modalı Yatay (Landscape) 2 Sütunlu Yerleşim**: QuickRunModal dikey sıkışık formdan çıkarılarak geniş yatay (max-w-5xl/6xl) 2 sütunlu ergonomik bir yerleşime geçirildi. Sol tarafta Test Case bilgileri, versiyon/ortam parametreleri ve kaydırılabilir test adımları/beklenen sonuçlar; sağ tarafta ise sonuç durumu kartları, koşu notları, Jira Mock entegrasyonu ve çoklu ekran görüntüsü kanıt yükleme alanı ayrıştırılarak kullanım kolaylığı sağlandı.

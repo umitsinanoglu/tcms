@@ -582,6 +582,20 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             );
           })}
         </div>
+
+        {/* Collapsed Rail Bottom Action: New Project */}
+        {can('CREATE_PROJECT') && (
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 w-full flex flex-col items-center shrink-0">
+            <button
+              type="button"
+              onClick={onOpenNewProject}
+              className="w-10 h-10 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white flex items-center justify-center shadow-md shadow-rose-600/30 transition-all active:scale-95 cursor-pointer"
+              title="Yeni Test Planı Oluştur"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+        )}
       </aside>
     );
   }
@@ -909,6 +923,21 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           )}
         </div>
       </div>
+
+      {/* Bottom Action: Yeni Test Planı Button */}
+      {can('CREATE_PROJECT') && (
+        <div className="p-3 border-t border-slate-200 dark:border-slate-800/90 bg-slate-50/70 dark:bg-slate-900/60 shrink-0">
+          <button
+            type="button"
+            onClick={onOpenNewProject}
+            className="w-full flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 shadow-md shadow-rose-600/20 active:scale-98 transition-all cursor-pointer"
+            title="Yeni Test Planı Oluştur"
+          >
+            <Plus className="w-4 h-4 shrink-0" />
+            <span>Yeni Test Planı</span>
+          </button>
+        </div>
+      )}
     </aside>
   );
 };

@@ -24,9 +24,12 @@ import { NewCaseModal } from '@/components/NewCaseModal';
 import { QuickRunModal } from '@/components/QuickRunModal';
 import { UserManagementModal } from '@/components/UserManagementModal';
 import { useNavigation, NavigationState } from '@/context/NavigationContext';
+import { useAuth } from '@/context/AuthContext';
+import { LoginView } from '@/components/LoginView';
 import { ReportsView } from '@/components/ReportsView';
 
 export default function Home() {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { pushState, registerNavigationHandler, goBack } = useNavigation();
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -494,8 +497,10 @@ export default function Home() {
   }, [loadTree, pushState]);
 
   useEffect(() => {
-    loadProjects();
-  }, [loadProjects]);
+    if (isAuthenticated) {
+      loadProjects();
+    }
+  }, [isAuthenticated, loadProjects]);
 
   // Handlers for Project actions
   const handleCreateProject = async (data: { name: string; key: string; description?: string; jiraProjectKey?: string }) => {
@@ -684,6 +689,23 @@ export default function Home() {
       }
     }
   };
+
+  // Auth Loading Splash
+  if (isAuthLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-950 text-slate-100">
+        <div className="flex flex-col items-center space-y-3">
+          <div className="w-10 h-10 border-4 border-rose-500/20 border-t-rose-500 rounded-full animate-spin" />
+          <span className="text-xs font-semibold text-slate-400">Yükleniyor...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // If not logged in, render Login screen
+  if (!isAuthenticated) {
+    return <LoginView />;
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 transition-colors duration-200">

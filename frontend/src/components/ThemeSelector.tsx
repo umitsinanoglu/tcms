@@ -25,18 +25,12 @@ export const ThemeSelector: React.FC = () => {
     switch (id) {
       case 'crimson-light':
         return (
-          <div className="flex items-center space-x-0.5 text-rose-500">
-            <Sun className="w-3.5 h-3.5" />
-            <Sparkles className="w-3 h-3 text-rose-400" />
-          </div>
+          <Sun className="w-4 h-4 text-amber-500 transition-transform duration-200 group-hover:rotate-45" />
         );
       case 'crimson-dark':
       default:
         return (
-          <div className="flex items-center space-x-0.5 text-rose-400">
-            <Moon className="w-3.5 h-3.5" />
-            <Sparkles className="w-3 h-3 text-rose-400" />
-          </div>
+          <Moon className="w-4 h-4 text-rose-400 transition-transform duration-200 group-hover:-rotate-12" />
         );
     }
   };
@@ -45,39 +39,28 @@ export const ThemeSelector: React.FC = () => {
 
   return (
     <div className="relative inline-block text-left z-[100]" ref={menuRef}>
-      {/* Theme Trigger Button */}
+      {/* Theme Trigger Button - Compact Icon View */}
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700/90 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50 cursor-pointer"
-        title="Tema Seçici"
+        className="group w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center rounded-xl bg-slate-100/90 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50 cursor-pointer shrink-0"
+        title={`Tema Seçici: ${activeThemeMeta.name}`}
+        aria-label="Tema Seçici"
       >
-        <div className="flex items-center space-x-1.5">
-          {getThemeIcon(theme)}
-          <span className="text-xs font-semibold">{activeThemeMeta.name}</span>
-        </div>
-        <div className="flex items-center space-x-0.5 ml-1">
-          {activeThemeMeta.swatchColors.map((color, idx) => (
-            <span
-              key={idx}
-              className="w-2.5 h-2.5 rounded-full border border-black/10 dark:border-white/10"
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
+        {getThemeIcon(theme)}
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl drop-shadow-2xl backdrop-blur-xl p-2 animate-in fade-in zoom-in-95 duration-150 z-[100]">
+        <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl drop-shadow-2xl backdrop-blur-xl p-2 animate-in fade-in zoom-in-95 duration-150 z-[100]">
           <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Palette className="w-4 h-4 text-rose-500" />
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                Crimson Coral Temaları
+                Tema Tercihi
               </span>
             </div>
-            <span className="text-[10px] text-rose-500 font-mono font-semibold">v2.0</span>
+            <span className="text-[10px] text-rose-500 font-mono font-semibold">Crimson Coral</span>
           </div>
 
           <div className="mt-1 space-y-1">
@@ -90,21 +73,21 @@ export const ThemeSelector: React.FC = () => {
                     setTheme(t.id);
                     setIsOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center justify-between transition-all ${
+                  className={`w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-all ${
                     isSelected
                       ? 'bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/30 text-slate-900 dark:text-white'
                       : 'hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-300 border border-transparent'
                   }`}
                 >
-                  <div className="flex items-start space-x-3">
-                    <div className="mt-0.5 p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800">
                       {getThemeIcon(t.id)}
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
                         <span className="text-xs font-semibold">{t.name}</span>
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
                         {t.description}
                       </p>
                     </div>
@@ -115,7 +98,7 @@ export const ThemeSelector: React.FC = () => {
                       {t.swatchColors.map((color, idx) => (
                         <span
                           key={idx}
-                          className="w-3.5 h-3.5 rounded-full border border-black/20 dark:border-white/20 shadow-sm"
+                          className="w-3 h-3 rounded-full border border-black/20 dark:border-white/20 shadow-sm"
                           style={{ backgroundColor: color }}
                         />
                       ))}

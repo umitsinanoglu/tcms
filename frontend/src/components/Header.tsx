@@ -14,12 +14,8 @@ import {
   Check,
   Search,
   X,
-  ExternalLink,
   BookOpen,
   Users,
-  Shield,
-  ShieldAlert,
-  UserCheck,
   Eye,
   LogOut,
 } from 'lucide-react';
@@ -37,7 +33,6 @@ interface HeaderProps {
   onOpenUserManagement?: () => void;
 }
 
-
 export const Header: React.FC<HeaderProps> = ({
   projects = [],
   selectedProject,
@@ -47,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNewProject,
   onOpenUserManagement,
 }) => {
-  const { currentUser, users, role, switchUser, switchRole, can, isAdmin, isViewer } = useAuth();
+  const { currentUser, role, can, isAdmin, isViewer, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -328,7 +323,7 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
       )}
 
-      {/* Right: RBAC User Profile, Theme Switcher, Swagger Docs & Action Button */}
+      {/* Right: RBAC User Profile, Theme Switcher, Swagger Docs */}
       <div className="flex items-center space-x-2 sm:space-x-2.5 shrink-0">
         {/* Viewer Mode Alert Indicator */}
         {isViewer && (
@@ -341,7 +336,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         )}
 
-        {/* User Switcher / Profile Popover */}
+        {/* User Profile Popover (No Profile Switching) */}
         <div className="relative" ref={userDropdownRef}>
           <button
             type="button"
@@ -351,7 +346,7 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-600 ring-2 ring-rose-500/20 shadow-sm'
                 : 'bg-slate-100/90 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
             }`}
-            title="Kullanıcı / Rol Değiştir"
+            title="Kullanıcı Profili"
           >
             {currentUser?.avatarUrl ? (
               <img
@@ -423,57 +418,9 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               </div>
 
-              {/* Fast User Switch List (Phase 1 Testing Convenience) */}
-              <div className="p-2 border-b border-slate-100 dark:border-slate-800">
-                <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                  Hızlı Hesap & Rol Değiştir:
-                </span>
-                <div className="space-y-1 max-h-48 overflow-y-auto">
-                  {users.map((u) => {
-                    const isSelected = currentUser?.id === u.id;
-                    const badge = getRoleBadge(u.role);
-                    return (
-                      <button
-                        key={u.id}
-                        type="button"
-                        onClick={() => {
-                          switchUser(u);
-                          setIsUserDropdownOpen(false);
-                        }}
-                        className={`w-full text-left p-1.5 rounded-xl flex items-center justify-between text-xs transition-colors ${
-                          isSelected
-                            ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold border border-rose-500/20'
-                            : 'hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 border border-transparent'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2 min-w-0">
-                          {u.avatarUrl ? (
-                            <img
-                              src={u.avatarUrl}
-                              alt={u.name}
-                              className="w-5 h-5 rounded-full object-cover shrink-0"
-                            />
-                          ) : (
-                            <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold shrink-0">
-                              {u.name.charAt(0)}
-                            </div>
-                          )}
-                          <span className="truncate max-w-[130px] font-medium">{u.name}</span>
-                        </div>
-                        <span
-                          className={`font-mono text-[8px] font-bold px-1.5 py-0.2 rounded border ${badge.bg}`}
-                        >
-                          {badge.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Admin Actions: User Management */}
+              {/* Admin Actions: User Management (Visible ONLY for ADMIN role) */}
               {isAdmin && onOpenUserManagement && (
-                <div className="p-1.5 bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="p-1.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30">
                   <button
                     type="button"
                     onClick={() => {
@@ -487,11 +434,26 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 </div>
               )}
+
+              {/* Logout Action */}
+              <div className="p-1.5 bg-slate-50/50 dark:bg-slate-900/50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUserDropdownOpen(false);
+                    logout();
+                  }}
+                  className="w-full flex items-center space-x-2 py-2 px-3 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Çıkış Yap</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Swagger / OpenAPI Docs Link */}
+        {/* Compact Swagger / OpenAPI Docs Link Button */}
         <a
           href={
             process.env.NEXT_PUBLIC_API_URL
@@ -500,32 +462,18 @@ export const Header: React.FC<HeaderProps> = ({
           }
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-rose-50/80 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800/50 rounded-xl transition-all shadow-sm shrink-0"
-          title="OpenAPI / Swagger API Dokümantasyonunu Aç (Yeni Sekme)"
+          className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-rose-50/80 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800/50 rounded-xl transition-all shadow-sm shrink-0"
+          title="Swagger / OpenAPI API Dokümantasyonu (Yeni Sekme)"
+          aria-label="Swagger API Docs"
         >
-          <BookOpen className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-          <span className="hidden md:inline font-semibold">Swagger Docs</span>
-          <ExternalLink className="w-3 h-3 opacity-50 shrink-0 ml-0.5" />
+          <BookOpen className="w-4 h-4 text-rose-500" />
         </a>
 
         <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 shrink-0 hidden sm:block" />
 
-        {/* Theme Selector Component */}
+        {/* Compact Icon View Theme Selector */}
         <ThemeSelector />
-
-        {/* Primary Action Button: 'Yeni Test Planı' (Hidden for Viewer and Tester roles) */}
-        {can('CREATE_PROJECT') && (
-          <button
-            onClick={onOpenNewProject}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 rounded-xl text-white transition-all shadow-md shadow-rose-600/20 active:scale-95 shrink-0 cursor-pointer"
-            title="Yeni Test Planı / Proje Oluştur"
-          >
-            <PlusCircle className="w-4 h-4 shrink-0" />
-            <span className="sm:inline hidden">Yeni Test Planı</span>
-          </button>
-        )}
       </div>
     </header>
   );
 };
-
