@@ -224,6 +224,39 @@ export interface ProjectReportSummary {
     passRate: number;
     executedPassRate: number;
   };
+  readiness?: {
+    status: 'GO' | 'CAUTION' | 'NO_GO';
+    score: number;
+    reason: string;
+    blockerCount: number;
+    criticalCount: number;
+  };
+  channels?: {
+    key: string;
+    name: string;
+    icon: string;
+    total: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    untested: number;
+    passRate: number;
+  }[];
+  automation?: {
+    manual: number;
+    automation: number;
+    percentage: number;
+  };
+  topRiskySuites?: {
+    id: string;
+    name: string;
+    totalCases: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    untested: number;
+    passRate: number;
+  }[];
   distributions: {
     priority: Record<string, number>;
     type: Record<string, number>;
