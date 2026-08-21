@@ -103,15 +103,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const flattenedSuites = flattenSuitesRecursive(suites);
 
-  // Root level cases without a suite
+  // Root level cases without a suite (always at the very top)
   const rootCases = testCases.filter((tc) => !tc.suiteId);
   const displaySuites: FlattenedSuite[] = [...flattenedSuites];
 
   if (rootCases.length > 0) {
     displaySuites.unshift({
       id: '__root_cases__',
-      name: 'Plan Test Case\'leri (Suite\'siz)',
-      fullPath: `[${project.key}] / Plan Kökü`,
+      name: "Kök Test Case'leri (Suite'siz)",
+      fullPath: `[${project.key}] / Kök Dizin`,
       testCases: rootCases,
       allCases: rootCases,
     });
@@ -136,7 +136,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const handleOpenSuiteCard = (suiteId: string) => {
     if (suiteId === '__root_cases__') {
-      if (onSelectCase && rootCases.length > 0) {
+      if (onSelectSuite) {
+        onSelectSuite({
+          id: '__root_cases__',
+          name: "Kök Test Case'leri (Suite'siz)",
+          orderIndex: 0,
+          parentId: null,
+          children: [],
+          testCases: rootCases,
+        });
+      } else if (onSelectCase && rootCases.length > 0) {
         onSelectCase(rootCases[0]);
       }
       return;

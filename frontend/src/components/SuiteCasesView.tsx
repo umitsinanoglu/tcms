@@ -25,6 +25,7 @@ import {
   Settings2,
   Check,
   Filter,
+  FileText,
 } from 'lucide-react';
 
 interface SuiteCasesViewProps {
@@ -229,8 +230,12 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                 <span>Geri</span>
               </button>
             )}
-            <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 shrink-0">
-              <FolderOpen className="w-6 h-6" />
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shrink-0 ${
+              suite.id === '__root_cases__'
+                ? 'bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] border-[#b83a4b]/20'
+                : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+            }`}>
+              {suite.id === '__root_cases__' ? <FileText className="w-6 h-6" /> : <FolderOpen className="w-6 h-6" />}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center flex-wrap gap-2">
@@ -245,7 +250,9 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                 )}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                Suite içindeki test case listesi, versiyon/ortam seçimi ve koşu yönetimi
+                {suite.id === '__root_cases__'
+                  ? "Herhangi bir test suite'e bağlı olmayan kök test case listesi ve koşu yönetimi"
+                  : "Suite içindeki test case listesi, versiyon/ortam seçimi ve koşu yönetimi"}
               </p>
             </div>
           </div>
@@ -272,18 +279,18 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `Suite_${suite.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Report.csv`;
+                a.download = `${suite.id === '__root_cases__' ? 'Kok_Test_Caseleri' : `Suite_${suite.name.replace(/[^a-zA-Z0-9_-]/g, '_')}`}_Report.csv`;
                 a.click();
                 URL.revokeObjectURL(url);
               }}
               className="flex items-center space-x-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all active:scale-95 cursor-pointer"
-              title="Suite Test Senaryolarını CSV Formatında İndir"
+              title="Test Senaryolarını CSV Formatında İndir"
             >
               <FileCode2 className="w-4 h-4 text-emerald-500" />
-              <span>Suite Raporu (CSV)</span>
+              <span>Rapor (CSV)</span>
             </button>
 
-            {onAddSubSuite && can('CREATE_SUITE') && (
+            {suite.id !== '__root_cases__' && onAddSubSuite && can('CREATE_SUITE') && (
               <button
                 type="button"
                 onClick={() => onAddSubSuite(suite.id)}
@@ -297,8 +304,8 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
             {can('CREATE_CASE') && (
               <button
                 type="button"
-                onClick={() => onAddCaseInSuite(suite.id)}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-rose-600/20 transition-all active:scale-95 cursor-pointer"
+                onClick={() => onAddCaseInSuite(suite.id === '__root_cases__' ? '' : suite.id)}
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-[#b83a4b] hover:bg-[#a32e3e] text-white text-xs font-semibold rounded-xl shadow-md shadow-[#b83a4b]/20 transition-all active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Yeni Case</span>

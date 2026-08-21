@@ -391,11 +391,22 @@ export default function Home() {
         }
       } else if (targetState.suiteId) {
         setSelectedCase(null);
-        const suite = findSuiteInTree(targetTree, targetState.suiteId);
-        if (suite) {
-          setSelectedSuite(suite);
+        if (targetState.suiteId === '__root_cases__') {
+          setSelectedSuite({
+            id: '__root_cases__',
+            name: "Kök Test Case'leri (Suite'siz)",
+            orderIndex: 0,
+            parentId: null,
+            children: [],
+            testCases: rootCases,
+          });
         } else {
-          setSelectedSuite(null);
+          const suite = findSuiteInTree(targetTree, targetState.suiteId);
+          if (suite) {
+            setSelectedSuite(suite);
+          } else {
+            setSelectedSuite(null);
+          }
         }
       } else {
         setSelectedCase(null);
@@ -590,14 +601,16 @@ export default function Home() {
     if (created.suiteId) {
       setTree((prevTree) => addCaseToTreeNodes(prevTree, created));
     } else {
-      setRootCases((prevRoots) => [...prevRoots, created]);
+      setRootCases((prevRoots) => [created, ...prevRoots]);
     }
     setSelectedSuite((prevSuite) => {
-      if (prevSuite && prevSuite.id === created.suiteId) {
-        return {
-          ...prevSuite,
-          testCases: [...(prevSuite.testCases || []), created],
-        };
+      if (prevSuite) {
+        if (prevSuite.id === created.suiteId || (prevSuite.id === '__root_cases__' && !created.suiteId)) {
+          return {
+            ...prevSuite,
+            testCases: [created, ...(prevSuite.testCases || [])],
+          };
+        }
       }
       return prevSuite;
     });
@@ -622,22 +635,58 @@ export default function Home() {
     setSelectedCase(fullUpdatedCase);
 
     // Update local tree & root cases in React state without full remote DB refetch
-    setTree((prevTree) => updateCaseInTreeNodes(prevTree, fullUpdatedCase));
-    setRootCases((prevRoots) =>
-      prevRoots.map((tc) => (tc.id === fullUpdatedCase.id ? { ...tc, ...fullUpdatedCase } : tc))
-    );
+    if (fullUpdatedCase.suiteId) {
+      // It has a suiteId: remove from rootCases if it was there, and update/add in tree
+      setRootCases((prevRoots) => prevRoots.filter((tc) => tc.id !== fullUpdatedCase.id));
+      setTree((prevTree) => {
+        const removedTree = removeCaseFromTreeNodes(prevTree, fullUpdatedCase.id);
+        return addCaseToTreeNodes(removedTree, fullUpdatedCase);
+      });
+    } else {
+      // It has NO suiteId (Root case): remove from tree if it was there, and update/add in rootCases
+      setTree((prevTree) => removeCaseFromTreeNodes(prevTree, fullUpdatedCase.id));
+      setRootCases((prevRoots) => {
+        const exists = prevRoots.some((tc) => tc.id === fullUpdatedCase.id);
+        if (exists) {
+          return prevRoots.map((tc) => (tc.id === fullUpdatedCase.id ? fullUpdatedCase : tc));
+        } else {
+          return [fullUpdatedCase, ...prevRoots];
+        }
+      });
+    }
 
     // Also update selectedSuite testCases in-memory if active
     setSelectedSuite((prevSuite) => {
       if (!prevSuite) return null;
+      if (prevSuite.id === '__root_cases__') {
+        if (!fullUpdatedCase.suiteId) {
+          return {
+            ...prevSuite,
+            testCases: prevSuite.testCases?.map((tc) =>
+              tc.id === fullUpdatedCase.id ? fullUpdatedCase : tc
+            ) || [],
+          };
+        } else {
+          return {
+            ...prevSuite,
+            testCases: (prevSuite.testCases || []).filter((tc) => tc.id !== fullUpdatedCase.id),
+          };
+        }
+      }
       const hasCase = prevSuite.testCases?.some((tc) => tc.id === fullUpdatedCase.id);
-      if (!hasCase) return prevSuite;
-      return {
-        ...prevSuite,
-        testCases: prevSuite.testCases.map((tc) =>
-          tc.id === fullUpdatedCase.id ? { ...tc, ...fullUpdatedCase } : tc
-        ),
-      };
+      if (!hasCase && prevSuite.id !== fullUpdatedCase.suiteId) return prevSuite;
+      if (prevSuite.id === fullUpdatedCase.suiteId) {
+        const exists = prevSuite.testCases?.some((tc) => tc.id === fullUpdatedCase.id);
+        const newCases = exists
+          ? prevSuite.testCases!.map((tc) => (tc.id === fullUpdatedCase.id ? fullUpdatedCase : tc))
+          : [...(prevSuite.testCases || []), fullUpdatedCase];
+        return { ...prevSuite, testCases: newCases };
+      } else {
+        return {
+          ...prevSuite,
+          testCases: (prevSuite.testCases || []).filter((tc) => tc.id !== fullUpdatedCase.id),
+        };
+      }
     });
   };
 

@@ -644,9 +644,26 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
             <>
               {filteredRootCases.length > 0 && (
                 <div className="mb-2 space-y-0.5 pb-2 border-b border-slate-200 dark:border-slate-800">
-                  <div className="px-2 py-1 flex items-center space-x-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    <FileText className="w-3.5 h-3.5 text-blue-500" />
-                    <span>Plan Test Case'leri ({filteredRootCases.length})</span>
+                  <div
+                    onClick={() => {
+                      if (onSelectSuite) {
+                        onSelectSuite({
+                          id: '__root_cases__',
+                          name: "Kök Test Case'leri (Suite'siz)",
+                          orderIndex: 0,
+                          parentId: null,
+                          children: [],
+                          testCases: rootTestCases,
+                        });
+                      }
+                    }}
+                    className="px-2 py-1 flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-blue-600 transition-colors"
+                  >
+                    <div className="flex items-center space-x-1.5">
+                      <FileText className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Kök Test Case'leri ({filteredRootCases.length})</span>
+                    </div>
+                    <span className="text-[9px] font-mono text-slate-400 font-normal">Tümünü Gör →</span>
                   </div>
                   {filteredRootCases.map((tc) => {
                     const isSelected = selectedCaseId === tc.id;
