@@ -866,12 +866,32 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                         </div>
                       ) : (
                         <div className="space-y-0.5">
-                          {/* Root Cases (En Üstte) */}
+                          {/* Kök Test Case'leri (Her Zaman En Üstte) */}
                           {filteredRootCases.length > 0 && (
-                            <div className="space-y-0.5 mb-1.5 pb-1 border-b border-slate-200/60 dark:border-slate-800/80">
-                              <div className="flex items-center space-x-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1 py-0.5">
-                                <FileText className="w-3 h-3 text-[#b83a4b]" />
-                                <span>Kök Case'ler ({filteredRootCases.length})</span>
+                            <div className="space-y-0.5 mb-2 pb-1.5 border-b border-slate-200/70 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/40 rounded-xl p-1.5 shadow-xs">
+                              <div
+                                onClick={() => {
+                                  if (onSelectSuite) {
+                                    onSelectSuite({
+                                      id: '__root_cases__',
+                                      name: "Kök Test Case'leri (Suite'siz)",
+                                      orderIndex: 0,
+                                      parentId: null,
+                                      children: [],
+                                      testCases: rootTestCases,
+                                    });
+                                  }
+                                }}
+                                className="flex items-center justify-between space-x-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-1 py-1 cursor-pointer hover:text-[#b83a4b] transition-colors group"
+                                title="Tüm kök test case'leri liste görünümünde aç"
+                              >
+                                <div className="flex items-center space-x-1.5">
+                                  <FileText className="w-3.5 h-3.5 text-[#b83a4b] shrink-0" />
+                                  <span>Kök Test Case'leri ({filteredRootCases.length})</span>
+                                </div>
+                                <span className="text-[9px] font-mono text-slate-400 group-hover:text-[#b83a4b] font-normal transition-colors">
+                                  Tümünü Gör →
+                                </span>
                               </div>
                               {filteredRootCases.map((tc) => {
                                 const isSelected = selectedCaseId === tc.id;
@@ -879,11 +899,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                                   <div
                                     key={tc.id}
                                     onClick={() => onSelectCase(tc)}
-                                    style={{ paddingLeft: '4px' }}
-                                    className={`group flex items-center justify-between py-1 pr-1.5 rounded-lg cursor-pointer transition-all duration-150 ${
+                                    style={{ paddingLeft: '6px' }}
+                                    className={`group flex items-center justify-between py-1.5 pr-1.5 rounded-lg cursor-pointer transition-all duration-150 ${
                                       isSelected
                                         ? 'bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] font-semibold border-l-2 border-[#b83a4b] shadow-sm'
-                                        : 'hover:bg-slate-100 dark:hover:bg-slate-800/40 text-slate-600 dark:text-slate-400'
+                                        : 'hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
                                     }`}
                                   >
                                     <div className="flex items-center space-x-1.5 min-w-0 flex-1">
@@ -892,7 +912,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                                           isSelected ? 'text-[#b83a4b]' : 'text-slate-400'
                                         }`}
                                       />
-                                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
                                         {tc.code}
                                       </span>
                                       <span className="text-xs truncate flex-1 min-w-0" title={tc.title}>

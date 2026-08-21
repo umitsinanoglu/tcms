@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Kök Test Case'leri (herhangi bir suite'e bağlı olmayanlar) hiyerarşik ağaçta, dashboard suite listesinde ve gezginde her zaman en üstte gösterilecek şekilde optimize edildi.
 - Dashboard üst KPI başarım kartları ve dağılım panelleri daha kompakt, zarif ve veri yoğunluklu hale getirildi.
 - Tüm Test Suite'leri görünümü kart ızgarasından detaylı ve veri yoğunluklu liste görünümüne dönüştürüldü.
 - Kurumsal renklere uygun mat, solgun ve göz yormayan crimson kırmızı renk paleti uyarlandı.
