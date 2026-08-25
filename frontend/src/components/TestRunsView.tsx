@@ -222,8 +222,8 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-tr from-[#821c2b] to-[#b83a4b] text-white shadow-md shadow-[#821c2b]/25">
-              <Play className="w-5 h-5 fill-current" />
+            <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-md shadow-emerald-500/10">
+              <Play className="w-5 h-5 fill-current text-emerald-500" />
             </div>
             <div>
               <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
@@ -249,7 +249,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           <button
             type="button"
             onClick={onOpenManualRun}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-md shadow-[#821c2b]/25 hover:shadow-[0_4px_12px_rgba(130,28,43,0.35)] active:scale-98 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-500/25 active:scale-98 transition-all cursor-pointer"
           >
             <Play className="w-4 h-4 fill-white" />
             <span>Yeni Test Koşumu Başlat</span>
@@ -263,7 +263,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
             <span className="text-xs font-medium uppercase tracking-wider">Toplam Koşu</span>
-            <Play className="w-4 h-4 text-blue-500" />
+            <Play className="w-4 h-4 text-emerald-500 fill-current" />
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-3xl font-extrabold font-mono tracking-tight">{totalRuns}</span>

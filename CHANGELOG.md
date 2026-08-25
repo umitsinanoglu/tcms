@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Test Suite ve Test Case kavramları tamamen kaldırılarak 'Test Senaryosu' (Test Scenario) modeli altında birleştirildi; 1 kez yazıp N kez koşma yeteneği, modern TestScenariosView çalışma alanı, sadeleştirilmiş AppSidebar ve tekil/toplu koşum desteği entegre edildi
+- Test Planları gridindeki ve sağ çekmecedeki Düzenle (Pencil) butonları doğrudan ilgili Test Planının detay sayfasına yönlendirecek şekilde güncellendi
+- Test Planları gridinden Proje kolonu kaldırıldı; Koşum Başlat, Düzenle ve Sil aksiyonları doğrudan buton ikonları olarak satırlara eklendi
+- Redesigned Dashboard view based on modern enterprise SDLC UI with unified Test Plans vs Runs architecture
 - Veritabanı sıfırlandı ve yeni hiyerarşiye uygun (Test Projeleri -> Test Planları, Modüller, Test Senaryoları ve Koşumlar) kurumsal veriler yüklendi
 - Kök Test Case'leri (herhangi bir suite'e bağlı olmayanlar) hiyerarşik ağaçta, dashboard suite listesinde ve gezginde her zaman en üstte gösterilecek şekilde optimize edildi.
 - Dashboard üst KPI başarım kartları ve dağılım panelleri daha kompakt, zarif ve veri yoğunluklu hale getirildi.
@@ -44,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manual Execution Dashboard (Manuel Test Koşum Paneli) modalı Türkçe diline çevrildi ve tema ile tam uyumlu hale getirildi.
 
 ### Added
+- Kapsamlı Test Planı Detay Sayfası (TestPlanDetailView) eklendi; Test Planı Görüntüle butonu ile detay sayfasına geçiş, inline metadata düzenleme (başlık, hedef ortam, sürüm, durum, kapsam, gereksinimler), plana senaryo ekleme/çıkarma/oluşturma, bağlı koşumlar ve özet KPI kartları entegre edildi
+- Test Planları sayfası görsel tasarıma uygun olarak grid/tablo görünümü, KPI özet kartları, durum sekmeleri ve detay paneli ile revize edildi; Arama kutusu top navigasyon sağ üst bölüme taşındı
 - Hiyerarşik refaktör: En üst seviye Test Projeleri olarak yapılandırıldı, TestPlan entity ve API modülü eklendi, sol navigasyon sadeleştirilerek Çalışılan Proje ve 5 ana modül (Ana Sayfa, Test Planları, Test Senaryoları, Test Koşumları, Test Raporları) kuruldu, Header sadeleştirildi ve Test Koşumları merkezi yürütme akışı inşa edildi.
 - Faz 1 Rol Bazlı Kullanıcı Yönetimi (RBAC) ve Ekran Yetkilendirme Çerçevesi
 - Dinamik Database Environment desteği eklendi (ENVIRONMENT=supabase / ENVIRONMENT=local)

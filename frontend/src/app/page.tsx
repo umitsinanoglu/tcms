@@ -6,6 +6,8 @@ import {
   SuiteTreeNode,
   TestCase,
   TestPlan,
+  TestRun,
+  CreateTestPlanDto,
   ProjectsService,
   SuitesService,
   TestCasesService,
@@ -15,8 +17,9 @@ import {
 import { Header } from '@/components/Header';
 import { AppSidebar, SidebarTab } from '@/components/AppSidebar';
 import { TestCaseEditor } from '@/components/TestCaseEditor';
-import { SuiteCasesView } from '@/components/SuiteCasesView';
+import { TestScenariosView } from '@/components/TestScenariosView';
 import { TestPlansView } from '@/components/TestPlansView';
+import { TestPlanDetailView } from '@/components/TestPlanDetailView';
 import { TestRunsView } from '@/components/TestRunsView';
 import { DashboardView } from '@/components/DashboardView';
 import { ManualRunModal } from '@/components/ManualRunModal';
@@ -25,6 +28,7 @@ import { EditProjectModal } from '@/components/EditProjectModal';
 import { NewSuiteModal } from '@/components/NewSuiteModal';
 import { EditSuiteModal } from '@/components/EditSuiteModal';
 import { NewCaseModal } from '@/components/NewCaseModal';
+import { NewTestPlanModal } from '@/components/NewTestPlanModal';
 import { QuickRunModal } from '@/components/QuickRunModal';
 import { UserManagementModal } from '@/components/UserManagementModal';
 import { useNavigation, NavigationState } from '@/context/NavigationContext';
@@ -41,9 +45,11 @@ export default function Home() {
   const [tree, setTree] = useState<SuiteTreeNode[]>([]);
   const [rootCases, setRootCases] = useState<TestCase[]>([]);
   const [testPlans, setTestPlans] = useState<TestPlan[]>([]);
+  const [testRuns, setTestRuns] = useState<TestRun[]>([]);
   const [testRunsCount, setTestRunsCount] = useState<number>(0);
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null);
   const [selectedSuite, setSelectedSuite] = useState<SuiteTreeNode | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<TestPlan | null>(null);
   const [activeTab, setActiveTab] = useState<SidebarTab>('DASHBOARD');
   const [isLoadingTree, setIsLoadingTree] = useState(false);
   const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
@@ -179,6 +185,7 @@ export default function Home() {
   const [isEditSuiteOpen, setIsEditSuiteOpen] = useState(false);
   const [activeEditSuite, setActiveEditSuite] = useState<SuiteTreeNode | null>(null);
   const [isNewCaseOpen, setIsNewCaseOpen] = useState(false);
+  const [isNewTestPlanOpen, setIsNewTestPlanOpen] = useState(false);
   const [isManualRunOpen, setIsManualRunOpen] = useState(false);
   const [activeRunTestPlan, setActiveRunTestPlan] = useState<TestPlan | null>(null);
   const [isQuickRunOpen, setIsQuickRunOpen] = useState(false);
@@ -203,16 +210,18 @@ export default function Home() {
       setTree(newTree);
       setRootCases(newRootCases);
       setTestPlans(plansRes || []);
+      setTestRuns(runsRes || []);
       setTestRunsCount(runsRes?.length || 0);
 
-      return { tree: newTree, rootCases: newRootCases, plans: plansRes || [] };
+      return { tree: newTree, rootCases: newRootCases, plans: plansRes || [], runs: runsRes || [] };
     } catch (err) {
       console.error('Failed to load project data:', err);
       setTree([]);
       setRootCases([]);
       setTestPlans([]);
+      setTestRuns([]);
       setTestRunsCount(0);
-      return { tree: [], rootCases: [], plans: [] };
+      return { tree: [], rootCases: [], plans: [], runs: [] };
     } finally {
       setIsLoadingTree(false);
     }
@@ -699,6 +708,15 @@ export default function Home() {
     setIsManualRunOpen(true);
   };
 
+  const handleCreateTestPlan = async (data: CreateTestPlanDto) => {
+    await TestPlansService.create(data);
+    if (selectedProject?.id) {
+      const plans = await TestPlansService.getAllByProject(selectedProject.id);
+      setTestPlans(plans || []);
+    }
+    setIsNewTestPlanOpen(false);
+  };
+
   const handleQuickRunSuccess = async () => {
     if (selectedProject) {
       await loadProjectData(selectedProject.id);
@@ -735,10 +753,27 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      {/* Top Header: Clean Brand, Doc Link, Theme Toggle, User Initial Avatar */}
+      {/* Top Header: Clean Brand, Project Selector, Doc Link, Theme Toggle, User Initial Avatar */}
       <Header
+        projects={projects}
+        selectedProject={selectedProject}
+        testCases={allCases}
+        testPlans={testPlans}
+        onSelectProject={(p) => handleSelectProject(p)}
+        onOpenNewProject={() => setIsNewProjectOpen(true)}
+        onEditProject={(p) => {
+          setActiveEditProject(p);
+          setIsEditProjectOpen(true);
+        }}
+        onDeleteProject={handleDeleteProject}
         onNavigateHome={() => handleTabChange('DASHBOARD')}
         onOpenUserManagement={() => setIsUserManagementOpen(true)}
+        onSelectCase={(tc) => handleSelectCase(tc)}
+        onSelectPlan={(plan) => {
+          setSelectedPlan(plan);
+          setActiveRunTestPlan(plan);
+          handleTabChange('PLANS');
+        }}
       />
 
       {/* Main Workspace Layout with Persistent AppSidebar */}
@@ -748,9 +783,10 @@ export default function Home() {
           projects={projects}
           selectedProject={selectedProject}
           activeTab={activeTab}
-          onTabChange={(tab) => handleTabChange(tab)}
+          onTabChange={handleTabChange}
           tree={tree}
           rootTestCases={rootCases}
+          testCasesCount={allCases.length}
           testPlansCount={testPlans.length}
           testRunsCount={testRunsCount}
           selectedCaseId={selectedCase?.id || null}
@@ -796,13 +832,19 @@ export default function Home() {
           {activeTab === 'DASHBOARD' && (
             <DashboardView
               project={selectedProject}
+              projects={projects}
               testCases={allCases}
               suites={tree}
+              testPlans={testPlans}
+              testRuns={testRuns}
               testPlansCount={testPlans.length}
               onOpenManualRun={() => {
                 setActiveRunTestPlan(null);
                 setActiveSuiteRunCases(null);
                 setIsManualRunOpen(true);
+              }}
+              onOpenNewPlan={() => {
+                setIsNewTestPlanOpen(true);
               }}
               onOpenNewSuite={() => {
                 setActiveParentSuiteId(null);
@@ -814,6 +856,14 @@ export default function Home() {
               }}
               onSelectCase={(tc) => handleSelectCase(tc)}
               onSelectSuite={(suite) => handleSelectSuite(suite)}
+              onSelectPlan={(plan) => {
+                setSelectedPlan(plan);
+                setActiveRunTestPlan(plan);
+                handleTabChange('PLANS');
+              }}
+              onSelectRun={() => {
+                handleTabChange('RUNS');
+              }}
               onNavigateToPlans={() => handleTabChange('PLANS')}
               onNavigateToExplorer={() => handleTabChange('EXPLORER')}
               onNavigateToRuns={() => handleTabChange('RUNS')}
@@ -822,11 +872,42 @@ export default function Home() {
           )}
 
           {activeTab === 'PLANS' && (
-            <TestPlansView
-              project={selectedProject}
-              onStartRunWithPlan={handleStartRunWithPlan}
-              onNavigateToRuns={() => handleTabChange('RUNS')}
-            />
+            selectedPlan ? (
+              <TestPlanDetailView
+                plan={selectedPlan}
+                project={selectedProject}
+                projects={projects}
+                allCases={allCases}
+                tree={tree}
+                onBack={() => setSelectedPlan(null)}
+                onStartRunWithPlan={(p, cases) => {
+                  setActiveRunTestPlan(p);
+                  if (cases && cases.length > 0) {
+                    setActiveSuiteRunCases(cases);
+                  }
+                  setIsManualRunOpen(true);
+                }}
+                onSelectCase={(tc) => handleSelectCase(tc)}
+                onUpdatePlanSuccess={(updated) => {
+                  setSelectedPlan(updated);
+                  setTestPlans((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+                }}
+                onDeletePlanSuccess={(deletedId) => {
+                  setSelectedPlan(null);
+                  setTestPlans((prev) => prev.filter((item) => item.id !== deletedId));
+                }}
+              />
+            ) : (
+              <TestPlansView
+                project={selectedProject}
+                projects={projects}
+                allCases={allCases}
+                onStartRunWithPlan={handleStartRunWithPlan}
+                onSelectPlanToView={(p) => setSelectedPlan(p)}
+                onNavigateToRuns={() => handleTabChange('RUNS')}
+                onOpenNewPlan={() => setIsNewTestPlanOpen(true)}
+              />
+            )
           )}
 
           {activeTab === 'EXPLORER' && (
@@ -837,32 +918,22 @@ export default function Home() {
                 onDelete={handleDeleteCase}
                 onRun={handleRunCase}
                 onClose={handleCloseCase}
-                onBack={goBack}
-              />
-            ) : selectedSuite ? (
-              <SuiteCasesView
-                suite={selectedSuite}
-                allSuites={tree}
-                onSelectCase={(tc) => handleSelectCase(tc)}
-                onSelectSuite={(s) => handleSelectSuite(s)}
-                onAddSubSuite={(parentSuiteId) => {
-                  setActiveParentSuiteId(parentSuiteId);
-                  setIsNewSuiteOpen(true);
-                }}
-                onAddCaseInSuite={(suiteId) => {
-                  setActiveParentSuiteId(suiteId);
-                  setIsNewCaseOpen(true);
-                }}
-                onRunCase={handleRunCase}
-                onClose={handleCloseSuite}
-                onBack={goBack}
+                onBack={() => setSelectedCase(null)}
               />
             ) : (
-              <TestCaseEditor
-                testCase={null}
-                onSave={handleSaveCase}
-                onDelete={handleDeleteCase}
-                onRun={handleRunCase}
+              <TestScenariosView
+                project={selectedProject}
+                projects={projects}
+                testCases={allCases}
+                testPlans={testPlans}
+                onSelectCase={(tc) => handleSelectCase(tc)}
+                onOpenNewCase={() => setIsNewCaseOpen(true)}
+                onRunSingleCase={(tc) => handleRunCase(tc)}
+                onRunMultipleCases={(cases) => {
+                  setActiveSuiteRunCases(cases);
+                  setIsManualRunOpen(true);
+                }}
+                onDeleteCase={handleDeleteCase}
               />
             )
           )}
@@ -947,6 +1018,15 @@ export default function Home() {
         defaultSuiteId={activeParentSuiteId}
         suites={tree}
         onSubmit={handleCreateCase}
+      />
+
+      <NewTestPlanModal
+        isOpen={isNewTestPlanOpen}
+        onClose={() => setIsNewTestPlanOpen(false)}
+        projectId={selectedProject?.id}
+        projectName={selectedProject?.name}
+        projectKey={selectedProject?.key}
+        onSubmit={handleCreateTestPlan}
       />
 
       <QuickRunModal

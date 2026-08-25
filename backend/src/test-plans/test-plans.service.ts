@@ -41,6 +41,13 @@ export class TestPlansService {
         _count: {
           select: { testRuns: true },
         },
+        project: {
+          select: {
+            id: true,
+            name: true,
+            key: true,
+          },
+        },
         testRuns: {
           select: {
             id: true,
@@ -48,9 +55,15 @@ export class TestPlansService {
             status: true,
             createdAt: true,
             _count: { select: { results: true } },
+            results: {
+              select: {
+                id: true,
+                status: true,
+                executionMs: true,
+              },
+            },
           },
           orderBy: { createdAt: 'desc' },
-          take: 5,
         },
       },
       orderBy: { createdAt: 'desc' },

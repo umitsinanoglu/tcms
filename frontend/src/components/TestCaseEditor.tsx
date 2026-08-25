@@ -388,7 +388,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
               <button
                 type="submit"
                 disabled={isSaving}
-                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow-md shadow-[#821c2b]/20 transition-all active:scale-95 cursor-pointer"
               >
                 {isSaving ? (
                   <Sparkles className="w-4 h-4 animate-spin" />
