@@ -131,7 +131,7 @@ export const EditSuiteModal: React.FC<EditSuiteModalProps> = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex items-center space-x-2 px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-amber-600/20 disabled:opacity-50"
+                className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white text-xs font-semibold rounded-xl shadow-md shadow-[#821c2b]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Save className="w-4 h-4" />
                 <span>{isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}</span>
