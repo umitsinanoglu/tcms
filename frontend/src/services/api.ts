@@ -33,9 +33,56 @@ export interface Project {
   jiraProjectKey?: string;
   createdAt: string;
   _count?: {
+    testPlans?: number;
     suites: number;
     testRuns: number;
   };
+}
+
+export type PlanStatus = 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
+
+export interface TestPlan {
+  id: string;
+  title: string;
+  description?: string;
+  version: string;
+  environment: string;
+  status: PlanStatus;
+  scope?: string;
+  requirements?: string;
+  projectId: string;
+  project?: {
+    id: string;
+    name: string;
+    key: string;
+  };
+  testRuns?: TestRun[];
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    testRuns: number;
+  };
+}
+
+export interface CreateTestPlanDto {
+  title: string;
+  description?: string;
+  version?: string;
+  environment?: string;
+  status?: PlanStatus;
+  scope?: string;
+  requirements?: string;
+  projectId: string;
+}
+
+export interface UpdateTestPlanDto {
+  title?: string;
+  description?: string;
+  version?: string;
+  environment?: string;
+  status?: PlanStatus;
+  scope?: string;
+  requirements?: string;
 }
 
 export interface StepAttachment {
@@ -134,6 +181,15 @@ export interface TestRun {
   executedBy: string;
   testerEmail: string;
   projectId: string;
+  testPlanId?: string | null;
+  testPlan?: {
+    id: string;
+    title: string;
+    version: string;
+    environment: string;
+    scope?: string;
+    requirements?: string;
+  } | null;
   results: TestResult[];
   createdAt: string;
   _count?: {
@@ -147,6 +203,7 @@ export interface CreateRunDto {
   environment?: string;
   executedBy?: string;
   testerEmail?: string;
+  testPlanId?: string;
 }
 
 export interface SaveResultsDto {
@@ -172,6 +229,17 @@ export const ProjectsService = {
   getTree: (projectId: string) =>
     api.get<TreeResponse>(`/projects/${projectId}/tree`).then((res) => res.data),
   delete: (id: string) => api.delete(`/projects/${id}`).then((res) => res.data),
+};
+
+export const TestPlansService = {
+  getAllByProject: (projectId: string) =>
+    api.get<TestPlan[]>(`/projects/${projectId}/test-plans`).then((res) => res.data),
+  getOne: (id: string) => api.get<TestPlan>(`/test-plans/${id}`).then((res) => res.data),
+  create: (data: CreateTestPlanDto) =>
+    api.post<TestPlan>('/test-plans', data).then((res) => res.data),
+  update: (id: string, data: UpdateTestPlanDto) =>
+    api.patch<TestPlan>(`/test-plans/${id}`, data).then((res) => res.data),
+  delete: (id: string) => api.delete(`/test-plans/${id}`).then((res) => res.data),
 };
 
 export const SuitesService = {

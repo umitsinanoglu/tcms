@@ -26,4 +26,9 @@ export class CreateTestRunDto {
   @IsString()
   @IsOptional()
   testerEmail?: string = 'tester@company.com';
+
+  @ApiProperty({ example: 'uuid-of-test-plan', description: 'İlişkili Test Planı ID', required: false })
+  @IsString()
+  @IsOptional()
+  testPlanId?: string;
 }
