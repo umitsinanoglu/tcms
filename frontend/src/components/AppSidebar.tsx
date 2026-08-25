@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SuiteTreeNode, TestCase, Project } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -7,7 +7,6 @@ import {
   FileText,
   ChevronRight,
   ChevronDown,
-  ChevronLeft,
   Plus,
   GripVertical,
   Layers,
@@ -27,15 +26,24 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
-  Sparkles,
   Check,
+  LayoutDashboard,
+  ClipboardList,
+  Activity,
+  BarChart3,
 } from 'lucide-react';
+
+export type SidebarTab = 'DASHBOARD' | 'PLANS' | 'EXPLORER' | 'RUNS' | 'REPORTS';
 
 interface AppSidebarProps {
   projects: Project[];
   selectedProject: Project | null;
+  activeTab: SidebarTab;
+  onTabChange: (tab: SidebarTab) => void;
   tree: SuiteTreeNode[];
   rootTestCases?: TestCase[];
+  testPlansCount?: number;
+  testRunsCount?: number;
   selectedCaseId: string | null;
   selectedSuiteId?: string | null;
   onSelectProject: (project: Project) => void;
@@ -61,8 +69,12 @@ type StatusFilter = 'ALL' | 'PASSED' | 'FAILED' | 'BLOCKED' | 'UNTESTED';
 export const AppSidebar: React.FC<AppSidebarProps> = ({
   projects,
   selectedProject,
+  activeTab,
+  onTabChange,
   tree,
   rootTestCases = [],
+  testPlansCount = 0,
+  testRunsCount = 0,
   selectedCaseId,
   selectedSuiteId,
   onSelectProject,
@@ -82,14 +94,19 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onReorderSuite,
   isLoadingTree = false,
 }) => {
-  const { can, isViewer } = useAuth();
+  const { can } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+  const [projectSearchQuery, setProjectSearchQuery] = useState('');
+  const [caseSearchQuery, setCaseSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
   const [draggedSuiteId, setDraggedSuiteId] = useState<string | null>(null);
   const [dragOverSuiteId, setDragOverSuiteId] = useState<string | null>(null);
   const [isRootDragOver, setIsRootDragOver] = useState(false);
+
+  const projectDropdownRef = useRef<HTMLDivElement>(null);
+  const projectSearchInputRef = useRef<HTMLInputElement>(null);
 
   // Load collapsed state from localStorage on mount
   useEffect(() => {
@@ -98,6 +115,22 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       setIsCollapsed(true);
     }
   }, []);
+
+  // Close project dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (projectDropdownRef.current && !projectDropdownRef.current.contains(event.target as Node)) {
+        setIsProjectDropdownOpen(false);
+      }
+    };
+    if (isProjectDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      setTimeout(() => projectSearchInputRef.current?.focus(), 50);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProjectDropdownOpen]);
 
   const toggleCollapsed = () => {
     setIsCollapsed((prev) => {
@@ -139,32 +172,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     return false;
   };
 
-  const [collapsedProjectsMap, setCollapsedProjectsMap] = useState<Record<string, boolean>>({});
-
-  // Automatically expand the active selected project whenever it changes
-  useEffect(() => {
-    if (selectedProject?.id) {
-      setCollapsedProjectsMap((prev) => ({
-        ...prev,
-        [selectedProject.id]: false,
-      }));
-    }
-  }, [selectedProject?.id]);
-
   const toggleExpand = (suiteId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setExpandedMap((prev) => {
       const current = prev[suiteId] ?? true;
       return { ...prev, [suiteId]: !current };
     });
-  };
-
-  const toggleProjectExpand = (projectId: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setCollapsedProjectsMap((prev) => ({
-      ...prev,
-      [projectId]: !prev[projectId],
-    }));
   };
 
   const handleExpandAll = () => {
@@ -191,34 +204,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     setExpandedMap(map);
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'BLOCKER':
-        return 'bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
-      case 'CRITICAL':
-        return 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30';
-      case 'NORMAL':
-        return 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';
-      case 'LOW':
-        return 'bg-slate-500/10 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400 border-slate-500/30';
-      default:
-        return 'bg-slate-500/10 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400 border-slate-500/30';
-    }
-  };
-
-  const getTypeBadge = (type: string) => {
-    switch (type) {
-      case 'WEB':
-        return 'text-emerald-500 dark:text-emerald-400';
-      case 'MOBILE':
-        return 'text-purple-500 dark:text-purple-400';
-      case 'API':
-        return 'text-cyan-500 dark:text-cyan-400';
-      default:
-        return 'text-slate-400';
-    }
-  };
-
   const getLatestStatusBadge = (testCase: TestCase) => {
     const latestResult = testCase.results && testCase.results.length > 0 ? testCase.results[0] : null;
     const status = latestResult?.status;
@@ -237,7 +222,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       case 'FAILED':
         return (
           <span
-            className="flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 font-mono font-bold"
+            className="flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold"
             title={`Sonuç: FAILED ${latestResult?.errorMessage ? `- ${latestResult.errorMessage}` : ''}`}
           >
             <XCircle className="w-2.5 h-2.5" />
@@ -257,7 +242,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       case 'BLOCKED':
         return (
           <span
-            className="flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 font-mono font-bold"
+            className="flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-mono font-bold"
             title="Sonuç: BLOCKED"
           >
             <Slash className="w-2.5 h-2.5" />
@@ -336,10 +321,22 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   // Filter projects by search query
   const filteredProjects = projects.filter(
     (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      p.name.toLowerCase().includes(projectSearchQuery.toLowerCase()) ||
+      p.key.toLowerCase().includes(projectSearchQuery.toLowerCase()) ||
+      (p.description && p.description.toLowerCase().includes(projectSearchQuery.toLowerCase()))
   );
+
+  // Flatten all cases to compute total cases count
+  const getAllCasesCount = (nodes: SuiteTreeNode[]): number => {
+    let count = 0;
+    nodes.forEach((n) => {
+      if (n.testCases) count += n.testCases.length;
+      if (n.children) count += getAllCasesCount(n.children);
+    });
+    return count;
+  };
+
+  const totalCasesCount = (rootTestCases?.length || 0) + getAllCasesCount(tree);
 
   // Render Suite Node recursively
   const renderSuiteNode = (node: SuiteTreeNode, depth: number = 0) => {
@@ -350,16 +347,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
     // Filter test cases
     const filteredCases = (node.testCases || []).filter((c) => {
-      const matchesSearch = searchQuery
-        ? c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.code.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesSearch = caseSearchQuery
+        ? c.title.toLowerCase().includes(caseSearchQuery.toLowerCase()) ||
+          c.code.toLowerCase().includes(caseSearchQuery.toLowerCase())
         : true;
       const matchesStatus = matchCaseStatus(c);
       return matchesSearch && matchesStatus;
     });
 
     const indentPx = depth * 14 + 4;
-    const caseIndentPx = depth * 14 + 22;
+    const caseIndentPx = depth * 14 + 20;
 
     return (
       <div key={node.id} className="select-none">
@@ -439,7 +436,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   onAddCaseInSuite(node.id);
                 }}
                 className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"
-                title="Suite İçine Test Case Ekle"
+                title="Suite İçine Test Senaryosu Ekle"
               >
                 <FilePlus className="w-3 h-3" />
               </button>
@@ -466,7 +463,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     onDeleteSuite(node.id);
                   }
                 }}
-                className="p-1 rounded hover:bg-[#b83a4b]/20 text-[#b83a4b]"
+                className="p-1 rounded hover:bg-rose-500/20 text-rose-500"
                 title="Suite Sil"
               >
                 <Trash2 className="w-3 h-3" />
@@ -532,440 +529,540 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
   // Filter root test cases
   const filteredRootCases = rootTestCases.filter((c) => {
-    const matchesSearch = searchQuery
-      ? c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.code.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = caseSearchQuery
+      ? c.title.toLowerCase().includes(caseSearchQuery.toLowerCase()) ||
+        c.code.toLowerCase().includes(caseSearchQuery.toLowerCase())
       : true;
     const matchesStatus = matchCaseStatus(c);
     return matchesSearch && matchesStatus;
   });
 
-  // Render Collapsed Sidebar Rail
+  // Navigation Items Config (Requirement 5)
+  const navItems: {
+    id: SidebarTab;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: number | string;
+  }[] = [
+    {
+      id: 'DASHBOARD',
+      label: 'Ana Sayfa',
+      icon: LayoutDashboard,
+    },
+    {
+      id: 'PLANS',
+      label: 'Test Planları',
+      icon: ClipboardList,
+      badge: testPlansCount > 0 ? testPlansCount : undefined,
+    },
+    {
+      id: 'EXPLORER',
+      label: 'Test Senaryoları',
+      icon: Layers,
+      badge: totalCasesCount > 0 ? totalCasesCount : undefined,
+    },
+    {
+      id: 'RUNS',
+      label: 'Test Koşumları',
+      icon: Activity,
+      badge: testRunsCount > 0 ? testRunsCount : undefined,
+    },
+    {
+      id: 'REPORTS',
+      label: 'Test Raporları',
+      icon: BarChart3,
+    },
+  ];
+
+  // Collapsed Sidebar View
   if (isCollapsed) {
     return (
-      <aside className="w-16 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c121e] flex flex-col items-center py-3 h-[calc(100vh-4rem)] select-none transition-all duration-300 z-20 shrink-0">
-        {/* Expand Trigger Button */}
+      <aside className="w-16 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c121e] flex flex-col items-center py-3 h-[calc(100vh-3.5rem)] select-none transition-all duration-300 z-20 shrink-0">
         <button
           type="button"
           onClick={toggleCollapsed}
-          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-[#b83a4b]/10 text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] transition-colors shadow-sm mb-4"
+          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-[#b83a4b]/10 text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] transition-colors shadow-sm mb-3"
           title="Sol Menüyü Genişlet"
         >
           <PanelLeftOpen className="w-4 h-4" />
         </button>
 
-        {/* Add Project Shortcut */}
-        {can('CREATE_PROJECT') && (
-          <button
-            type="button"
-            onClick={onOpenNewProject}
-            className="p-2 rounded-xl bg-[#b83a4b]/10 hover:bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a] transition-colors mb-3"
-            title="Yeni Test Planı Ekle"
+        {/* Active Project Icon Badge */}
+        {selectedProject && (
+          <div
+            onClick={toggleCollapsed}
+            className="w-10 h-10 rounded-xl bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] font-mono font-bold text-xs flex items-center justify-center border border-[#b83a4b]/30 mb-3 cursor-pointer"
+            title={`Çalışılan Proje: [${selectedProject.key}] ${selectedProject.name}`}
           >
-            <Plus className="w-4 h-4" />
-          </button>
+            {selectedProject.key.slice(0, 3)}
+          </div>
         )}
 
-        <div className="w-8 h-[1px] bg-slate-200 dark:bg-slate-800 my-1" />
+        <div className="w-8 h-[1px] bg-slate-200 dark:bg-slate-800 mb-3" />
 
-        {/* Projects Rail List */}
-        <div className="flex-1 overflow-y-auto w-full flex flex-col items-center space-y-2 py-1 px-2">
-          {projects.map((p) => {
-            const isSelected = selectedProject?.id === p.id;
+        {/* Collapsed Navigation Icons */}
+        <div className="space-y-2 flex flex-col items-center w-full px-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
             return (
               <button
-                key={p.id}
+                key={item.id}
                 type="button"
-                onClick={() => onSelectProject(p)}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center font-mono font-bold text-xs transition-all relative group ${
-                  isSelected
-                    ? 'bg-[#b83a4b] text-white shadow-md shadow-[#821c2b]/30 scale-105'
-                    : 'bg-slate-100 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                onClick={() => onTabChange(item.id)}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all relative ${
+                  isActive
+                    ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white shadow-md shadow-[#821c2b]/30 scale-105'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
-                title={`[${p.key}] ${p.name}`}
+                title={item.label}
               >
-                <span>{p.key.slice(0, 3)}</span>
-                {isSelected && (
-                  <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#b83a4b] rounded-r" />
+                <Icon className="w-4 h-4" />
+                {isActive && (
+                  <span className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#b83a4b] rounded-r" />
                 )}
               </button>
             );
           })}
         </div>
-
-        {/* Collapsed Rail Bottom Action: New Project */}
-        {can('CREATE_PROJECT') && (
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 w-full flex flex-col items-center shrink-0">
-            <button
-              type="button"
-              onClick={onOpenNewProject}
-              className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white flex items-center justify-center shadow-md shadow-[#821c2b]/25 transition-all active:scale-95 cursor-pointer"
-              title="Yeni Test Planı Oluştur"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-          </div>
-        )}
       </aside>
     );
   }
 
-  // Render Full Expanded Sidebar
+  // Expanded Sidebar View
   return (
-    <aside className="w-[360px] sm:w-[380px] lg:w-[400px] border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c121e] flex flex-col h-[calc(100vh-4rem)] select-none transition-all duration-300 z-20 shrink-0">
-      {/* 1. Header & Collapse Action */}
-      <div className="p-3 border-b border-slate-200 dark:border-slate-800/90 flex items-center justify-between">
-        <div className="flex items-center space-x-2 min-w-0">
-          <FolderKanban className="w-4 h-4 text-[#b83a4b] shrink-0" />
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 truncate">
-            Test Planı
-          </h2>
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold border border-slate-200 dark:border-slate-700">
-            {projects.length} Plan
+    <aside className="w-[310px] sm:w-[330px] lg:w-[350px] border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c121e] flex flex-col h-[calc(100vh-3.5rem)] select-none transition-all duration-300 z-20 shrink-0">
+      {/* 1. Header: "Çalışılan Proje" Combobox & Collapse Action (Requirement 4 & 5) */}
+      <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#141821]/80">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Çalışılan Proje
           </span>
-        </div>
-
-        <div className="flex items-center space-x-1 shrink-0">
-          {can('CREATE_PROJECT') && (
-            <button
-              type="button"
-              onClick={onOpenNewProject}
-              className="p-1.5 rounded-lg bg-[#b83a4b]/10 hover:bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a] transition-colors"
-              title="Yeni Test Planı Oluştur"
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </button>
-          )}
           <button
             type="button"
             onClick={toggleCollapsed}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+            className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
             title="Sol Menüyü Daralt"
           >
             <PanelLeftClose className="w-3.5 h-3.5" />
           </button>
         </div>
-      </div>
 
-      {/* 2. Search Bar ("Test planı veya anahtar ara") */}
-      <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40">
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Test planı veya anahtar ara..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 pl-8 pr-7 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]/50 transition-colors shadow-xs"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* 3. Test Plans Cards & Hierarchical Tree */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
-        {/* Test Plans Section Header */}
-        <div className="flex items-center justify-between px-1">
-          <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-            Test Planları ({filteredProjects.length})
-          </span>
-        </div>
-
-        {/* Test Plan Cards List */}
-        <div className="space-y-1.5">
-          {filteredProjects.length === 0 ? (
-            <div className="text-center py-6 px-3 text-slate-400 text-xs">
-              <FolderKanban className="w-6 h-6 mx-auto mb-1.5 opacity-30 text-slate-400" />
-              <p>Test planı bulunamadı</p>
-            </div>
-          ) : (
-            filteredProjects.map((p) => {
-              const isSelected = selectedProject?.id === p.id;
-              const isProjectTreeOpen = isSelected && !collapsedProjectsMap[p.id];
-              return (
-                <div
-                  key={p.id}
-                  className={`rounded-xl border transition-all duration-200 overflow-hidden ${
-                    isSelected
-                      ? 'bg-[#b83a4b]/[0.06] dark:bg-[#b83a4b]/10 border-[#b83a4b]/30 shadow-sm'
-                      : 'bg-slate-50/60 dark:bg-slate-900/40 hover:bg-slate-100/80 dark:hover:bg-slate-800/50 border-slate-200/80 dark:border-slate-800'
-                  }`}
-                >
-                  {/* Test Plan Card Header: e.g. [1] 123, [A] abc, [P] Plan */}
-                  <div
-                    onClick={() => {
-                      if (selectedProject?.id === p.id) {
-                        toggleProjectExpand(p.id);
-                      } else {
-                        setCollapsedProjectsMap((prev) => ({ ...prev, [p.id]: false }));
-                        onSelectProject(p);
-                      }
-                    }}
-                    className="p-2 flex items-center justify-between cursor-pointer group"
-                  >
-                    <div className="flex items-center space-x-2 min-w-0 flex-1">
-                      {/* Badge: [1], [A], [P], [AUTH] */}
-                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/25 shrink-0 group-hover:scale-105 transition-transform">
-                        [{p.key}]
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <h3
-                          className="text-xs font-bold truncate text-slate-800 dark:text-slate-200 group-hover:text-[#b83a4b] transition-colors"
-                          title={p.name}
-                        >
-                          {p.name}
-                        </h3>
-                        {p.description && (
-                          <p
-                            className="text-[10px] text-slate-400 dark:text-slate-500 truncate"
-                            title={p.description}
-                          >
-                            {p.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-0.5 shrink-0 ml-1">
-                      {onEditProject && can('EDIT_PROJECT') && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditProject(p);
-                          }}
-                          className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Planı Düzenle"
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                      )}
-                      {onDeleteProject && can('DELETE_PROJECT') && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (
-                              confirm(
-                                `'${p.name}' adlı Test Planını ve altındaki tüm suite ve test case'leri silmek istediğinize emin misiniz?`
-                              )
-                            ) {
-                              onDeleteProject(p.id);
-                            }
-                          }}
-                          className="p-1 rounded hover:bg-[#b83a4b]/20 text-slate-400 hover:text-[#b83a4b] opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Test Planını Sil"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
-                      <ChevronRight
-                        className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                          isProjectTreeOpen ? 'rotate-90 text-[#b83a4b]' : ''
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Hierarchical Tree (Test Suite → Case) when selected & open */}
-                  {isProjectTreeOpen && (
-                    <div className="p-1.5 pt-0 border-t border-[#b83a4b]/20 bg-white/50 dark:bg-slate-900/50 space-y-1.5">
-                      {/* Tree Controls Toolbar */}
-                      <div className="flex items-center justify-between pt-1.5 pb-1 border-b border-slate-200/50 dark:border-slate-800/60 text-[11px]">
-                        <div className="flex items-center space-x-1">
-                          <button
-                            type="button"
-                            onClick={handleExpandAll}
-                            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500"
-                            title="Tümünü Genişlet"
-                          >
-                            <Maximize2 className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleCollapseAll}
-                            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500"
-                            title="Tümünü Daralt"
-                          >
-                            <Minimize2 className="w-3 h-3" />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center space-x-1">
-                          {onOpenNewSuite && can('CREATE_SUITE') && (
-                            <button
-                              type="button"
-                              onClick={onOpenNewSuite}
-                              className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-[#b83a4b]/10 text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] text-[10px] font-medium"
-                              title="Yeni Test Suite Ekle"
-                            >
-                              <FolderPlus className="w-2.5 h-2.5" />
-                              <span>Suite</span>
-                            </button>
-                          )}
-                          {onOpenNewCase && can('CREATE_CASE') && (
-                            <button
-                              type="button"
-                              onClick={onOpenNewCase}
-                              className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-[#b83a4b]/10 text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] text-[10px] font-medium"
-                              title="Yeni Test Case Ekle"
-                            >
-                              <FilePlus className="w-2.5 h-2.5" />
-                              <span>Case</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Status Filter Chips */}
-                      <div className="flex items-center gap-1 overflow-x-auto pb-1 text-[9px] font-mono">
-                        {(['ALL', 'PASSED', 'FAILED', 'BLOCKED', 'UNTESTED'] as StatusFilter[]).map((st) => (
-                          <button
-                            key={st}
-                            type="button"
-                            onClick={() => setStatusFilter(st)}
-                            className={`px-1.5 py-0.5 rounded border transition-colors ${
-                              statusFilter === st
-                                ? 'bg-[#b83a4b] text-white border-[#821c2b] font-bold'
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
-                            }`}
-                          >
-                            {st === 'ALL' ? 'TÜMÜ' : st}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Root Drop Zone for Drag & Drop */}
-                      <div
-                        onDragOver={handleDragOverRoot}
-                        onDrop={handleDropRoot}
-                        className={`py-0.5 px-2 rounded-lg text-center text-[10px] transition-colors ${
-                          isRootDragOver
-                            ? 'bg-[#b83a4b]/20 border-2 border-dashed border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
-                            : 'text-slate-400'
-                        }`}
-                      >
-                        {isRootDragOver && '📂 Ana Dizine (Kök Seviyeye) Bırak'}
-                      </div>
-
-                      {/* Tree Content (Suites + Root Cases) */}
-                      {isLoadingTree ? (
-                        <div className="text-center py-4 text-xs text-slate-400">Yükleniyor...</div>
-                      ) : tree.length === 0 && filteredRootCases.length === 0 ? (
-                        <div className="text-center py-4 text-xs text-slate-400">
-                          <Layers className="w-6 h-6 mx-auto mb-1 opacity-40 text-slate-400" />
-                          <p>Henüz suite veya case eklenmedi.</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-0.5">
-                          {/* Kök Test Case'leri (Her Zaman En Üstte) */}
-                          {filteredRootCases.length > 0 && (
-                            <div className="space-y-0.5 mb-2 pb-1.5 border-b border-slate-200/70 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/40 rounded-xl p-1.5 shadow-xs">
-                              <div
-                                onClick={() => {
-                                  if (onSelectSuite) {
-                                    onSelectSuite({
-                                      id: '__root_cases__',
-                                      name: "Kök Test Case'leri (Suite'siz)",
-                                      orderIndex: 0,
-                                      parentId: null,
-                                      children: [],
-                                      testCases: rootTestCases,
-                                    });
-                                  }
-                                }}
-                                className="flex items-center justify-between space-x-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-1 py-1 cursor-pointer hover:text-[#b83a4b] transition-colors group"
-                                title="Tüm kök test case'leri liste görünümünde aç"
-                              >
-                                <div className="flex items-center space-x-1.5">
-                                  <FileText className="w-3.5 h-3.5 text-[#b83a4b] shrink-0" />
-                                  <span>Kök Test Case'leri ({filteredRootCases.length})</span>
-                                </div>
-                                <span className="text-[9px] font-mono text-slate-400 group-hover:text-[#b83a4b] font-normal transition-colors">
-                                  Tümünü Gör →
-                                </span>
-                              </div>
-                              {filteredRootCases.map((tc) => {
-                                const isSelected = selectedCaseId === tc.id;
-                                return (
-                                  <div
-                                    key={tc.id}
-                                    onClick={() => onSelectCase(tc)}
-                                    style={{ paddingLeft: '6px' }}
-                                    className={`group flex items-center justify-between py-1.5 pr-1.5 rounded-lg cursor-pointer transition-all duration-150 ${
-                                      isSelected
-                                        ? 'bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] font-semibold border-l-2 border-[#b83a4b] shadow-sm'
-                                        : 'hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
-                                    }`}
-                                  >
-                                    <div className="flex items-center space-x-1.5 min-w-0 flex-1">
-                                      <FileText
-                                        className={`w-3.5 h-3.5 shrink-0 ${
-                                          isSelected ? 'text-[#b83a4b]' : 'text-slate-400'
-                                        }`}
-                                      />
-                                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
-                                        {tc.code}
-                                      </span>
-                                      <span className="text-xs truncate flex-1 min-w-0" title={tc.title}>
-                                        {tc.title}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center space-x-1 shrink-0 ml-1">
-                                      {getLatestStatusBadge(tc)}
-                                      {onRunCase && (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            onRunCase(tc);
-                                          }}
-                                          className="p-1 rounded hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                          title="Hızlı Koş"
-                                        >
-                                          <Play className="w-3 h-3" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          {/* Render Tree Hierarchy */}
-                          {tree.map((node) => renderSuiteNode(node, 0))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Bottom Action: Yeni Test Planı Button */}
-      {can('CREATE_PROJECT') && (
-        <div className="p-3 border-t border-slate-200 dark:border-slate-800/90 bg-slate-50/70 dark:bg-slate-900/60 shrink-0">
+        {/* Project Selector Dropdown Button */}
+        <div className="relative" ref={projectDropdownRef}>
           <button
             type="button"
-            onClick={onOpenNewProject}
-            className="w-full flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-md shadow-[#821c2b]/20 active:scale-98 transition-all cursor-pointer"
-            title="Yeni Test Planı Oluştur"
+            onClick={() => setIsProjectDropdownOpen((prev) => !prev)}
+            className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer ${
+              isProjectDropdownOpen
+                ? 'bg-white dark:bg-[#1d232f] border-[#b83a4b]/50 ring-2 ring-[#b83a4b]/20 shadow-sm'
+                : 'bg-white dark:bg-[#1d232f] hover:border-[#b83a4b]/30 border-slate-200 dark:border-slate-700/80 shadow-xs'
+            }`}
           >
-            <Plus className="w-4 h-4 shrink-0" />
-            <span>Yeni Test Planı</span>
+            <div className="flex items-center space-x-2 min-w-0 flex-1">
+              <FolderKanban className="w-4 h-4 text-[#b83a4b] shrink-0" />
+              {selectedProject ? (
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="font-mono text-[10px] font-bold text-[#b83a4b] dark:text-[#d66b7a] bg-[#b83a4b]/10 px-1.5 py-0.2 rounded border border-[#b83a4b]/20 shrink-0">
+                      [{selectedProject.key}]
+                    </span>
+                    <span className="text-xs font-bold truncate text-slate-800 dark:text-slate-100">
+                      {selectedProject.name}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <span className="text-xs text-slate-400 font-medium">Proje Seçin...</span>
+              )}
+            </div>
+            <ChevronDown
+              className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                isProjectDropdownOpen ? 'rotate-180 text-[#b83a4b]' : ''
+              }`}
+            />
           </button>
+
+          {/* Project Switcher Popover */}
+          {isProjectDropdownOpen && (
+            <div className="absolute left-0 right-0 mt-2 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col">
+              {/* Search Box */}
+              <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    ref={projectSearchInputRef}
+                    type="text"
+                    placeholder="Proje ara..."
+                    value={projectSearchQuery}
+                    onChange={(e) => setProjectSearchQuery(e.target.value)}
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 pl-8 pr-7 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]/50"
+                  />
+                  {projectSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setProjectSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Projects List */}
+              <div className="max-h-60 overflow-y-auto p-1.5 space-y-1">
+                {filteredProjects.length === 0 ? (
+                  <div className="text-center py-4 px-3 text-slate-400 text-xs">
+                    <FolderKanban className="w-6 h-6 mx-auto mb-1 opacity-30 text-slate-400" />
+                    <p>Proje bulunamadı</p>
+                  </div>
+                ) : (
+                  filteredProjects.map((p) => {
+                    const isSelected = selectedProject?.id === p.id;
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          onSelectProject(p);
+                          setIsProjectDropdownOpen(false);
+                          setProjectSearchQuery('');
+                        }}
+                        className={`w-full text-left p-2 rounded-xl flex items-center justify-between cursor-pointer transition-all group ${
+                          isSelected
+                            ? 'bg-[#b83a4b]/10 dark:bg-[#b83a4b]/15 border border-[#b83a4b]/30 text-[#b83a4b] dark:text-[#d66b7a] font-semibold'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300 border border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2 min-w-0 pr-2 flex-1">
+                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/30 shrink-0">
+                            [{p.key}]
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs truncate font-medium text-slate-800 dark:text-slate-200 group-hover:text-[#b83a4b] transition-colors">
+                              {p.name}
+                            </p>
+                            {p.description && (
+                              <p className="text-[10px] text-slate-400 truncate">{p.description}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-1 shrink-0">
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#b83a4b] shrink-0" />}
+                          {onEditProject && can('EDIT_PROJECT') && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsProjectDropdownOpen(false);
+                                onEditProject(p);
+                              }}
+                              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Projeyi Düzenle"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                          )}
+                          {onDeleteProject && can('DELETE_PROJECT') && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsProjectDropdownOpen(false);
+                                if (confirm(`'${p.name}' adlı Test Projesini silmek istediğinize emin misiniz?`)) {
+                                  onDeleteProject(p.id);
+                                }
+                              }}
+                              className="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Projeyi Sil"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* New Project Action */}
+              {can('CREATE_PROJECT') && (
+                <div className="p-1.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProjectDropdownOpen(false);
+                      onOpenNewProject();
+                    }}
+                    className="w-full flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold text-[#b83a4b] dark:text-[#d66b7a] hover:bg-[#b83a4b]/10 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Yeni Test Projesi Oluştur</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 2. Primary Nav List (Ana Sayfa, Test Planları, Test Senaryoları, Test Koşumları, Test Raporları) */}
+      <div className="p-3 space-y-1 border-b border-slate-200 dark:border-slate-800">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onTabChange(item.id)}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                isActive
+                  ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white shadow-md shadow-[#821c2b]/25 translate-x-1'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <div className="flex items-center space-x-2.5">
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />
+                <span>{item.label}</span>
+              </div>
+              {item.badge !== undefined && (
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                    isActive
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 3. Dynamic Sub-Content Section */}
+      {activeTab === 'EXPLORER' ? (
+        /* Test Explorer Tree Section */
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* Sub Header & Tree Toolbar */}
+          <div className="p-2 px-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Klasör & Senaryo Ağacı
+              </span>
+              <div className="flex items-center space-x-1">
+                <button
+                  type="button"
+                  onClick={handleExpandAll}
+                  className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500"
+                  title="Tümünü Genişlet"
+                >
+                  <Maximize2 className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCollapseAll}
+                  className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500"
+                  title="Tümünü Daralt"
+                >
+                  <Minimize2 className="w-3 h-3" />
+                </button>
+                {onOpenNewSuite && can('CREATE_SUITE') && (
+                  <button
+                    type="button"
+                    onClick={onOpenNewSuite}
+                    className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-[#b83a4b]/10 text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] text-[10px] font-medium"
+                    title="Yeni Test Suite Ekle"
+                  >
+                    <FolderPlus className="w-2.5 h-2.5" />
+                    <span>Suite</span>
+                  </button>
+                )}
+                {onOpenNewCase && can('CREATE_CASE') && (
+                  <button
+                    type="button"
+                    onClick={onOpenNewCase}
+                    className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-[#b83a4b]/10 text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] text-[10px] font-medium"
+                    title="Yeni Test Case Ekle"
+                  >
+                    <FilePlus className="w-2.5 h-2.5" />
+                    <span>Case</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Case Search Box */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Senaryo veya kod ara..."
+                value={caseSearchQuery}
+                onChange={(e) => setCaseSearchQuery(e.target.value)}
+                className="w-full bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 pl-8 pr-7 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]/50"
+              />
+              {caseSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setCaseSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Status Filter Chips */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-[9px] font-mono">
+              {(['ALL', 'PASSED', 'FAILED', 'BLOCKED', 'UNTESTED'] as StatusFilter[]).map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setStatusFilter(st)}
+                  className={`px-1.5 py-0.5 rounded border transition-colors ${
+                    statusFilter === st
+                      ? 'bg-[#b83a4b] text-white border-[#821c2b] font-bold'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {st === 'ALL' ? 'TÜMÜ' : st}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tree Scroll Area */}
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {/* Root Drop Zone for Drag & Drop */}
+            <div
+              onDragOver={handleDragOverRoot}
+              onDrop={handleDropRoot}
+              className={`py-0.5 px-2 rounded-lg text-center text-[10px] transition-colors ${
+                isRootDragOver
+                  ? 'bg-[#b83a4b]/20 border-2 border-dashed border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
+                  : 'text-slate-400'
+              }`}
+            >
+              {isRootDragOver && '📂 Ana Dizine (Kök Seviyeye) Bırak'}
+            </div>
+
+            {isLoadingTree ? (
+              <div className="text-center py-6 text-xs text-slate-400">Yükleniyor...</div>
+            ) : tree.length === 0 && filteredRootCases.length === 0 ? (
+              <div className="text-center py-8 text-xs text-slate-400">
+                <Layers className="w-8 h-8 mx-auto mb-1.5 opacity-40 text-slate-400" />
+                <p>Henüz suite veya senaryo eklenmedi.</p>
+              </div>
+            ) : (
+              <div className="space-y-0.5">
+                {/* Root Cases */}
+                {filteredRootCases.length > 0 && (
+                  <div className="space-y-0.5 mb-2 pb-1.5 border-b border-slate-200/70 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/40 rounded-xl p-1.5 shadow-xs">
+                    <div
+                      onClick={() => {
+                        if (onSelectSuite) {
+                          onSelectSuite({
+                            id: '__root_cases__',
+                            name: "Kök Test Senaryoları (Suite'siz)",
+                            orderIndex: 0,
+                            parentId: null,
+                            children: [],
+                            testCases: rootTestCases,
+                          });
+                        }
+                      }}
+                      className="flex items-center justify-between space-x-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-1 py-1 cursor-pointer hover:text-[#b83a4b] transition-colors group"
+                      title="Tüm kök senaryoları liste görünümünde aç"
+                    >
+                      <div className="flex items-center space-x-1.5">
+                        <FileText className="w-3.5 h-3.5 text-[#b83a4b] shrink-0" />
+                        <span>Kök Senaryolar ({filteredRootCases.length})</span>
+                      </div>
+                      <span className="text-[9px] font-mono text-slate-400 group-hover:text-[#b83a4b] font-normal transition-colors">
+                        Tümünü Gör →
+                      </span>
+                    </div>
+                    {filteredRootCases.map((tc) => {
+                      const isSelected = selectedCaseId === tc.id;
+                      return (
+                        <div
+                          key={tc.id}
+                          onClick={() => onSelectCase(tc)}
+                          style={{ paddingLeft: '6px' }}
+                          className={`group flex items-center justify-between py-1.5 pr-1.5 rounded-lg cursor-pointer transition-all duration-150 ${
+                            isSelected
+                              ? 'bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] font-semibold border-l-2 border-[#b83a4b] shadow-sm'
+                              : 'hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-1.5 min-w-0 flex-1">
+                            <FileText
+                              className={`w-3.5 h-3.5 shrink-0 ${
+                                isSelected ? 'text-[#b83a4b]' : 'text-slate-400'
+                              }`}
+                            />
+                            <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                              {tc.code}
+                            </span>
+                            <span className="text-xs truncate flex-1 min-w-0" title={tc.title}>
+                              {tc.title}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1 shrink-0 ml-1">
+                            {getLatestStatusBadge(tc)}
+                            {onRunCase && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRunCase(tc);
+                                }}
+                                className="p-1 rounded hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Hızlı Koş"
+                              >
+                                <Play className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Render Tree Hierarchy */}
+                {tree.map((node) => renderSuiteNode(node, 0))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Summary Footer or Context Card for non-Explorer views */
+        <div className="flex-1 p-3 overflow-y-auto space-y-3">
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 text-xs space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Proje Özeti
+            </span>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 text-xs">
+                <span>Test Planları:</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{testPlansCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 text-xs">
+                <span>Test Senaryoları:</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{totalCasesCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 text-xs">
+                <span>Test Koşumları:</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{testRunsCount}</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </aside>

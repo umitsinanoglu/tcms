@@ -26,6 +26,7 @@ export class TestRunsService {
         environment: dto.environment || 'STAGING',
         executedBy: dto.executedBy || 'QA Tester',
         testerEmail: dto.testerEmail || 'tester@company.com',
+        testPlanId: dto.testPlanId || null,
         status: RunStatus.IN_PROGRESS,
       },
     });
@@ -164,6 +165,14 @@ export class TestRunsService {
     return this.prisma.testRun.findMany({
       where: { projectId },
       include: {
+        testPlan: {
+          select: {
+            id: true,
+            title: true,
+            version: true,
+            environment: true,
+          },
+        },
         _count: {
           select: { results: true },
         },
@@ -254,6 +263,16 @@ export class TestRunsService {
     const testRun = await this.prisma.testRun.findUnique({
       where: { id },
       include: {
+        testPlan: {
+          select: {
+            id: true,
+            title: true,
+            version: true,
+            environment: true,
+            scope: true,
+            requirements: true,
+          },
+        },
         results: {
           include: {
             testCase: {

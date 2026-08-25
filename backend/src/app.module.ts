@@ -7,10 +7,13 @@ import { TestRunsModule } from './test-runs/test-runs.module';
 import { ReportsModule } from './reports/reports.module';
 import { UsersModule } from './users/users.module';
 
+import { TestPlansModule } from './test-plans/test-plans.module';
+
 @Module({
   imports: [
     PrismaModule,
     ProjectsModule,
+    TestPlansModule,
     SuitesModule,
     TestCasesModule,
     TestRunsModule,
