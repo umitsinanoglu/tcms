@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- Düzeltme: Yeni test planında senaryo ve başarı oranı mock veri temizlendi; yeni test senaryosu oluşturulduğunda liste ve sayaçların anında güncellenmesi sağlandı.
+- **Test Planı Liste Reaktivitesi ve Anında Güncelleme Düzeltmesi**: `TestPlansView` bileşeni `page.tsx`'teki `testPlans` state'i ile tam senkronize hale getirildi; yeni bir test planı oluşturulduğunda veya güncellendiğinde sayfa yenilemeye gerek kalmadan listenin anında güncellenmesi ve yeni planın otomatik seçilmesi sağlandı.
+- **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
+
+### Added
+- **Test Planı Oluşturma & Düzenleme Modallarında Senaryo Seçim Paneli**: `NewTestPlanModal` ve `EditTestPlanModal` bileşenlerine arama filtreli, süit isimli, Tümünü Seç / Seçimi Temizle aksiyonlu test senaryosu seçim alanı eklendi; plan oluştururken veya düzenlerken istenen senaryoların plana dahil edilmesi / çıkarılması sağlandı.
 - **Yeni Test Planı Sol Menü Ağacı İzolasyonu Düzeltmesi**: Yeni bir Test Planı oluşturulduğunda sol menüde (`AppSidebar`) önceki/ilk plana ait klasör ve senaryoların kalması engellendi; oluşturulan yeni plan anında seçilerek ağaç yapısı temizlendi, otomatik genişletildi ve içi tamamen boş ("Henüz suite veya case eklenmedi.") olarak listelenmesi sağlandı.
 - Top navigation sağ üst alana Swagger Docs butonu eklendi
 - **Değişiklikleri Kaydet & Koşum Geçmişi Koruma Düzeltmesi**: `TestCasesService.update` backend metoduna `results` ve `testRun` ilişkileri dahil edildi ve `page.tsx`'teki `handleSaveCase`, `handleQuickRunSuccess` ile `ManualRunModal` `onClose` akışları iyileştirildi; böylece bir test senaryosunda değişiklik kaydedildiğinde veya yeni bir koşu yapıldığında tüm önceki koşum kayıtları, test notları ve ekran görüntüleri eksiksiz korunarak anında güncellenmesi sağlandı.

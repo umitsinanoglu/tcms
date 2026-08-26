@@ -57,6 +57,7 @@ interface TestPlanDetailViewProps {
   onBack: () => void;
   onStartRunWithPlan: (plan: TestPlan, cases?: TestCase[]) => void;
   onSelectCase?: (testCase: TestCase) => void;
+  onCaseCreated?: (newCase: TestCase) => Promise<void> | void;
   onUpdatePlanSuccess?: (updated: TestPlan) => void;
   onDeletePlanSuccess?: (deletedId: string) => void;
 }
@@ -72,6 +73,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
   onBack,
   onStartRunWithPlan,
   onSelectCase,
+  onCaseCreated,
   onUpdatePlanSuccess,
   onDeletePlanSuccess,
 }) => {
@@ -96,12 +98,11 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
   const [planCaseIds, setPlanCaseIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(`tcms_plan_cases_${initialPlan.id}`);
-      if (saved) return JSON.parse(saved);
+      if (saved !== null) return JSON.parse(saved);
     } catch {
       // Ignore
     }
-    // Default to project cases or a portion of them
-    return allCases.slice(0, Math.min(allCases.length, 12)).map((c) => c.id);
+    return [];
   });
 
   // Selected scenarios in table
@@ -116,6 +117,29 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [candidateCaseIdsToAdd, setCandidateCaseIdsToAdd] = useState<string[]>([]);
   const [candidateSearchQuery, setCandidateSearchQuery] = useState('');
+
+  // Synchronize when initialPlan changes
+  useEffect(() => {
+    setPlan(initialPlan);
+    setEditTitle(initialPlan.title);
+    setEditDescription(initialPlan.description || '');
+    setEditEnvironment(initialPlan.environment || 'STAGING');
+    setEditVersion(initialPlan.version || 'v1.0.0');
+    setEditStatus(initialPlan.status || 'ACTIVE');
+    setEditScope(initialPlan.scope || '');
+    setEditRequirements(initialPlan.requirements || '');
+
+    try {
+      const saved = localStorage.getItem(`tcms_plan_cases_${initialPlan.id}`);
+      if (saved !== null) {
+        setPlanCaseIds(JSON.parse(saved));
+      } else {
+        setPlanCaseIds([]);
+      }
+    } catch {
+      setPlanCaseIds([]);
+    }
+  }, [initialPlan]);
 
   // Reload Plan from backend
   const reloadPlan = useCallback(async () => {
@@ -151,10 +175,8 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
 
   // Scenarios mapped to this plan
   const planCases: TestCase[] = useMemo(() => {
-    if (allCases.length === 0) return [];
-    // Filter cases that are in planCaseIds or if empty, allCases
-    const matched = allCases.filter((c) => planCaseIds.includes(c.id));
-    return matched.length > 0 ? matched : allCases;
+    if (allCases.length === 0 || planCaseIds.length === 0) return [];
+    return allCases.filter((c) => planCaseIds.includes(c.id));
   }, [allCases, planCaseIds]);
 
   // Filtered Scenarios
@@ -184,36 +206,30 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
       plan.testRuns.forEach((r) => {
         if (r.results) {
           r.results.forEach((res) => {
-            executed++;
-            if (res.status === 'PASSED') passed++;
-            else if (res.status === 'FAILED') failed++;
-            else if (res.status === 'BLOCKED') blocked++;
-            else if (res.status === 'SKIPPED') skipped++;
+            if (total === 0 || planCaseIds.includes(res.testCaseId)) {
+              executed++;
+              if (res.status === 'PASSED') passed++;
+              else if (res.status === 'FAILED') failed++;
+              else if (res.status === 'BLOCKED') blocked++;
+              else if (res.status === 'SKIPPED') skipped++;
+            }
           });
         }
       });
     }
 
-    if (executed === 0 && total > 0) {
-      executed = Math.round(total * 0.8);
-      passed = Math.round(executed * 0.76);
-      failed = Math.max(0, executed - passed - 2);
-      blocked = 2;
-      skipped = 0;
-    }
-
-    const passRate = executed > 0 ? Math.round((passed / executed) * 100) : 76;
+    const passRate = executed > 0 ? Math.round((passed / executed) * 100) : 0;
 
     return {
-      total: total || 144,
-      executed: executed || 110,
-      passed: passed || 84,
-      failed: failed || 22,
-      blocked: blocked || 4,
-      skipped: skipped || 0,
-      passRate: passRate || 76,
+      total,
+      executed,
+      passed,
+      failed,
+      blocked,
+      skipped,
+      passRate,
     };
-  }, [planCases, plan.testRuns]);
+  }, [planCases, plan.testRuns, planCaseIds]);
 
   // Save Inline Metadata
   const handleSaveMetadata = async () => {
@@ -725,7 +741,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                 Başarı Oranı
               </span>
               <span className="text-xs font-black text-slate-900 dark:text-slate-100">
-                %{stats.passRate}
+                {stats.executed > 0 ? `%${stats.passRate}` : '—'}
               </span>
             </div>
             <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
@@ -737,7 +753,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                     ? 'bg-amber-500'
                     : 'bg-rose-500'
                 }`}
-                style={{ width: `${stats.passRate}%` }}
+                style={{ width: `${stats.executed > 0 ? stats.passRate : 0}%` }}
               />
             </div>
           </div>
@@ -1258,6 +1274,9 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
             const created = await TestCasesService.create(newCaseData);
             if (created?.id) {
               updatePlanCaseIds([...planCaseIds, created.id]);
+            }
+            if (onCaseCreated) {
+              await onCaseCreated(created);
             }
             setIsNewCaseModalOpen(false);
           } catch (err) {
