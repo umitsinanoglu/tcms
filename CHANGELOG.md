@@ -60,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Test adımlarına Ctrl+V ile panodan doğrudan görsel yapıştırma ve sürükle-bırak desteği eklendi
 - Test adımlarına görsel yükleme/ekleme ve boş durum kutusuna Adım Ekle butonu eklendi
+- Kurumsal karşılama ve login sayfası güncellendi: Sol tarafta proje tanıtımı ve yetenekler, sağ tarafta giriş formu ve hızlı kullanıcı seçimi
 - NeoBank dijital bankacilik projesi, FAST 7/24 transfer, dinamik CVV kredi karti, Findeks kredi, canli FX, QR ATM ve zengin SVG ekran goruntuleri eklendi.
 - Kapsamlı Test Planı Detay Sayfası (TestPlanDetailView) eklendi; Test Planı Görüntüle butonu ile detay sayfasına geçiş, inline metadata düzenleme (başlık, hedef ortam, sürüm, durum, kapsam, gereksinimler), plana senaryo ekleme/çıkarma/oluşturma, bağlı koşumlar ve özet KPI kartları entegre edildi
 - Test Planları sayfası görsel tasarıma uygun olarak grid/tablo görünümü, KPI özet kartları, durum sekmeleri ve detay paneli ile revize edildi; Arama kutusu top navigasyon sağ üst bölüme taşındı
