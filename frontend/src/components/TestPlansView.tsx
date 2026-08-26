@@ -357,7 +357,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#f8fafc] dark:bg-[#0b111e] select-none font-sans">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8fafc] dark:bg-[#0b111e] select-none font-sans">
       {/* 1. Page Header: Title + Subtitle + Action Buttons */}
       <div className="px-6 pt-5 pb-4 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -435,72 +435,76 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Top Metric Cards (Grid Row of 4 Cards from visual) */}
-      <div className="px-6 pb-4 shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 2. Top Metric Cards (Grid Row of 4 Compact Cards) */}
+      <div className="px-6 py-3 shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Toplam Test Planı */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-            <ClipboardList className="w-5 h-5" />
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <ClipboardList className="w-4 h-4" />
           </div>
-          <div>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
               Toplam Test Planı
             </span>
-            <p className="text-xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-              {kpiData.totalPlans}
-            </p>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">
-              Aktif {kpiData.activeCount} &bull; Pasif {kpiData.passiveCount}
-            </span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black text-slate-900 dark:text-slate-100 leading-none">
+                {kpiData.totalPlans}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Plan</span>
+            </div>
           </div>
         </div>
 
-        {/* Card 2: Yürütülen Plan */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <PlayCircle className="w-5 h-5" />
+        {/* Card 2: Aktif / Devam Eden */}
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4" />
           </div>
-          <div>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              Yürütülen Plan
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+              Aktif & Devam Eden
             </span>
-            <p className="text-xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-              {kpiData.inProgressCount}
-            </p>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">Devam Eden</span>
+            <div className="flex items-center space-x-1.5 text-sm font-black leading-none">
+              <span className="text-emerald-700 dark:text-emerald-300 font-bold">{kpiData.activeCount} Aktif</span>
+              <span className="text-slate-300 dark:text-slate-600 font-normal">&bull;</span>
+              <span className="text-amber-700 dark:text-amber-300 font-bold">{kpiData.inProgressCount} Koşumda</span>
+            </div>
           </div>
         </div>
 
-        {/* Card 3: Tamamlanan Plan */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-5 h-5" />
+        {/* Card 3: Tamamlanan Planlar */}
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <Calendar className="w-4 h-4" />
           </div>
-          <div>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              Tamamlanan Plan
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+              Tamamlanan Planlar
             </span>
-            <p className="text-xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-              {kpiData.completedCount}
-            </p>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">Son 90 günde</span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black text-slate-900 dark:text-slate-100 leading-none">
+                {kpiData.completedCount}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Başarılı</span>
+            </div>
           </div>
         </div>
 
-        {/* Card 4: Başarı Oranı (Ort.) */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5" />
+        {/* Card 4: Ortalama Başarı Oranı */}
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              Başarı Oranı (Ort.)
-            </span>
-            <p className="text-xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-              %{kpiData.avgPassRate}
-            </p>
-            {/* Progress bar underneath */}
-            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-1.5 overflow-hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Ort. Başarı Oranı
+              </span>
+              <span className="text-xs font-black text-slate-900 dark:text-slate-100">
+                %{kpiData.avgPassRate}
+              </span>
+            </div>
+            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
               <div
                 className={`h-full rounded-full ${
                   kpiData.avgPassRate >= 75
@@ -517,9 +521,9 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
       </div>
 
       {/* 3. Main Split View: Left Data Grid Table + Right Detail Drawer */}
-      <div className="flex-1 flex overflow-hidden px-6 pb-6 gap-4">
+      <div className="min-w-0 px-6 pb-6 flex flex-col lg:flex-row gap-4">
         {/* Left Side: Table & Tabs */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs overflow-hidden">
+        <div className="flex-1 min-w-0 bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs overflow-hidden flex flex-col">
           {/* Tab Navigation */}
           <div className="flex items-center space-x-6 px-5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold">
             {[
@@ -538,7 +542,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                     setActiveTab(tab.key as TabType);
                     setCurrentPage(1);
                   }}
-                  className={`py-3.5 border-b-2 transition-all cursor-pointer ${
+                  className={`py-3 border-b-2 transition-all cursor-pointer ${
                     isActive
                       ? 'border-[#2563eb] text-[#2563eb] dark:text-[#3b82f6] font-bold'
                       : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
@@ -551,31 +555,31 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           </div>
 
           {/* Table Container */}
-          <div className="flex-1 overflow-x-auto overflow-y-auto">
+          <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#161f30] shadow-xs">
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="py-3 px-5 bg-slate-50 dark:bg-[#161f30]">TEST PLANI</th>
-                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30]">TÜR</th>
-                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30]">KAPSAM</th>
-                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30] text-center">SENARYO</th>
-                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30]">BAŞARI ORANI</th>
-                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30]">DURUM</th>
-                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30]">SON ÇALIŞTIRMA</th>
-                  <th className="py-3 px-5 bg-slate-50 dark:bg-[#161f30] text-right">İŞLEMLER</th>
+              <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
+                <tr className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+                  <th className="py-2.5 px-4">TEST PLANI</th>
+                  <th className="py-2.5 px-3">TÜR</th>
+                  <th className="py-2.5 px-3">KAPSAM</th>
+                  <th className="py-2.5 px-3 text-center">SENARYO</th>
+                  <th className="py-2.5 px-3">BAŞARI ORANI</th>
+                  <th className="py-2.5 px-3">DURUM</th>
+                  <th className="py-2.5 px-3">SON ÇALIŞTIRMA</th>
+                  <th className="py-2.5 px-4 text-right">İŞLEMLER</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center text-slate-400">
+                    <td colSpan={8} className="py-14 text-center text-slate-400">
                       <div className="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
                       <span>Yükleniyor...</span>
                     </td>
                   </tr>
                 ) : paginatedPlans.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center text-slate-400">
+                    <td colSpan={8} className="py-14 text-center text-slate-400">
                       <ClipboardList className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
                       <p>Kayıtlı test planı bulunamadı.</p>
                     </td>
@@ -596,7 +600,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                         }`}
                       >
                         {/* Test Plan Name + Subtitle */}
-                        <td className="py-3.5 px-5">
+                        <td className="py-2.5 px-4">
                           <div className="flex items-center space-x-2.5">
                             <div className="w-7 h-7 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                               <Calendar className="w-3.5 h-3.5" />
@@ -606,7 +610,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                                 {p.title}
                               </p>
                               {p.description && (
-                                <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                                <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5" title={p.description}>
                                   {p.description}
                                 </p>
                               )}
@@ -615,9 +619,9 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                         </td>
 
                         {/* Type Badge */}
-                        <td className="py-3.5 px-3">
+                        <td className="py-2.5 px-3">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
+                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-xs ${
                               stats?.typeColor.bg || 'bg-blue-500/10'
                             } ${stats?.typeColor.text || 'text-blue-600'} ${
                               stats?.typeColor.border || 'border-blue-500/20'
@@ -628,17 +632,17 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                         </td>
 
                         {/* Scope */}
-                        <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400">
+                        <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 font-medium">
                           {stats?.scope || 'Web, Mobil'}
                         </td>
 
                         {/* Scenario Count */}
-                        <td className="py-3.5 px-3 text-center font-semibold text-slate-800 dark:text-slate-200">
+                        <td className="py-2.5 px-3 text-center font-bold text-slate-800 dark:text-slate-200 font-mono">
                           {stats?.totalScenarios || 144}
                         </td>
 
                         {/* Success Rate & Progress Bar */}
-                        <td className="py-3.5 px-3">
+                        <td className="py-2.5 px-3">
                           <div className="flex items-center space-x-2 w-28">
                             <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-[11px]">
                               %{stats?.passRate || 76}
@@ -658,34 +662,34 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                           </div>
                         </td>
 
-                        {/* Status */}
-                        <td className="py-3.5 px-3">
+                        {/* Status - High Contrast Badges */}
+                        <td className="py-2.5 px-3">
                           {stats?.statusKey === 'ACTIVE' ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
                               Aktif
                             </span>
                           ) : stats?.statusKey === 'IN_PROGRESS' ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs">
                               Devam Eden
                             </span>
                           ) : stats?.statusKey === 'COMPLETED' ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 shadow-xs">
                               Tamamlandı
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs">
                               Pasif
                             </span>
                           )}
                         </td>
 
                         {/* Last Run Date */}
-                        <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap">
                           {stats?.lastRunDate || '25.05.2024 14:30'}
                         </td>
 
                         {/* Action Icons: Koşum Başlat, Düzenle, Sil */}
-                        <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-2.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end space-x-1">
                             {/* Koşum Başlat */}
                             <button
@@ -831,19 +835,19 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                   {activeSelectedPlan.title}
                 </h3>
                 {activeSelectedStats?.statusKey === 'ACTIVE' ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs shrink-0">
                     Aktif
                   </span>
                 ) : activeSelectedStats?.statusKey === 'IN_PROGRESS' ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs shrink-0">
                     Devam Eden
                   </span>
                 ) : activeSelectedStats?.statusKey === 'COMPLETED' ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 shadow-xs shrink-0">
                     Tamamlandı
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 shrink-0">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs shrink-0">
                     Pasif
                   </span>
                 )}
