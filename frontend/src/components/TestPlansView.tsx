@@ -35,10 +35,12 @@ interface TestPlansViewProps {
   project: Project | null;
   projects?: Project[];
   allCases?: TestCase[];
+  testPlans?: TestPlan[];
   onStartRunWithPlan: (plan: TestPlan) => void;
   onSelectPlanToView?: (plan: TestPlan) => void;
   onNavigateToRuns?: () => void;
   onOpenNewPlan?: () => void;
+  onPlansChange?: () => Promise<void>;
 }
 
 type TabType = 'ALL' | 'ACTIVE' | 'IN_PROGRESS' | 'COMPLETED' | 'PASSIVE';
@@ -47,13 +49,15 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   project,
   projects = [],
   allCases = [],
+  testPlans,
   onStartRunWithPlan,
   onSelectPlanToView,
   onNavigateToRuns,
   onOpenNewPlan,
+  onPlansChange,
 }) => {
   const { can } = useAuth();
-  const [plans, setPlans] = useState<TestPlan[]>([]);
+  const [plans, setPlans] = useState<TestPlan[]>(testPlans || []);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('ALL');
   const [statusDropdownFilter, setStatusDropdownFilter] = useState<string>('ALL');
@@ -70,16 +74,33 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
   const [selectedPlanForEdit, setSelectedPlanForEdit] = useState<TestPlan | null>(null);
 
+  // Synchronize when testPlans prop changes
+  useEffect(() => {
+    if (testPlans !== undefined) {
+      setPlans(testPlans);
+      if (testPlans.length > 0) {
+        setSelectedPlanId((prev) => (prev && testPlans.some((p) => p.id === prev) ? prev : testPlans[0].id));
+      } else {
+        setSelectedPlanId(null);
+      }
+    }
+  }, [testPlans]);
+
   // Load Plans
   const loadPlans = useCallback(async () => {
     if (!project?.id) return;
+    if (onPlansChange) {
+      await onPlansChange();
+      return;
+    }
     setIsLoading(true);
     try {
       const data = await TestPlansService.getAllByProject(project.id);
       setPlans(data || []);
-      // Auto select the first plan if none selected
-      if (data && data.length > 0 && !selectedPlanId) {
-        setSelectedPlanId(data[0].id);
+      if (data && data.length > 0) {
+        setSelectedPlanId((prev) => (prev && data.some((p) => p.id === prev) ? prev : data[0].id));
+      } else {
+        setSelectedPlanId(null);
       }
     } catch (err) {
       console.error('Failed to load test plans:', err);
@@ -87,21 +108,30 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [project?.id, selectedPlanId]);
+  }, [project?.id, onPlansChange]);
 
   useEffect(() => {
-    loadPlans();
-  }, [loadPlans]);
+    if (testPlans === undefined) {
+      loadPlans();
+    }
+  }, [loadPlans, testPlans]);
 
   // Handle plan create
-  const handleCreatePlan = async (data: CreateTestPlanDto) => {
+  const handleCreatePlan = async (data: CreateTestPlanDto & { caseIds?: string[] }) => {
     const created = await TestPlansService.create(data);
+    if (created?.id) {
+      try {
+        localStorage.setItem(`tcms_plan_cases_${created.id}`, JSON.stringify(data.caseIds || []));
+      } catch {
+        // Ignore
+      }
+      setSelectedPlanId(created.id);
+    }
     await loadPlans();
-    if (created?.id) setSelectedPlanId(created.id);
   };
 
   // Handle plan update
-  const handleUpdatePlan = async (id: string, data: UpdateTestPlanDto) => {
+  const handleUpdatePlan = async (id: string, data: UpdateTestPlanDto & { caseIds?: string[] }) => {
     await TestPlansService.update(id, data);
     await loadPlans();
   };
@@ -178,59 +208,49 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         else scopeText = 'Web, Mobil';
       }
 
-      // 3. Runs & Results metrics calculation
-      let totalScenarios = allCases.length > 0 ? Math.min(210, Math.max(allCases.length, 36)) : 144;
+      // 3. Runs & Results metrics calculation from actual plan cases
+      let planCaseIds: string[] = [];
+      try {
+        const saved = localStorage.getItem(`tcms_plan_cases_${plan.id}`);
+        if (saved !== null) {
+          planCaseIds = JSON.parse(saved);
+        }
+      } catch {
+        planCaseIds = [];
+      }
+
+      let totalScenarios = planCaseIds.length;
       let executedScenarios = 0;
       let passed = 0;
       let failed = 0;
       let blocked = 0;
       let skipped = 0;
-      let lastRunDate = '';
+      let lastRunDate = '—';
 
       if (plan.testRuns && plan.testRuns.length > 0) {
         const latestRun = plan.testRuns[0];
-        lastRunDate = latestRun.createdAt
-          ? new Date(latestRun.createdAt).toLocaleString('tr-TR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          : '';
+        if (latestRun.createdAt) {
+          lastRunDate = new Date(latestRun.createdAt).toLocaleString('tr-TR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+        }
 
         plan.testRuns.forEach((r) => {
           if (r.results) {
             r.results.forEach((res: any) => {
-              executedScenarios++;
-              if (res.status === 'PASSED') passed++;
-              else if (res.status === 'FAILED') failed++;
-              else if (res.status === 'BLOCKED') blocked++;
-              else if (res.status === 'SKIPPED') skipped++;
+              if (totalScenarios === 0 || planCaseIds.includes(res.testCaseId)) {
+                executedScenarios++;
+                if (res.status === 'PASSED') passed++;
+                else if (res.status === 'FAILED') failed++;
+                else if (res.status === 'BLOCKED') blocked++;
+                else if (res.status === 'SKIPPED') skipped++;
+              }
             });
           }
-        });
-      }
-
-      // If no run data yet, compute sensible realistic metrics
-      if (executedScenarios === 0) {
-        const scenarioSeeds = [210, 72, 144, 162, 98, 54, 36, 120, 85];
-        totalScenarios = scenarioSeeds[idx % scenarioSeeds.length];
-        const passRates = [76, 100, 64, 62, 85, 40, 90, 80, 95];
-        const assignedRate = passRates[idx % passRates.length];
-        executedScenarios = Math.round(totalScenarios * 0.75);
-        passed = Math.round((executedScenarios * assignedRate) / 100);
-        failed = Math.max(0, executedScenarios - passed - 4);
-        blocked = executedScenarios > 50 ? 4 : 0;
-        skipped = 0;
-
-        const dateObj = new Date(plan.createdAt || Date.now());
-        lastRunDate = dateObj.toLocaleString('tr-TR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
         });
       }
 
@@ -240,13 +260,10 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
       let statusKey: 'ACTIVE' | 'IN_PROGRESS' | 'COMPLETED' | 'PASSIVE' = 'ACTIVE';
       if (plan.status === 'COMPLETED') {
         statusKey = 'COMPLETED';
-      } else if (plan.status === 'ARCHIVED') {
-        statusKey = 'PASSIVE';
-      } else if (plan.status === 'DRAFT') {
+      } else if (plan.status === 'ARCHIVED' || plan.status === 'DRAFT') {
         statusKey = 'PASSIVE';
       } else {
-        // Plan status is ACTIVE
-        if (idx === 2 || plan.title.toLowerCase().includes('ödeme') || plan.title.toLowerCase().includes('devam')) {
+        if (plan.title.toLowerCase().includes('ödeme') || plan.title.toLowerCase().includes('devam')) {
           statusKey = 'IN_PROGRESS';
         } else {
           statusKey = 'ACTIVE';
@@ -269,7 +286,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         blocked,
         skipped,
         passRate,
-        lastRunDate: lastRunDate || '25.05.2024 14:30',
+        lastRunDate,
         statusKey,
         dateRange,
       });
@@ -286,6 +303,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
     let completedCount = 0;
     let passiveCount = 0;
     let totalRates = 0;
+    let plansWithRuns = 0;
 
     plans.forEach((p) => {
       const stats = planStatsMap.get(p.id);
@@ -294,19 +312,23 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         else if (stats.statusKey === 'IN_PROGRESS') inProgressCount++;
         else if (stats.statusKey === 'COMPLETED') completedCount++;
         else if (stats.statusKey === 'PASSIVE') passiveCount++;
-        totalRates += stats.passRate;
+
+        if (stats.executedScenarios > 0) {
+          totalRates += stats.passRate;
+          plansWithRuns++;
+        }
       }
     });
 
-    const avgPassRate = totalPlans > 0 ? Math.round(totalRates / totalPlans) : 76;
+    const avgPassRate = plansWithRuns > 0 ? Math.round(totalRates / plansWithRuns) : null;
 
     return {
-      totalPlans: totalPlans || 15,
-      activeCount: activeCount || 9,
-      passiveCount: passiveCount || 6,
-      inProgressCount: inProgressCount || 4,
-      completedCount: completedCount || 23,
-      avgPassRate: avgPassRate || 76,
+      totalPlans,
+      activeCount,
+      passiveCount,
+      inProgressCount,
+      completedCount,
+      avgPassRate,
     };
   }, [plans, planStatsMap]);
 
@@ -501,19 +523,19 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                 Ort. Başarı Oranı
               </span>
               <span className="text-xs font-black text-slate-900 dark:text-slate-100">
-                %{kpiData.avgPassRate}
+                {kpiData.avgPassRate !== null ? `%${kpiData.avgPassRate}` : '—'}
               </span>
             </div>
             <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
               <div
                 className={`h-full rounded-full ${
-                  kpiData.avgPassRate >= 75
+                  (kpiData.avgPassRate || 0) >= 75
                     ? 'bg-emerald-500'
-                    : kpiData.avgPassRate >= 50
+                    : (kpiData.avgPassRate || 0) >= 50
                     ? 'bg-amber-500'
                     : 'bg-rose-500'
                 }`}
-                style={{ width: `${kpiData.avgPassRate}%` }}
+                style={{ width: `${kpiData.avgPassRate || 0}%` }}
               />
             </div>
           </div>
@@ -638,28 +660,32 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
 
                         {/* Scenario Count */}
                         <td className="py-2.5 px-3 text-center font-bold text-slate-800 dark:text-slate-200 font-mono">
-                          {stats?.totalScenarios || 144}
+                          {stats ? stats.totalScenarios : 0}
                         </td>
 
                         {/* Success Rate & Progress Bar */}
                         <td className="py-2.5 px-3">
-                          <div className="flex items-center space-x-2 w-28">
-                            <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-[11px]">
-                              %{stats?.passRate || 76}
-                            </span>
-                            <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${
-                                  (stats?.passRate || 76) >= 75
-                                    ? 'bg-emerald-500'
-                                    : (stats?.passRate || 76) >= 50
-                                    ? 'bg-amber-500'
-                                    : 'bg-rose-500'
-                                }`}
-                                style={{ width: `${stats?.passRate || 76}%` }}
-                              />
+                          {stats && stats.executedScenarios > 0 ? (
+                            <div className="flex items-center space-x-2 w-28">
+                              <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-[11px]">
+                                %{stats.passRate}
+                              </span>
+                              <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    stats.passRate >= 75
+                                      ? 'bg-emerald-500'
+                                      : stats.passRate >= 50
+                                      ? 'bg-amber-500'
+                                      : 'bg-rose-500'
+                                  }`}
+                                  style={{ width: `${stats.passRate}%` }}
+                                />
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <span className="text-slate-400 font-mono text-[11px]">—</span>
+                          )}
                         </td>
 
                         {/* Status - High Contrast Badges */}
@@ -685,7 +711,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
 
                         {/* Last Run Date */}
                         <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap">
-                          {stats?.lastRunDate || '25.05.2024 14:30'}
+                          {stats?.lastRunDate || '—'}
                         </td>
 
                         {/* Action Icons: Koşum Başlat, Düzenle, Sil */}
@@ -902,53 +928,63 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                   <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                     <span>Toplam Senaryo</span>
                     <span className="font-bold text-slate-900 dark:text-slate-100">
-                      {activeSelectedStats?.totalScenarios || 210}
+                      {activeSelectedStats ? activeSelectedStats.totalScenarios : 0}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                     <span>Çalıştırılan Senaryo</span>
                     <span className="font-bold text-slate-900 dark:text-slate-100">
-                      {activeSelectedStats?.executedScenarios || 150}
+                      {activeSelectedStats ? activeSelectedStats.executedScenarios : 0}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
                     <span>Başarılı</span>
-                    <span className="font-bold">{activeSelectedStats?.passed || 114}</span>
+                    <span className="font-bold">{activeSelectedStats ? activeSelectedStats.passed : 0}</span>
                   </div>
 
                   <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
                     <span>Başarısız</span>
-                    <span className="font-bold">{activeSelectedStats?.failed || 29}</span>
+                    <span className="font-bold">{activeSelectedStats ? activeSelectedStats.failed : 0}</span>
                   </div>
 
                   <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
                     <span>Bloke</span>
-                    <span className="font-bold">{activeSelectedStats?.blocked || 7}</span>
+                    <span className="font-bold">{activeSelectedStats ? activeSelectedStats.blocked : 0}</span>
                   </div>
 
                   <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
                     <span>Atlandı</span>
-                    <span className="font-bold">{activeSelectedStats?.skipped || 0}</span>
+                    <span className="font-bold">{activeSelectedStats ? activeSelectedStats.skipped : 0}</span>
                   </div>
 
                   <div className="pt-1.5 flex items-center justify-between font-bold text-slate-900 dark:text-slate-100">
                     <span>Başarı Oranı</span>
-                    <span className="font-mono">%{activeSelectedStats?.passRate || 76}</span>
+                    {activeSelectedStats && activeSelectedStats.executedScenarios > 0 ? (
+                      <span className="font-mono">%{activeSelectedStats.passRate}</span>
+                    ) : (
+                      <span className="font-mono text-slate-400">—</span>
+                    )}
                   </div>
 
                   {/* Visual Progress Bar */}
                   <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden mt-1">
                     <div
                       className={`h-full rounded-full ${
-                        (activeSelectedStats?.passRate || 76) >= 75
+                        (activeSelectedStats?.passRate || 0) >= 75
                           ? 'bg-emerald-500'
-                          : (activeSelectedStats?.passRate || 76) >= 50
+                          : (activeSelectedStats?.passRate || 0) >= 50
                           ? 'bg-amber-500'
                           : 'bg-rose-500'
                       }`}
-                      style={{ width: `${activeSelectedStats?.passRate || 76}%` }}
+                      style={{
+                        width: `${
+                          activeSelectedStats && activeSelectedStats.executedScenarios > 0
+                            ? activeSelectedStats.passRate
+                            : 0
+                        }%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -1037,6 +1073,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         projectId={project.id}
         projectName={project.name}
         projectKey={project.key}
+        allCases={allCases}
         onSubmit={handleCreatePlan}
       />
 
@@ -1047,6 +1084,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           setSelectedPlanForEdit(null);
         }}
         plan={selectedPlanForEdit}
+        allCases={allCases}
         onUpdate={handleUpdatePlan}
         onDelete={handleDeletePlan}
       />

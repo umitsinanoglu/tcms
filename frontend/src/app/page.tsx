@@ -630,6 +630,10 @@ export default function Home() {
       }
       return prevSuite;
     });
+
+    if (selectedProject) {
+      await loadProjectData(selectedProject.id);
+    }
     handleSelectCase(created);
   };
 
@@ -665,6 +669,10 @@ export default function Home() {
           : [fullUpdatedCase, ...prevRoots];
       });
     }
+
+    if (selectedProject) {
+      await loadProjectData(selectedProject.id);
+    }
   };
 
   const handleDeleteCase = async (caseId: string) => {
@@ -675,6 +683,10 @@ export default function Home() {
     }
     setTree((prevTree) => removeCaseFromTreeNodes(prevTree, caseId));
     setRootCases((prevRoots) => prevRoots.filter((tc) => tc.id !== caseId));
+
+    if (selectedProject) {
+      await loadProjectData(selectedProject.id);
+    }
   };
 
   const handleRunCase = (tc: TestCase, version?: string, environment?: string) => {
@@ -708,8 +720,15 @@ export default function Home() {
     setIsManualRunOpen(true);
   };
 
-  const handleCreateTestPlan = async (data: CreateTestPlanDto) => {
-    await TestPlansService.create(data);
+  const handleCreateTestPlan = async (data: CreateTestPlanDto & { caseIds?: string[] }) => {
+    const created = await TestPlansService.create(data);
+    if (created?.id) {
+      try {
+        localStorage.setItem(`tcms_plan_cases_${created.id}`, JSON.stringify(data.caseIds || []));
+      } catch {
+        // Ignore
+      }
+    }
     if (selectedProject?.id) {
       const plans = await TestPlansService.getAllByProject(selectedProject.id);
       setTestPlans(plans || []);
@@ -888,6 +907,11 @@ export default function Home() {
                   setIsManualRunOpen(true);
                 }}
                 onSelectCase={(tc) => handleSelectCase(tc)}
+                onCaseCreated={async () => {
+                  if (selectedProject) {
+                    await loadProjectData(selectedProject.id);
+                  }
+                }}
                 onUpdatePlanSuccess={(updated) => {
                   setSelectedPlan(updated);
                   setTestPlans((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
@@ -902,10 +926,17 @@ export default function Home() {
                 project={selectedProject}
                 projects={projects}
                 allCases={allCases}
+                testPlans={testPlans}
                 onStartRunWithPlan={handleStartRunWithPlan}
                 onSelectPlanToView={(p) => setSelectedPlan(p)}
                 onNavigateToRuns={() => handleTabChange('RUNS')}
                 onOpenNewPlan={() => setIsNewTestPlanOpen(true)}
+                onPlansChange={async () => {
+                  if (selectedProject) {
+                    const plans = await TestPlansService.getAllByProject(selectedProject.id);
+                    setTestPlans(plans || []);
+                  }
+                }}
               />
             )
           )}
@@ -1038,6 +1069,7 @@ export default function Home() {
         projectId={selectedProject?.id}
         projectName={selectedProject?.name}
         projectKey={selectedProject?.key}
+        allCases={allCases}
         onSubmit={handleCreateTestPlan}
       />
 

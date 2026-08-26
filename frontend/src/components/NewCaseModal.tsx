@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { TestCase, Priority, TestType, ExecutionType, SuiteTreeNode } from '@/services/api';
-import { X, Plus, FileText, Sparkles } from 'lucide-react';
+import { X, Plus, FileText, Folder } from 'lucide-react';
 
 interface NewCaseModalProps {
   isOpen: boolean;
@@ -19,9 +19,12 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
   onClose,
   projectId,
   projectName,
+  defaultSuiteId,
+  suites = [],
   onSubmit,
 }) => {
   const [title, setTitle] = useState('');
+  const [selectedSuiteId, setSelectedSuiteId] = useState<string>('');
   const [executionType, setExecutionType] = useState<ExecutionType>('MANUAL');
   const [type, setType] = useState<TestType>('WEB');
   const [priority, setPriority] = useState<Priority>('NORMAL');
@@ -30,9 +33,25 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Flatten suites for dropdown display
+  const flattenedSuites = useMemo(() => {
+    const flatten = (nodes: SuiteTreeNode[], depth = 0): { id: string; name: string; depth: number }[] => {
+      let list: { id: string; name: string; depth: number }[] = [];
+      nodes.forEach((n) => {
+        list.push({ id: n.id, name: n.name, depth });
+        if (n.children && n.children.length > 0) {
+          list = list.concat(flatten(n.children, depth + 1));
+        }
+      });
+      return list;
+    };
+    return flatten(suites);
+  }, [suites]);
+
   useEffect(() => {
     if (isOpen) {
       setTitle('');
+      setSelectedSuiteId(defaultSuiteId || '');
       setDescription('');
       setPreconditions('');
       setExecutionType('MANUAL');
@@ -40,7 +59,7 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
       setPriority('NORMAL');
       setErrorMsg('');
     }
-  }, [isOpen]);
+  }, [isOpen, defaultSuiteId]);
 
   if (!isOpen) return null;
 
@@ -54,6 +73,7 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
       await onSubmit({
         title: title.trim(),
         projectId,
+        suiteId: selectedSuiteId ? selectedSuiteId : undefined,
         executionType,
         type,
         priority,
@@ -120,6 +140,28 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-xs font-medium"
             />
           </div>
+
+          {/* Suite / Module Selection */}
+          {flattenedSuites.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
+                <Folder className="w-3.5 h-3.5 text-blue-500" />
+                <span>Bağlı Olacağı Test Suite / Modül</span>
+              </label>
+              <select
+                value={selectedSuiteId}
+                onChange={(e) => setSelectedSuiteId(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-medium cursor-pointer shadow-xs"
+              >
+                <option value="">📁 Kök Dizin (Suite&apos;siz / Doğrudan Projeye Bağlı)</option>
+                {flattenedSuites.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {'\u00A0'.repeat(s.depth * 3)}↳ 📁 {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Test Type, Execution Type & Priority Row */}
           <div className="grid grid-cols-3 gap-3">
@@ -198,7 +240,7 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               İptal
             </button>
