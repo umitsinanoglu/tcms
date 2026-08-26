@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Enhanced UI information density, collapsible test plan summary, compact metric cards, prominent table headers, and high-contrast badges across views
 - Test Suite ve Test Case kavramları tamamen kaldırılarak 'Test Senaryosu' (Test Scenario) modeli altında birleştirildi; 1 kez yazıp N kez koşma yeteneği, modern TestScenariosView çalışma alanı, sadeleştirilmiş AppSidebar ve tekil/toplu koşum desteği entegre edildi
 - Test Planları gridindeki ve sağ çekmecedeki Düzenle (Pencil) butonları doğrudan ilgili Test Planının detay sayfasına yönlendirecek şekilde güncellendi
 - Test Planları gridinden Proje kolonu kaldırıldı; Koşum Başlat, Düzenle ve Sil aksiyonları doğrudan buton ikonları olarak satırlara eklendi

@@ -831,13 +831,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                       {/* Run Results Table */}
                       <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
                         <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-slate-100/60 dark:bg-slate-800/60 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
-                              <th className="p-2.5">Kod</th>
-                              <th className="p-2.5">Senaryo</th>
-                              <th className="p-2.5">Modül</th>
-                              <th className="p-2.5">Sonuç</th>
-                              <th className="p-2.5">Hata / Jira</th>
+                          <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 shadow-xs">
+                            <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800">
+                              <th className="p-2.5 bg-slate-100 dark:bg-slate-800">Kod</th>
+                              <th className="p-2.5 bg-slate-100 dark:bg-slate-800">Senaryo</th>
+                              <th className="p-2.5 bg-slate-100 dark:bg-slate-800">Modül</th>
+                              <th className="p-2.5 bg-slate-100 dark:bg-slate-800">Sonuç</th>
+                              <th className="p-2.5 bg-slate-100 dark:bg-slate-800">Hata / Jira</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -1002,16 +1002,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-semibold">
-                        <th className="py-2.5 px-4">Kod</th>
-                        <th className="py-2.5 px-4">Başlık</th>
-                        <th className="py-2.5 px-4">Modül</th>
-                        <th className="py-2.5 px-4">Öncelik</th>
-                        <th className="py-2.5 px-4">Tip</th>
-                        <th className="py-2.5 px-4">Yürütme</th>
-                        <th className="py-2.5 px-4">Son Durum</th>
-                        <th className="py-2.5 px-4">Jira Story / Bug</th>
+                    <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 shadow-xs">
+                      <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-semibold">
+                        <th className="py-2.5 px-4 bg-slate-100 dark:bg-slate-800">Kod</th>
+                        <th className="py-2.5 px-4 bg-slate-100 dark:bg-slate-800">Başlık</th>
+                        <th className="py-2.5 px-4 bg-slate-100 dark:bg-slate-800">Modül</th>
+                        <th className="py-2.5 px-4 bg-slate-100 dark:bg-slate-800">Öncelik</th>
+                        <th className="py-2.5 px-4 bg-slate-100 dark:bg-slate-800">Tip</th>
+                        <th className="py-2.5 px-4 bg-slate-100 dark:bg-slate-800">Yürütme</th>
+                        <th className="py-2.5 px-4 bg-slate-100 dark:bg-slate-800">Son Durum</th>
+                        <th className="py-2.5 px-4 bg-slate-100 dark:bg-slate-800">Jira Story / Bug</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">

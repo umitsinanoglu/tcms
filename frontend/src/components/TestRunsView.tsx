@@ -257,89 +257,110 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
         </div>
       </div>
 
-      {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Cards Row (4 Compact Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Total Runs */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span className="text-xs font-medium uppercase tracking-wider">Toplam Koşu</span>
-            <Play className="w-4 h-4 text-emerald-500 fill-current" />
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <Play className="w-4 h-4 fill-current text-emerald-500" />
           </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold font-mono tracking-tight">{totalRuns}</span>
-            <button onClick={loadRuns} className="text-slate-400 hover:text-slate-200 transition-colors" title="Yenile">
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Toplam Koşu
+              </span>
+              <button onClick={loadRuns} className="text-slate-400 hover:text-slate-200 transition-colors" title="Yenile">
+                <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black text-slate-900 dark:text-slate-100 font-mono leading-none">
+                {totalRuns}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Koşu</span>
+            </div>
           </div>
         </div>
 
         {/* In Progress Runs */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span className="text-xs font-medium uppercase tracking-wider">Devam Eden Koşular</span>
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
             </span>
           </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400 tracking-tight">
-              {inProgressRuns}
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+              Devam Eden Koşular
             </span>
-            <span className="text-xs text-slate-400 font-mono">Aktif Koşu</span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black font-mono text-blue-600 dark:text-blue-400 leading-none">
+                {inProgressRuns}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Aktif</span>
+            </div>
           </div>
         </div>
 
         {/* Completed Runs */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span className="text-xs font-medium uppercase tracking-wider">Tamamlanan</span>
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 tracking-tight">
-              {completedRuns}
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+              Tamamlanan
             </span>
-            <span className="text-xs text-slate-400 font-mono">Başarılı Kayıt</span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-300 leading-none">
+                {completedRuns}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Başarılı</span>
+            </div>
           </div>
         </div>
 
         {/* Aborted Runs */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span className="text-xs font-medium uppercase tracking-wider">İptal Edilen / Durdurulan</span>
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
             <XCircle className="w-4 h-4 text-rose-500" />
           </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold font-mono text-rose-600 dark:text-rose-400 tracking-tight">
-              {abortedRuns}
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+              İptal / Durdurulan
             </span>
-            <span className="text-xs text-slate-400 font-mono">Aborted</span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black font-mono text-rose-700 dark:text-rose-300 leading-none">
+                {abortedRuns}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Durduruldu</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Controls & Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900/80 p-2.5 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
         {/* Search */}
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Koşu başlığı, modül, versiyon veya ortam ara..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
 
         {/* Status Filter Buttons */}
-        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl space-x-1 text-xs overflow-x-auto no-scrollbar">
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl space-x-1 text-xs overflow-x-auto no-scrollbar">
           <button
             onClick={() => setStatusFilter('ALL')}
-            className={`px-3 py-1 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
               statusFilter === 'ALL'
-                ? 'bg-emerald-600 text-white shadow-sm'
+                ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -347,9 +368,9 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           </button>
           <button
             onClick={() => setStatusFilter('IN_PROGRESS')}
-            className={`px-3 py-1 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
               statusFilter === 'IN_PROGRESS'
-                ? 'bg-blue-600 text-white shadow-sm'
+                ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -357,9 +378,9 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           </button>
           <button
             onClick={() => setStatusFilter('COMPLETED')}
-            className={`px-3 py-1 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
               statusFilter === 'COMPLETED'
-                ? 'bg-emerald-600 text-white shadow-sm'
+                ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -367,9 +388,9 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           </button>
           <button
             onClick={() => setStatusFilter('ABORTED')}
-            className={`px-3 py-1 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
               statusFilter === 'ABORTED'
-                ? 'bg-rose-600 text-white shadow-sm'
+                ? 'bg-rose-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -379,24 +400,24 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
       </div>
 
       {/* Test Runs Table */}
-      <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 shadow-sm">
+      <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-100 dark:bg-slate-900/90 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-                <th className="py-3 px-4 min-w-[180px]">Test Koşusu Başlığı</th>
-                <th className="py-3 px-4 min-w-[140px]">Ebeveyn / Modül</th>
-                <th className="py-3 px-4 min-w-[110px]">Ürün Tipi</th>
-                <th className="py-3 px-4 w-24">Versiyon</th>
-                <th className="py-3 px-4 w-24">Ortam</th>
-                <th className="py-3 px-4 w-32">Çalıştıran</th>
-                <th className="py-3 px-4 w-28">Durum</th>
-                <th className="py-3 px-4 w-24 text-center">Case Sayısı</th>
-                <th className="py-3 px-4 w-32">Tarih</th>
-                <th className="py-3 px-4 w-24 text-right">İşlemler</th>
+            <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#161f30] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
+              <tr className="text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider text-[11px]">
+                <th className="py-2.5 px-4 min-w-[180px]">Test Koşusu Başlığı</th>
+                <th className="py-2.5 px-4 min-w-[140px]">Ebeveyn / Modül</th>
+                <th className="py-2.5 px-4 min-w-[110px]">Ürün Tipi</th>
+                <th className="py-2.5 px-4 w-24">Versiyon</th>
+                <th className="py-2.5 px-4 w-24">Ortam</th>
+                <th className="py-2.5 px-4 w-32">Çalıştıran</th>
+                <th className="py-2.5 px-4 w-28">Durum</th>
+                <th className="py-2.5 px-4 w-24 text-center">Case Sayısı</th>
+                <th className="py-2.5 px-4 w-32">Tarih</th>
+                <th className="py-2.5 px-4 w-24 text-right">İşlemler</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
               {filteredRuns.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="py-12 text-center text-slate-400 dark:text-slate-500">
@@ -413,9 +434,9 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                     <tr
                       key={run.id}
                       onClick={() => handleOpenDetail(run.id)}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition-colors"
                     >
-                      <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-100">
+                      <td className="py-2.5 px-4 font-bold text-slate-900 dark:text-slate-100">
                         <div className="flex items-center space-x-2">
                           <Play className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                           <span className="truncate max-w-xs">{run.title}</span>
@@ -423,7 +444,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                       </td>
 
                       {/* Parent Suite / Modül Column */}
-                      <td className="py-3 px-4">
+                      <td className="py-2.5 px-4">
                         <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
                           {parentSuites.map((s, sIdx) => (
                             <span
@@ -439,42 +460,42 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                       </td>
 
                       {/* Product Type / Test Type Column */}
-                      <td className="py-3 px-4">
+                      <td className="py-2.5 px-4">
                         <div className="flex items-center space-x-1 flex-wrap gap-y-1">
                           {productTypes.map((t) => renderTypeBadge(t))}
                         </div>
                       </td>
 
-                      <td className="py-3 px-4 font-mono font-semibold text-slate-600 dark:text-slate-300">
+                      <td className="py-2.5 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">
                         {run.version}
                       </td>
 
-                      <td className="py-3 px-4 font-mono text-[11px]">
-                        <span className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border border-slate-300 dark:border-slate-700">
+                      <td className="py-2.5 px-4 font-mono text-[11px]">
+                        <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold border border-slate-300 dark:border-slate-700">
                           {run.environment}
                         </span>
                       </td>
 
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium truncate max-w-[130px]">
+                      <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300 font-medium truncate max-w-[130px]">
                         {run.executedBy || 'QA Tester'}
                       </td>
 
-                      <td className="py-3 px-4">
+                      <td className="py-2.5 px-4">
                         {run.status === 'IN_PROGRESS' && (
-                          <span className="inline-flex items-center space-x-1.5 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/30">
+                          <span className="inline-flex items-center space-x-1.5 text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/80 px-2.5 py-0.5 rounded-full border border-blue-300 dark:border-blue-700/60 shadow-xs">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
                             <span>DEVAM EDİYOR</span>
                           </span>
                         )}
                         {run.status === 'COMPLETED' && (
-                          <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                          <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                             <span>TAMAMLANDI</span>
                           </span>
                         )}
                         {run.status === 'ABORTED' && (
-                          <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/30">
-                            <XCircle className="w-3 h-3 text-rose-500" />
+                          <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2.5 py-0.5 rounded-full border border-rose-300 dark:border-rose-700/60 shadow-xs">
+                            <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
                             <span>İPTAL EDİLDİ</span>
                           </span>
                         )}

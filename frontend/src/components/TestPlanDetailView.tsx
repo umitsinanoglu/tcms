@@ -277,33 +277,36 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
     }
   };
 
+  // Collapsible metadata state (default collapsed for high information density)
+  const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
+
   // Helper badge for status
   const getStatusBadge = (status: PlanStatus) => {
     switch (status) {
       case 'ACTIVE':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
             AKTİF
           </span>
         );
       case 'DRAFT':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30">
-            <Clock className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs">
+            <Clock className="w-3 h-3 text-slate-500" />
             TASLAK
           </span>
         );
       case 'COMPLETED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
-            <CheckCircle2 className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 shadow-xs">
+            <CheckCircle2 className="w-3 h-3 text-blue-600 dark:text-blue-400" />
             TAMAMLANDI
           </span>
         );
       case 'ARCHIVED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs">
             ARŞİV
           </span>
         );
@@ -313,11 +316,11 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#f8fafc] dark:bg-[#0b111e] font-sans select-none">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden bg-[#f8fafc] dark:bg-[#0b111e] font-sans select-none min-h-0">
       {/* 1. Top Breadcrumb & Action Bar */}
-      <div className="px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-[#161f30]/90 backdrop-blur-sm shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="px-6 py-3.5 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161f30] shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
         {/* Left: Back Button & Title Info */}
-        <div className="flex items-center space-x-3.5 min-w-0">
+        <div className="flex items-center space-x-3 min-w-0">
           <button
             type="button"
             onClick={onBack}
@@ -328,18 +331,18 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
           </button>
 
           <div className="min-w-0">
-            <div className="flex items-center space-x-2 text-xs text-slate-400 font-medium">
-              <span>{project?.name || 'Test Projesi'}</span>
-              <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-600" />
+            <div className="flex items-center space-x-1.5 text-[11px] text-slate-400 font-medium">
+              <span className="truncate max-w-[140px]">{project?.name || 'Test Projesi'}</span>
+              <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0" />
               <span className="text-slate-600 dark:text-slate-300 font-semibold">Test Planları</span>
-              <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-600" />
+              <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0" />
               <span className="font-mono text-[#2563eb] dark:text-[#3b82f6] font-bold">
-                [{plan.version}]
+                [{plan.version || 'v1.0.0'}]
               </span>
             </div>
 
-            <div className="flex items-center space-x-3 mt-1 flex-wrap">
-              <h1 className="text-lg md:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">
+            <div className="flex items-center space-x-2.5 mt-0.5 flex-wrap">
+              <h1 className="text-base md:text-lg font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">
                 {plan.title}
               </h1>
               {getStatusBadge(plan.status)}
@@ -348,26 +351,31 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center space-x-2.5 shrink-0">
+        <div className="flex items-center space-x-2 shrink-0">
           <button
             type="button"
             onClick={reloadPlan}
             className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1d232f] text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-xs cursor-pointer"
             title="Yenile"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             type="button"
-            onClick={() => setIsEditingMetadata((prev) => !prev)}
-            className={`inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
+            onClick={() => {
+              if (!isMetadataExpanded && !isEditingMetadata) {
+                setIsMetadataExpanded(true);
+              }
+              setIsEditingMetadata((prev) => !prev);
+            }}
+            className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
               isEditingMetadata
-                ? 'bg-amber-500/10 text-amber-600 border-amber-500/30'
+                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/40'
                 : 'bg-white dark:bg-[#1d232f] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
           >
-            <Pencil className="w-3.5 h-3.5" />
+            <Pencil className="w-3.5 h-3.5 text-slate-500" />
             <span>{isEditingMetadata ? 'Düzenlemeyi Kapat' : 'Planı Düzenle'}</span>
           </button>
 
@@ -377,13 +385,13 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
             className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1d232f] text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:border-rose-500/30 transition-all shadow-xs cursor-pointer"
             title="Test Planını Sil"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
 
           <button
             type="button"
             onClick={() => onStartRunWithPlan(plan, planCases)}
-            className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-500/25 active:scale-98 transition-all cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 active:scale-98 transition-all cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>Bu Planla Koşum Başlat</span>
@@ -391,284 +399,336 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Plan Details & Editable Metadata Card */}
-      <div className="px-6 py-4 shrink-0">
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs transition-all">
-          {isEditingMetadata ? (
-            /* Editing Form Mode */
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                  <Pencil className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Test Planı Bilgilerini Düzenle</span>
-                </span>
-                <span className="text-[11px] text-slate-400">Değişiklikleri kaydetmeyi unutmayın</span>
+      {/* 2. Collapsible Plan Details Summary Bar & Panel */}
+      <div className="px-6 py-2.5 shrink-0">
+        <div className="rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs transition-all overflow-hidden">
+          {/* Header Strip with Toggle Button */}
+          <div className="px-4 py-2 flex items-center justify-between bg-slate-50/60 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/80">
+            {/* Quick Summary Chips when collapsed */}
+            <div className="flex items-center space-x-4 text-xs overflow-x-auto py-0.5">
+              <div className="flex items-center space-x-1 text-slate-600 dark:text-slate-300 font-semibold shrink-0">
+                <Server className="w-3.5 h-3.5 text-blue-500" />
+                <span className="text-[11px] text-slate-400 font-medium">Ortam:</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{plan.environment || 'STAGING'}</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                {/* Title */}
-                <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                    Plan Başlığı *
-                  </label>
-                  <input
-                    type="text"
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-semibold"
-                    placeholder="Plan Başlığı"
-                  />
-                </div>
-
-                {/* Hedef Ortam */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                    Hedef Ortam
-                  </label>
-                  <select
-                    value={editEnvironment}
-                    onChange={(e) => setEditEnvironment(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-medium"
-                  >
-                    <option value="DEV">DEV (Geliştirme)</option>
-                    <option value="TEST">TEST</option>
-                    <option value="STAGING">STAGING</option>
-                    <option value="UAT">UAT</option>
-                    <option value="PROD">PROD (Canlı)</option>
-                  </select>
-                </div>
-
-                {/* Hedef Sürüm */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                    Hedef Sürüm
-                  </label>
-                  <input
-                    type="text"
-                    value={editVersion}
-                    onChange={(e) => setEditVersion(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-mono font-bold"
-                    placeholder="v1.0.0"
-                  />
-                </div>
-
-                {/* Durum */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                    Plan Durumu
-                  </label>
-                  <select
-                    value={editStatus}
-                    onChange={(e) => setEditStatus(e.target.value as PlanStatus)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-medium"
-                  >
-                    <option value="ACTIVE">Aktif (ACTIVE)</option>
-                    <option value="DRAFT">Taslak (DRAFT)</option>
-                    <option value="COMPLETED">Tamamlandı (COMPLETED)</option>
-                    <option value="ARCHIVED">Arşiv (ARCHIVED)</option>
-                  </select>
-                </div>
-
-                {/* Kapsam */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                    Kapsam ve Modüller
-                  </label>
-                  <input
-                    type="text"
-                    value={editScope}
-                    onChange={(e) => setEditScope(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                    placeholder="Web, Mobil, API, Ödeme Ağ Geçidi..."
-                  />
-                </div>
-
-                {/* Jira / Gereksinimler */}
-                <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                    Jira Kayıtları / Gereksinim Kodları
-                  </label>
-                  <input
-                    type="text"
-                    value={editRequirements}
-                    onChange={(e) => setEditRequirements(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-mono"
-                    placeholder="PROJ-101, PROJ-102, REQ-88..."
-                  />
-                </div>
-
-                {/* Description */}
-                <div className="sm:col-span-4">
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                    Açıklama ve Kapsam Detayı
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                    placeholder="Bu test planının kapsamı, hedefleri ve test stratejisi..."
-                  />
-                </div>
+              <div className="flex items-center space-x-1 text-slate-600 dark:text-slate-300 font-semibold shrink-0">
+                <Tag className="w-3.5 h-3.5 text-purple-500" />
+                <span className="text-[11px] text-slate-400 font-medium">Sürüm:</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{plan.version || 'v1.0.0'}</span>
               </div>
 
-              {/* Actions Save / Cancel */}
-              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsEditingMetadata(false)}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                >
-                  İptal
-                </button>
-                <button
-                  type="button"
-                  disabled={isSavingMetadata}
-                  onClick={handleSaveMetadata}
-                  className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] disabled:opacity-50 transition-all shadow-xs cursor-pointer"
-                >
-                  {isSavingMetadata ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Check className="w-3.5 h-3.5" />
-                  )}
-                  <span>{isSavingMetadata ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            /* Display View Mode */
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 text-xs">
-              <div>
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-                  Hedef Ortam
-                </span>
-                <div className="flex items-center space-x-1.5 mt-1">
-                  <Server className="w-3.5 h-3.5 text-blue-500" />
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    {plan.environment || 'STAGING'}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-                  Hedef Sürüm
-                </span>
-                <div className="flex items-center space-x-1.5 mt-1">
-                  <Tag className="w-3.5 h-3.5 text-purple-500" />
-                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                    {plan.version || 'v1.0.0'}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-                  Kapsam
-                </span>
-                <div className="flex items-center space-x-1.5 mt-1">
+              {plan.scope && (
+                <div className="hidden sm:flex items-center space-x-1 text-slate-600 dark:text-slate-300 shrink-0">
                   <Layers className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                    {plan.scope || 'Web, Mobil'}
-                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">Kapsam:</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[150px]">{plan.scope}</span>
                 </div>
-              </div>
+              )}
 
-              <div>
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-                  Gereksinimler / Jira
-                </span>
-                <div className="flex items-center space-x-1.5 mt-1">
+              {plan.requirements && (
+                <div className="hidden md:flex items-center space-x-1 text-slate-600 dark:text-slate-300 shrink-0">
                   <FileText className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="font-mono font-semibold text-indigo-600 dark:text-indigo-400 truncate">
-                    {plan.requirements || 'Belirtilmedi'}
-                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">Jira:</span>
+                  <span className="font-mono font-semibold text-indigo-600 dark:text-indigo-400 truncate max-w-[130px]">{plan.requirements}</span>
                 </div>
-              </div>
+              )}
+            </div>
 
-              <div className="col-span-2">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-                  Açıklama
-                </span>
-                <p className="text-slate-600 dark:text-slate-300 text-[11px] truncate mt-1">
-                  {plan.description || 'Bu test planı için özel bir açıklama girilmemiş.'}
-                </p>
-              </div>
+            {/* Toggle Expand / Collapse Button */}
+            <button
+              type="button"
+              onClick={() => setIsMetadataExpanded((prev) => !prev)}
+              className="inline-flex items-center space-x-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 px-2.5 py-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors shrink-0 cursor-pointer"
+            >
+              <span>{isMetadataExpanded ? 'Plan Detaylarını Gizle' : 'Plan Detaylarını Göster'}</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isMetadataExpanded ? 'rotate-180 text-blue-600' : ''}`} />
+            </button>
+          </div>
+
+          {/* Expandable Content Area */}
+          {(isMetadataExpanded || isEditingMetadata) && (
+            <div className="p-4 bg-white dark:bg-[#161f30] border-t border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-top-1 duration-150">
+              {isEditingMetadata ? (
+                /* Editing Form Mode */
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      <Pencil className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Test Planı Bilgilerini Düzenle</span>
+                    </span>
+                    <span className="text-[11px] text-slate-400">Değişiklikleri kaydetmeyi unutmayın</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                    {/* Title */}
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                        Plan Başlığı *
+                      </label>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-semibold"
+                        placeholder="Plan Başlığı"
+                      />
+                    </div>
+
+                    {/* Hedef Ortam */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                        Hedef Ortam
+                      </label>
+                      <select
+                        value={editEnvironment}
+                        onChange={(e) => setEditEnvironment(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-medium"
+                      >
+                        <option value="DEV">DEV (Geliştirme)</option>
+                        <option value="TEST">TEST</option>
+                        <option value="STAGING">STAGING</option>
+                        <option value="UAT">UAT</option>
+                        <option value="PROD">PROD (Canlı)</option>
+                      </select>
+                    </div>
+
+                    {/* Hedef Sürüm */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                        Hedef Sürüm
+                      </label>
+                      <input
+                        type="text"
+                        value={editVersion}
+                        onChange={(e) => setEditVersion(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-mono font-bold"
+                        placeholder="v1.0.0"
+                      />
+                    </div>
+
+                    {/* Durum */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                        Plan Durumu
+                      </label>
+                      <select
+                        value={editStatus}
+                        onChange={(e) => setEditStatus(e.target.value as PlanStatus)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-medium"
+                      >
+                        <option value="ACTIVE">Aktif (ACTIVE)</option>
+                        <option value="DRAFT">Taslak (DRAFT)</option>
+                        <option value="COMPLETED">Tamamlandı (COMPLETED)</option>
+                        <option value="ARCHIVED">Arşiv (ARCHIVED)</option>
+                      </select>
+                    </div>
+
+                    {/* Kapsam */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                        Kapsam ve Modüller
+                      </label>
+                      <input
+                        type="text"
+                        value={editScope}
+                        onChange={(e) => setEditScope(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                        placeholder="Web, Mobil, API, Ödeme Ağ Geçidi..."
+                      />
+                    </div>
+
+                    {/* Jira / Gereksinimler */}
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                        Jira Kayıtları / Gereksinim Kodları
+                      </label>
+                      <input
+                        type="text"
+                        value={editRequirements}
+                        onChange={(e) => setEditRequirements(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-mono"
+                        placeholder="PROJ-101, PROJ-102, REQ-88..."
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div className="sm:col-span-4">
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                        Açıklama ve Kapsam Detayı
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                        placeholder="Bu test planının kapsamı, hedefleri ve test stratejisi..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actions Save / Cancel */}
+                  <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingMetadata(false)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isSavingMetadata}
+                      onClick={handleSaveMetadata}
+                      className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] disabled:opacity-50 transition-all shadow-xs cursor-pointer"
+                    >
+                      {isSavingMetadata ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5" />
+                      )}
+                      <span>{isSavingMetadata ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Full Display View Mode */
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3.5 text-xs">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Hedef Ortam
+                    </span>
+                    <div className="flex items-center space-x-1.5 mt-0.5">
+                      <Server className="w-3.5 h-3.5 text-blue-500" />
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                        {plan.environment || 'STAGING'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Hedef Sürüm
+                    </span>
+                    <div className="flex items-center space-x-1.5 mt-0.5">
+                      <Tag className="w-3.5 h-3.5 text-purple-500" />
+                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                        {plan.version || 'v1.0.0'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Kapsam
+                    </span>
+                    <div className="flex items-center space-x-1.5 mt-0.5">
+                      <Layers className="w-3.5 h-3.5 text-emerald-500" />
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                        {plan.scope || 'Web, Mobil'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Gereksinimler / Jira
+                    </span>
+                    <div className="flex items-center space-x-1.5 mt-0.5">
+                      <FileText className="w-3.5 h-3.5 text-amber-500" />
+                      <span className="font-mono font-semibold text-indigo-600 dark:text-indigo-400 truncate">
+                        {plan.requirements || 'Belirtilmedi'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="col-span-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Açıklama
+                    </span>
+                    <p className="text-slate-600 dark:text-slate-300 text-xs mt-0.5 leading-relaxed">
+                      {plan.description || 'Bu test planı için özel bir açıklama girilmemiş.'}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* 3. KPI Metrics Row (4 Cards) */}
-      <div className="px-6 pb-4 shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 3. KPI Metrics Row (4 Compact Cards) */}
+      <div className="px-6 py-2 shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Total Scenarios */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-            <Calendar className="w-5 h-5" />
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <Calendar className="w-4 h-4" />
           </div>
-          <div>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
               Toplam Senaryo
             </span>
-            <p className="text-xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-              {stats.total}
-            </p>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">Plan Kapsamında</span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black text-slate-900 dark:text-slate-100 leading-none">
+                {stats.total}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Kapsamda</span>
+            </div>
           </div>
         </div>
 
         {/* Executed Scenarios */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-            <PlayCircle className="w-5 h-5" />
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <PlayCircle className="w-4 h-4" />
           </div>
-          <div>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
               Çalıştırılan Senaryo
             </span>
-            <p className="text-xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-              {stats.executed}
-            </p>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">
-              %{Math.round((stats.executed / (stats.total || 1)) * 100)} Tamamlandı
-            </span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black text-slate-900 dark:text-slate-100 leading-none">
+                {stats.executed}
+              </span>
+              <span className="text-[10px] font-mono font-semibold text-purple-600 dark:text-purple-400">
+                %{Math.round((stats.executed / (stats.total || 1)) * 100)}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Pass / Fail Breakdown */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-5 h-5" />
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4" />
           </div>
-          <div>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
               Başarılı / Başarısız
             </span>
-            <div className="flex items-center space-x-2 text-base font-extrabold leading-tight">
-              <span className="text-emerald-600 dark:text-emerald-400">{stats.passed} Pass</span>
-              <span className="text-slate-300 dark:text-slate-600">&bull;</span>
-              <span className="text-rose-600 dark:text-rose-400">{stats.failed} Fail</span>
+            <div className="flex items-center space-x-1.5 text-sm font-black leading-none">
+              <span className="text-emerald-700 dark:text-emerald-300 font-bold">{stats.passed} Pass</span>
+              <span className="text-slate-300 dark:text-slate-600 font-normal">&bull;</span>
+              <span className="text-rose-700 dark:text-rose-300 font-bold">{stats.failed} Fail</span>
             </div>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">
-              {stats.blocked} Bloke &bull; {stats.skipped} Atlandı
-            </span>
           </div>
         </div>
 
         {/* Pass Rate Progress Bar */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5" />
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              Başarı Oranı (Ort.)
-            </span>
-            <p className="text-xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-              %{stats.passRate}
-            </p>
-            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-1.5 overflow-hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Başarı Oranı
+              </span>
+              <span className="text-xs font-black text-slate-900 dark:text-slate-100">
+                %{stats.passRate}
+              </span>
+            </div>
+            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
               <div
                 className={`h-full rounded-full ${
                   stats.passRate >= 75
@@ -685,15 +745,15 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
       </div>
 
       {/* 4. Tab Navigation & Content */}
-      <div className="flex-1 flex flex-col min-w-0 px-6 pb-6 overflow-hidden">
-        <div className="flex-1 flex flex-col bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs overflow-hidden">
+      <div className="min-w-0 px-6 pb-6">
+        <div className="bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs overflow-hidden">
           {/* Tabs Header */}
           <div className="flex items-center justify-between px-5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold shrink-0">
             <div className="flex items-center space-x-6">
               <button
                 type="button"
                 onClick={() => setActiveTab('SCENARIOS')}
-                className={`py-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 ${
+                className={`py-3 border-b-2 transition-all cursor-pointer flex items-center space-x-2 ${
                   activeTab === 'SCENARIOS'
                     ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
                     : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
@@ -708,7 +768,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('RUNS')}
-                className={`py-3.5 border-b-2 transition-all cursor-pointer flex items-center space-x-2 ${
+                className={`py-3 border-b-2 transition-all cursor-pointer flex items-center space-x-2 ${
                   activeTab === 'RUNS'
                     ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
                     : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
@@ -723,7 +783,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('OVERVIEW')}
-                className={`py-3.5 border-b-2 transition-all cursor-pointer ${
+                className={`py-3 border-b-2 transition-all cursor-pointer ${
                   activeTab === 'OVERVIEW'
                     ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
                     : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
@@ -754,7 +814,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                     setCandidateSearchQuery('');
                     setIsAddCasesModalOpen(true);
                   }}
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer border border-slate-200/60 dark:border-slate-700/60 shadow-xs"
                 >
                   <Plus className="w-3.5 h-3.5 text-blue-600" />
                   <span>Mevcut Senaryoları Ekle</span>
@@ -776,7 +836,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
           {activeTab === 'SCENARIOS' && (
             <div className="flex-1 flex flex-col min-h-0">
               {/* Search & Filters */}
-              <div className="p-3 px-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="p-2.5 px-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -815,41 +875,24 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                 </div>
               </div>
 
-              {/* Scenarios Table */}
-              <div className="flex-1 overflow-auto">
+              {/* Scenarios Table with Prominent Corporate Headers */}
+              <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#121926]/50 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10">
-                      <th className="py-3 px-4 w-10">
-                        <input
-                          type="checkbox"
-                          checked={
-                            filteredPlanCases.length > 0 &&
-                            selectedCaseIds.length === filteredPlanCases.length
-                          }
-                          onChange={() => {
-                            if (selectedCaseIds.length === filteredPlanCases.length) {
-                              setSelectedCaseIds([]);
-                            } else {
-                              setSelectedCaseIds(filteredPlanCases.map((c) => c.id));
-                            }
-                          }}
-                          className="rounded border-slate-300 text-blue-600 focus:ring-0 cursor-pointer"
-                        />
-                      </th>
-                      <th className="py-3 px-3 w-28">KOD</th>
-                      <th className="py-3 px-3">SENARYO BAŞLIĞI</th>
-                      <th className="py-3 px-3">SÜİT</th>
-                      <th className="py-3 px-3">ÖNCELİK</th>
-                      <th className="py-3 px-3">TÜR</th>
-                      <th className="py-3 px-3">ADIM SAYISI</th>
-                      <th className="py-3 px-4 text-right">İŞLEMLER</th>
+                  <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
+                    <tr className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+                      <th className="py-2.5 px-4 w-28">KOD</th>
+                      <th className="py-2.5 px-3">SENARYO BAŞLIĞI</th>
+                      <th className="py-2.5 px-3">SÜİT</th>
+                      <th className="py-2.5 px-3">ÖNCELİK</th>
+                      <th className="py-2.5 px-3">TÜR</th>
+                      <th className="py-2.5 px-3">ADIM SAYISI</th>
+                      <th className="py-2.5 px-4 text-right">İŞLEMLER</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                     {filteredPlanCases.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-16 text-center text-slate-400">
+                        <td colSpan={7} className="py-14 text-center text-slate-400">
                           <Folder className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
                           <p className="font-semibold text-slate-700 dark:text-slate-300">
                             Bu test planına henüz senaryo eklenmemiş.
@@ -869,43 +912,33 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                       </tr>
                     ) : (
                       filteredPlanCases.map((tc) => {
-                        const isChecked = selectedCaseIds.includes(tc.id);
                         return (
                           <tr
                             key={tc.id}
                             className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
                             onClick={() => onSelectCase && onSelectCase(tc)}
                           >
-                            <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() =>
-                                  setSelectedCaseIds((prev) =>
-                                    prev.includes(tc.id)
-                                      ? prev.filter((id) => id !== tc.id)
-                                      : [...prev, tc.id]
-                                  )
-                                }
-                                className="rounded border-slate-300 text-blue-600 focus:ring-0 cursor-pointer"
-                              />
-                            </td>
-
                             {/* Code */}
-                            <td className="py-3.5 px-3">
+                            <td className="py-2.5 px-4">
                               <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                                 {tc.code}
                               </span>
                             </td>
 
-                            {/* Title */}
-                            <td className="py-3.5 px-3">
-                              <div className="min-w-0 max-w-md">
-                                <p className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                            {/* Title & Tooltip Description */}
+                            <td className="py-2.5 px-3">
+                              <div className="min-w-0 max-w-lg">
+                                <p
+                                  className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate"
+                                  title={tc.description ? `${tc.title}\n\nAçıklama: ${tc.description}` : tc.title}
+                                >
                                   {tc.title}
                                 </p>
                                 {tc.description && (
-                                  <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                                  <p
+                                    className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5"
+                                    title={tc.description}
+                                  >
                                     {tc.description}
                                   </p>
                                 )}
@@ -913,22 +946,24 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                             </td>
 
                             {/* Suite */}
-                            <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400">
+                            <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
                               <div className="flex items-center space-x-1.5">
                                 <Folder className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                <span className="truncate">{tc.suite?.name || 'Kök Dizin'}</span>
+                                <span className="truncate max-w-[130px] font-medium">{tc.suite?.name || 'Kök Dizin'}</span>
                               </div>
                             </td>
 
-                            {/* Priority */}
-                            <td className="py-3.5 px-3">
+                            {/* Priority - High Contrast Badges */}
+                            <td className="py-2.5 px-3">
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-xs ${
                                   tc.priority === 'BLOCKER'
-                                    ? 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                                    ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700/60'
                                     : tc.priority === 'CRITICAL'
-                                    ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                    ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/60'
+                                    : tc.priority === 'NORMAL'
+                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
+                                    : 'bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800'
                                 }`}
                               >
                                 {tc.priority}
@@ -936,19 +971,19 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                             </td>
 
                             {/* Type */}
-                            <td className="py-3.5 px-3">
-                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                            <td className="py-2.5 px-3">
+                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400 font-semibold">
                                 {tc.type}
                               </span>
                             </td>
 
                             {/* Step Count */}
-                            <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400 font-mono">
+                            <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 font-mono text-[11px]">
                               {tc.steps?.length || 0} Adım
                             </td>
 
                             {/* Actions */}
-                            <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                            <td className="py-2.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center justify-end space-x-1">
                                 <button
                                   type="button"
@@ -979,11 +1014,6 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
               {/* Table Footer */}
               <div className="p-3 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex items-center justify-between text-xs text-slate-500">
                 <span>Toplam {filteredPlanCases.length} Senaryo</span>
-                {selectedCaseIds.length > 0 && (
-                  <span className="font-bold text-blue-600">
-                    {selectedCaseIds.length} Senaryo Seçili
-                  </span>
-                )}
               </div>
             </div>
           )}
