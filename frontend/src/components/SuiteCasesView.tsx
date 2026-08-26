@@ -112,15 +112,15 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
   const getPriorityBadge = (priority: Priority) => {
     switch (priority) {
       case 'BLOCKER':
-        return 'bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
+        return 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700/60 shadow-xs';
       case 'CRITICAL':
-        return 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30';
+        return 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/60 shadow-xs';
       case 'NORMAL':
-        return 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 shadow-xs';
       case 'LOW':
-        return 'bg-slate-500/10 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400 border-slate-500/30';
+        return 'bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 shadow-xs';
       default:
-        return 'bg-slate-500/10 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400 border-slate-500/30';
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700 shadow-xs';
     }
   };
 
@@ -536,16 +536,16 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
         <div className="w-full bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left text-xs border-collapse min-w-[920px]">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-950/60 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-3 text-center w-10">#</th>
-                  <th className="py-3 px-3 w-28">Test Kodu</th>
-                  <th className="py-3 px-4 min-w-[240px]">Test Case Başlığı ve Detay</th>
-                  <th className="py-3 px-3 w-24 text-center">Öncelik</th>
-                  <th className="py-3 px-3 w-24 text-center">Tip</th>
-                  <th className="py-3 px-3 w-28 text-center">Son Durum</th>
-                  <th className="py-3 px-3 w-64 text-center">Koşu Parametreleri</th>
-                  <th className="py-3 px-4 w-44 text-right">İşlemler</th>
+              <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
+                <tr className="text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="py-2.5 px-3 text-center w-10">#</th>
+                  <th className="py-2.5 px-3 w-28">Test Kodu</th>
+                  <th className="py-2.5 px-4 min-w-[240px]">Test Case Başlığı ve Detay</th>
+                  <th className="py-2.5 px-3 w-24 text-center">Öncelik</th>
+                  <th className="py-2.5 px-3 w-24 text-center">Tip</th>
+                  <th className="py-2.5 px-3 w-28 text-center">Son Durum</th>
+                  <th className="py-2.5 px-3 w-64 text-center">Koşu Parametreleri</th>
+                  <th className="py-2.5 px-4 w-44 text-right">İşlemler</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
