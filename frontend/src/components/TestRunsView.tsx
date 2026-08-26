@@ -60,6 +60,7 @@ interface TestRunsViewProps {
   onOpenQuickRun?: (testCase?: TestCase | null) => void;
   onSelectCase?: (testCase: TestCase) => void;
   onSelectPlan?: (testPlan: TestPlan) => void;
+  onSelectRun?: (run: TestRun) => void;
 }
 
 export const TestRunsView: React.FC<TestRunsViewProps> = ({
@@ -70,6 +71,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
   onOpenQuickRun,
   onSelectCase,
   onSelectPlan,
+  onSelectRun,
 }) => {
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [loading, setLoading] = useState(false);
@@ -126,14 +128,18 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
     loadRuns();
   }, [loadRuns]);
 
-  // Open detailed run view
+  // Open detailed run view (navigate to dedicated view if available, or fallback to modal)
   const handleOpenDetail = async (runId: string) => {
     try {
       const details = await TestRunsService.getRunDetails(runId);
-      setSelectedRunDetails(details);
-      setDetailFilterStatus('ALL');
-      setDetailSearch('');
-      setIsDetailOpen(true);
+      if (onSelectRun && details) {
+        onSelectRun(details);
+      } else {
+        setSelectedRunDetails(details);
+        setDetailFilterStatus('ALL');
+        setDetailSearch('');
+        setIsDetailOpen(true);
+      }
     } catch (err) {
       console.error('Failed to fetch run details:', err);
     }

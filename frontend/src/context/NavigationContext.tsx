@@ -7,6 +7,7 @@ export interface NavigationState {
   projectId: string | null;
   suiteId: string | null;
   caseId: string | null;
+  runId?: string | null;
   label: string;
   timestamp?: number;
 }
@@ -44,7 +45,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // canGoBack is true if there is a previous history item OR if we are currently deep in Explorer/Suite/Case/Runs and can navigate back to Dashboard
   const canGoBack =
     currentIndex > 0 ||
-    Boolean(currentState && (currentState.tab !== 'DASHBOARD' || currentState.suiteId || currentState.caseId));
+    Boolean(currentState && (currentState.tab !== 'DASHBOARD' || currentState.suiteId || currentState.caseId || currentState.runId));
 
   const canGoForward = currentIndex >= 0 && currentIndex < history.length - 1;
   const previousState = currentIndex > 0 ? history[currentIndex - 1] : null;
@@ -101,7 +102,8 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       currentItem.tab === newState.tab &&
       currentItem.projectId === newState.projectId &&
       currentItem.suiteId === newState.suiteId &&
-      currentItem.caseId === newState.caseId
+      currentItem.caseId === newState.caseId &&
+      currentItem.runId === newState.runId
     ) {
       // If only the label updated (e.g. project name loaded), update current in place
       if (currentItem.label !== newState.label) {

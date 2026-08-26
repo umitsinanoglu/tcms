@@ -287,10 +287,14 @@ export class TestRunsService {
                 id: true,
                 code: true,
                 title: true,
+                description: true,
+                precondition: true,
+                executionType: true,
                 type: true,
                 priority: true,
                 jiraStoryKey: true,
                 jiraIssueUrl: true,
+                screenshotUrl: true,
                 suiteId: true,
                 suite: {
                   select: {
@@ -298,6 +302,9 @@ export class TestRunsService {
                     name: true,
                     parentId: true,
                   },
+                },
+                steps: {
+                  orderBy: { stepNumber: 'asc' },
                 },
               },
             },

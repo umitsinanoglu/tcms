@@ -21,6 +21,7 @@ import { TestScenariosView } from '@/components/TestScenariosView';
 import { TestPlansView } from '@/components/TestPlansView';
 import { TestPlanDetailView } from '@/components/TestPlanDetailView';
 import { TestRunsView } from '@/components/TestRunsView';
+import { TestRunDetailView } from '@/components/TestRunDetailView';
 import { DashboardView } from '@/components/DashboardView';
 import { ManualRunModal } from '@/components/ManualRunModal';
 import { NewProjectModal } from '@/components/NewProjectModal';
@@ -50,6 +51,7 @@ export default function Home() {
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null);
   const [selectedSuite, setSelectedSuite] = useState<SuiteTreeNode | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<TestPlan | null>(null);
+  const [selectedRun, setSelectedRun] = useState<TestRun | null>(null);
   const [activeTab, setActiveTab] = useState<SidebarTab>('DASHBOARD');
   const [isLoadingTree, setIsLoadingTree] = useState(false);
   const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
@@ -145,6 +147,7 @@ export default function Home() {
     tab: SidebarTab;
     suiteId: string | null;
     caseId: string | null;
+    runId?: string | null;
   }
 
   const saveSessionState = (state: Partial<SavedSessionState>) => {
@@ -152,7 +155,7 @@ export default function Home() {
       const existingRaw = localStorage.getItem('tcms_session_state');
       const existing: SavedSessionState = existingRaw
         ? JSON.parse(existingRaw)
-        : { projectId: null, tab: 'DASHBOARD', suiteId: null, caseId: null };
+        : { projectId: null, tab: 'DASHBOARD', suiteId: null, caseId: null, runId: null };
 
       const merged: SavedSessionState = {
         ...existing,
@@ -236,12 +239,13 @@ export default function Home() {
         projectId: selectedProject?.id || null,
         suiteId: tab === 'EXPLORER' ? selectedSuite?.id || null : null,
         caseId: tab === 'EXPLORER' ? selectedCase?.id || null : null,
+        runId: tab === 'RUNS' ? selectedRun?.id || null : null,
       });
 
       if (shouldPushState) {
         let label = 'Ana Sayfa';
-        if (tab === 'PLANS') label = 'Test Planları';
-        else if (tab === 'RUNS') label = 'Test Koşumları';
+        if (tab === 'PLANS') label = selectedPlan ? `Plan: ${selectedPlan.title}` : 'Test Planları';
+        else if (tab === 'RUNS') label = selectedRun ? `Koşum: ${selectedRun.title}` : 'Test Koşumları';
         else if (tab === 'REPORTS') label = 'Test Raporları';
         else if (tab === 'EXPLORER') {
           if (selectedCase) label = `Senaryo: ${selectedCase.code}`;
@@ -254,11 +258,12 @@ export default function Home() {
           projectId: selectedProject?.id || null,
           suiteId: selectedSuite?.id || null,
           caseId: selectedCase?.id || null,
+          runId: selectedRun?.id || null,
           label,
         });
       }
     },
-    [pushState, selectedProject, selectedSuite, selectedCase]
+    [pushState, selectedProject, selectedSuite, selectedCase, selectedPlan, selectedRun]
   );
 
   // Handle Project Selection with Navigation Push
@@ -266,6 +271,8 @@ export default function Home() {
     async (p: Project, shouldPushState = true) => {
       setSelectedCase(null);
       setSelectedSuite(null);
+      setSelectedPlan(null);
+      setSelectedRun(null);
       setSelectedProject(p);
       setTree([]);
       setRootCases([]);
@@ -275,6 +282,7 @@ export default function Home() {
         tab: activeTab,
         suiteId: null,
         caseId: null,
+        runId: null,
       });
 
       const loaded = await loadProjectData(p.id);
@@ -285,6 +293,7 @@ export default function Home() {
           projectId: p.id,
           suiteId: null,
           caseId: null,
+          runId: null,
           label: `Proje: [${p.key}] ${p.name}`,
         });
       }
@@ -386,6 +395,7 @@ export default function Home() {
         projectId: targetState.projectId,
         suiteId: targetState.suiteId,
         caseId: targetState.caseId,
+        runId: targetState.runId,
       });
 
       let targetTree = treeRef.current;
@@ -401,9 +411,19 @@ export default function Home() {
         }
       }
 
-      // Handle Suite or Case restore
-      if (targetState.caseId) {
+      // Handle Suite, Case, or Run restore
+      if (targetState.runId) {
+        setSelectedCase(null);
         setSelectedSuite(null);
+        try {
+          const runDetails = await TestRunsService.getRunDetails(targetState.runId);
+          setSelectedRun(runDetails);
+        } catch {
+          setSelectedRun(null);
+        }
+      } else if (targetState.caseId) {
+        setSelectedSuite(null);
+        setSelectedRun(null);
         try {
           const tc = await TestCasesService.getOne(targetState.caseId);
           setSelectedCase(tc);
@@ -412,6 +432,7 @@ export default function Home() {
         }
       } else if (targetState.suiteId) {
         setSelectedCase(null);
+        setSelectedRun(null);
         if (targetState.suiteId === '__root_cases__') {
           setSelectedSuite({
             id: '__root_cases__',
@@ -432,6 +453,9 @@ export default function Home() {
       } else {
         setSelectedCase(null);
         setSelectedSuite(null);
+        if (targetState.tab !== 'RUNS') {
+          setSelectedRun(null);
+        }
       }
     });
 
@@ -470,6 +494,7 @@ export default function Home() {
 
         let targetCase: TestCase | null = null;
         let targetSuite: SuiteTreeNode | null = null;
+        let targetRun: TestRun | null = null;
 
         if (targetTab === 'EXPLORER') {
           if (savedState?.caseId) {
@@ -489,6 +514,16 @@ export default function Home() {
               setSelectedSuite(suite);
             }
           }
+        } else if (targetTab === 'RUNS' && savedState?.runId) {
+          try {
+            const r = await TestRunsService.getRunDetails(savedState.runId);
+            if (r) {
+              targetRun = r;
+              setSelectedRun(r);
+            }
+          } catch {
+            targetRun = null;
+          }
         }
 
         saveSessionState({
@@ -496,11 +531,12 @@ export default function Home() {
           tab: targetTab,
           suiteId: targetSuite?.id || null,
           caseId: targetCase?.id || null,
+          runId: targetRun?.id || null,
         });
 
         let label = 'Ana Sayfa';
         if (targetTab === 'PLANS') label = 'Test Planları';
-        else if (targetTab === 'RUNS') label = 'Test Koşumları';
+        else if (targetTab === 'RUNS') label = targetRun ? `Koşum: ${targetRun.title}` : 'Test Koşumları';
         else if (targetTab === 'REPORTS') label = 'Test Raporları';
         else if (targetTab === 'EXPLORER') {
           if (targetCase) label = `Senaryo: ${targetCase.code}`;
@@ -513,12 +549,14 @@ export default function Home() {
           projectId: targetProj.id,
           suiteId: targetSuite?.id || null,
           caseId: targetCase?.id || null,
+          runId: targetRun?.id || null,
           label,
         });
       } else {
         setSelectedProject(null);
         setSelectedCase(null);
         setSelectedSuite(null);
+        setSelectedRun(null);
         localStorage.removeItem('tcms_session_state');
         setIsNewProjectOpen(true);
       }
@@ -880,7 +918,23 @@ export default function Home() {
                 setActiveRunTestPlan(plan);
                 handleTabChange('PLANS');
               }}
-              onSelectRun={() => {
+              onSelectRun={(run) => {
+                if (run) {
+                  setSelectedRun(run);
+                  saveSessionState({
+                    projectId: selectedProject?.id || null,
+                    tab: 'RUNS',
+                    runId: run.id,
+                  });
+                  pushState({
+                    tab: 'RUNS',
+                    projectId: selectedProject?.id || null,
+                    suiteId: null,
+                    caseId: null,
+                    runId: run.id,
+                    label: `Koşum: ${run.title}`,
+                  });
+                }
                 handleTabChange('RUNS');
               }}
               onNavigateToPlans={() => handleTabChange('PLANS')}
@@ -965,27 +1019,80 @@ export default function Home() {
           )}
 
           {activeTab === 'RUNS' && (
-            <TestRunsView
-              projectId={selectedProject?.id || ''}
-              testPlans={testPlans}
-              allCases={allCases}
-              onOpenManualRun={(plan) => {
-                setActiveRunTestPlan(plan || null);
-                setActiveSuiteRunCases(null);
-                setIsManualRunOpen(true);
-              }}
-              onOpenQuickRun={(tc) => {
-                if (tc) {
-                  setActiveQuickRunCase(tc);
-                  setIsQuickRunOpen(true);
-                }
-              }}
-              onSelectCase={(tc) => handleSelectCase(tc)}
-              onSelectPlan={(plan) => {
-                setSelectedPlan(plan);
-                handleTabChange('PLANS');
-              }}
-            />
+            selectedRun ? (
+              <TestRunDetailView
+                run={selectedRun}
+                project={selectedProject}
+                projects={projects}
+                allCases={allCases}
+                tree={tree}
+                testPlans={testPlans}
+                onBack={() => {
+                  setSelectedRun(null);
+                  saveSessionState({ runId: null });
+                  pushState({
+                    tab: 'RUNS',
+                    projectId: selectedProject?.id || null,
+                    suiteId: null,
+                    caseId: null,
+                    runId: null,
+                    label: 'Test Koşumları',
+                  });
+                }}
+                onSelectCase={(tc) => handleSelectCase(tc)}
+                onSelectPlan={(plan) => {
+                  setSelectedPlan(plan);
+                  handleTabChange('PLANS');
+                }}
+                onUpdateRunSuccess={(updated) => {
+                  setSelectedRun(updated);
+                  setTestRuns((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+                }}
+                onDeleteRunSuccess={(deletedId) => {
+                  setSelectedRun(null);
+                  setTestRuns((prev) => prev.filter((item) => item.id !== deletedId));
+                  saveSessionState({ runId: null });
+                }}
+              />
+            ) : (
+              <TestRunsView
+                projectId={selectedProject?.id || ''}
+                testPlans={testPlans}
+                allCases={allCases}
+                onOpenManualRun={(plan) => {
+                  setActiveRunTestPlan(plan || null);
+                  setActiveSuiteRunCases(null);
+                  setIsManualRunOpen(true);
+                }}
+                onOpenQuickRun={(tc) => {
+                  if (tc) {
+                    setActiveQuickRunCase(tc);
+                    setIsQuickRunOpen(true);
+                  }
+                }}
+                onSelectCase={(tc) => handleSelectCase(tc)}
+                onSelectPlan={(plan) => {
+                  setSelectedPlan(plan);
+                  handleTabChange('PLANS');
+                }}
+                onSelectRun={(run) => {
+                  setSelectedRun(run);
+                  saveSessionState({
+                    projectId: selectedProject?.id || null,
+                    tab: 'RUNS',
+                    runId: run.id,
+                  });
+                  pushState({
+                    tab: 'RUNS',
+                    projectId: selectedProject?.id || null,
+                    suiteId: null,
+                    caseId: null,
+                    runId: run.id,
+                    label: `Koşum: ${run.title}`,
+                  });
+                }}
+              />
+            )
           )}
 
           {activeTab === 'REPORTS' && (

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Test Koşumu Detay Sayfası (TestRunDetailView), anlık durum kaydı, her durum için yorum & ekran görüntüsü ekleme ve hata bulguları (defects) takip sekmesi eklendi
 - **Test Planı Oluşturma & Düzenleme Modallarında Senaryo Seçim Paneli**: `NewTestPlanModal` ve `EditTestPlanModal` bileşenlerine arama filtreli, süit isimli, Tümünü Seç / Seçimi Temizle aksiyonlu test senaryosu seçim alanı eklendi; plan oluştururken veya düzenlerken istenen senaryoların plana dahil edilmesi / çıkarılması sağlandı.
 - **Yeni Test Planı Sol Menü Ağacı İzolasyonu Düzeltmesi**: Yeni bir Test Planı oluşturulduğunda sol menüde (`AppSidebar`) önceki/ilk plana ait klasör ve senaryoların kalması engellendi; oluşturulan yeni plan anında seçilerek ağaç yapısı temizlendi, otomatik genişletildi ve içi tamamen boş ("Henüz suite veya case eklenmedi.") olarak listelenmesi sağlandı.
 - Top navigation sağ üst alana Swagger Docs butonu eklendi
