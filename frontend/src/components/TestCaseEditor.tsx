@@ -16,17 +16,13 @@ import {
   ListOrdered,
   X,
   Play,
-  Image as ImageIcon,
-  Maximize2,
-  Clock,
   ArrowLeft,
-  Download,
-  MessageSquare,
   FileText,
   ExternalLink,
-  Bug,
-  RotateCcw,
   Eye,
+  Image as ImageIcon,
+  Download,
+  MessageSquare,
 } from 'lucide-react';
 
 interface TestCaseEditorProps {
@@ -61,7 +57,6 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [activeLightbox, setActiveLightbox] = useState<{ url: string; caption?: string } | null>(null);
-
   const prevCaseIdRef = useRef<string | null>(null);
 
   const parseAttachments = (raw: any): StepAttachment[] => {
@@ -76,23 +71,6 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
       }
     }
     return [];
-  };
-
-  const parseScreenshots = (raw?: string | null): string[] => {
-    if (!raw) return [];
-    if (typeof raw !== 'string') return [];
-    const trimmed = raw.trim();
-    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed)) {
-          return parsed.filter((item): item is string => typeof item === 'string' && item.length > 0);
-        }
-      } catch {
-        // not json
-      }
-    }
-    return [trimmed];
   };
 
   useEffect(() => {
@@ -189,6 +167,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
         stepNumber: nextNum,
         action: '',
         expectedResult: '',
+        attachments: [],
       },
     ]);
   };
@@ -212,6 +191,99 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
         stepNumber: idx + 1,
       }));
     });
+  };
+
+  const handleAddAttachmentFile = (stepIndex: number, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const url = event.target?.result as string;
+      if (url) {
+        setSteps((prev) => {
+          const next = [...prev];
+          const currentStep = next[stepIndex];
+          const currentAtts = currentStep.attachments || [];
+          next[stepIndex] = {
+            ...currentStep,
+            attachments: [
+              ...currentAtts,
+              {
+                id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+                url,
+                comment: file.name,
+              },
+            ],
+          };
+          return next;
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAttachmentCommentChange = (stepIndex: number, attachmentIndex: number, comment: string) => {
+    setSteps((prev) => {
+      const next = [...prev];
+      const currentStep = next[stepIndex];
+      const currentAtts = [...(currentStep.attachments || [])];
+      if (currentAtts[attachmentIndex]) {
+        currentAtts[attachmentIndex] = {
+          ...currentAtts[attachmentIndex],
+          comment,
+        };
+        next[stepIndex] = {
+          ...currentStep,
+          attachments: currentAtts,
+        };
+      }
+      return next;
+    });
+  };
+
+  const handleRemoveAttachment = (stepIndex: number, attachmentIndex: number) => {
+    setSteps((prev) => {
+      const next = [...prev];
+      const currentStep = next[stepIndex];
+      const currentAtts = (currentStep.attachments || []).filter((_, i) => i !== attachmentIndex);
+      next[stepIndex] = {
+        ...currentStep,
+        attachments: currentAtts,
+      };
+      return next;
+    });
+  };
+
+  const handlePasteOnStep = (stepIndex: number, e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    let hasImage = false;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile();
+        if (file) {
+          hasImage = true;
+          handleAddAttachmentFile(stepIndex, file);
+        }
+      }
+    }
+
+    if (hasImage) {
+      e.preventDefault();
+    }
+  };
+
+  const handleDropOnStep = (stepIndex: number, e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].type.startsWith('image/')) {
+          handleAddAttachmentFile(stepIndex, files[i]);
+        }
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -488,12 +560,24 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
           </div>
 
           {steps.length === 0 ? (
-            <div className="p-8 border border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-500 text-xs">
-              <AlertCircle className="w-6 h-6 mx-auto mb-2 opacity-30 text-slate-400" />
-              <p>Henüz tanımlanmış bir test adımı bulunmuyor.</p>
-              <p className="text-[10px] mt-1 text-slate-500">
-                "Adım Ekle" butonunu kullanarak Test Case adımlarını tanımlayabilirsiniz.
-              </p>
+            <div className="p-8 border border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-center text-slate-400 dark:text-slate-500 text-xs space-y-3">
+              <AlertCircle className="w-6 h-6 mx-auto opacity-30 text-slate-400" />
+              <div>
+                <p className="font-semibold text-slate-700 dark:text-slate-300">
+                  Henüz tanımlanmış bir test adımı bulunmuyor.
+                </p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  "Adım Ekle" butonunu kullanarak Test Case adımlarını tanımlayabilirsiniz.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddStep}
+                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Adım Ekle</span>
+              </button>
             </div>
           ) : (
             <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900/40 shadow-sm">
@@ -508,7 +592,10 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                 {steps.map((step, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
+                    onPaste={(e) => handlePasteOnStep(idx, e)}
+                    onDrop={(e) => handleDropOnStep(idx, e)}
+                    onDragOver={(e) => e.preventDefault()}
+                    className="p-3.5 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors space-y-2.5 focus-within:ring-1 focus-within:ring-blue-500/30 rounded-lg"
                   >
                     <div className="grid grid-cols-12 gap-2 items-start text-xs">
                       <div className="col-span-1 text-center pt-2 font-mono font-bold text-slate-500 dark:text-slate-400">
@@ -520,6 +607,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                           rows={2}
                           value={step.action}
                           onChange={(e) => handleStepChange(idx, 'action', e.target.value)}
+                          onPaste={(e) => handlePasteOnStep(idx, e)}
                           placeholder="Örn: 'Giriş Yap' butonuna tıklanır..."
                           className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none shadow-sm"
                         />
@@ -530,6 +618,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                           rows={2}
                           value={step.expectedResult || ''}
                           onChange={(e) => handleStepChange(idx, 'expectedResult', e.target.value)}
+                          onPaste={(e) => handlePasteOnStep(idx, e)}
                           placeholder="Örn: Ana sayfaya yönlendirilir ve kullanıcı paneli açılır..."
                           className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none shadow-sm"
                         />
@@ -546,6 +635,68 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                         </button>
                       </div>
                     </div>
+
+                    {/* Step Attachments Area */}
+                    <div className="pl-0 md:pl-8 pt-1.5 flex flex-wrap items-center gap-2 border-t border-slate-100 dark:border-slate-800/60">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center space-x-1 mr-1">
+                        <ImageIcon className="w-3 h-3 text-blue-500" />
+                        <span>Adım Görselleri ({step.attachments?.length || 0}):</span>
+                      </span>
+
+                      {/* Attachments List */}
+                      {step.attachments && step.attachments.map((att, aIdx) => (
+                        <div
+                          key={att.id || aIdx}
+                          className="relative group flex items-center space-x-1.5 p-1 bg-slate-100/90 dark:bg-slate-950/70 rounded-lg border border-slate-200 dark:border-slate-700/80 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+                        >
+                          <img
+                            src={att.url}
+                            alt={att.comment || `Adım ${step.stepNumber} Görsel ${aIdx + 1}`}
+                            className="w-10 h-7 object-cover rounded cursor-pointer hover:opacity-85 transition-opacity"
+                            onClick={() => setActiveLightbox({
+                              url: att.url,
+                              caption: `Adım ${step.stepNumber} Görsel #${aIdx + 1}${att.comment ? ` - ${att.comment}` : ''}`,
+                            })}
+                            title="Büyütmek için tıklayın"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Açıklama..."
+                            value={att.comment || ''}
+                            onChange={(e) => handleAttachmentCommentChange(idx, aIdx, e.target.value)}
+                            className="text-[10px] bg-transparent border-b border-transparent focus:border-blue-500 focus:outline-none w-24 md:w-32 text-slate-700 dark:text-slate-300 placeholder-slate-400 py-0.5"
+                            title="Görsel açıklaması"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveAttachment(idx, aIdx)}
+                            className="p-1 text-slate-400 hover:text-rose-500 rounded hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            title="Görseli Kaldır"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Upload Image Button & Paste Hint */}
+                      <label className="inline-flex items-center space-x-1.5 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer transition-colors shadow-xs">
+                        <Plus className="w-3 h-3 text-blue-500" />
+                        <span>Görsel Ekle</span>
+                        <kbd className="font-mono text-[9px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">Ctrl+V</kbd>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleAddAttachmentFile(idx, file);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -559,8 +710,8 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
             <div className="absolute top-4 right-4 flex items-center space-x-3 z-10">
               <a
                 href={activeLightbox.url}
-                download="test-step-screenshot.png"
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl border border-slate-700 shadow-lg transition-colors"
+                download="test-step-attachment.png"
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl border border-slate-700 shadow-lg transition-colors cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>İndir</span>
@@ -568,7 +719,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveLightbox(null)}
-                className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-700 shadow-lg transition-colors"
+                className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-700 shadow-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -577,7 +728,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
             <div className="max-w-5xl max-h-[85vh] p-2 flex flex-col items-center space-y-3 overflow-auto">
               <img
                 src={activeLightbox.url}
-                alt={activeLightbox.caption || 'Ekran Görüntüsü'}
+                alt={activeLightbox.caption || 'Adım Görseli'}
                 className="max-w-full max-h-[75vh] object-contain rounded-2xl border border-slate-800 shadow-2xl"
               />
 
@@ -590,227 +741,6 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
             </div>
           </div>
         )}
-
-        {/* Execution History Section */}
-        <div className="space-y-4 p-5 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
-            <div className="flex items-center space-x-2.5">
-              <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                <Clock className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  Koşum Geçmişi & Tüm Tekrar Koşuları ({testCase.results?.length || 0})
-                </h3>
-                <p className="text-[11px] text-slate-400">
-                  Bu test case'e ait tüm bağımsız koşum kayıtları, test notları ve ekran görüntüleri
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 shrink-0">
-              {onRun && (
-                <button
-                  type="button"
-                  onClick={() => onRun(testCase)}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-all shadow-sm active:scale-95 cursor-pointer"
-                  title="Bu Test Case için Yeni Bir Koşu Başlat"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Tekrar Koş</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {!testCase.results || testCase.results.length === 0 ? (
-            <div className="py-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 space-y-2">
-              <Clock className="w-8 h-8 mx-auto opacity-30 text-slate-400" />
-              <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                Bu test case için henüz koşum kaydı bulunmuyor.
-              </p>
-              {onRun && (
-                <button
-                  type="button"
-                  onClick={() => onRun(testCase)}
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-lg transition-colors"
-                >
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>İlk Koşuyu Başlat</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {testCase.results.map((res, idx) => {
-                const runNumber = testCase.results!.length - idx;
-                const runTitle = res.testRun?.title || `Koşu #${runNumber}`;
-                const runVersion = res.testRun?.version || 'v1.0.0';
-                const runEnv = res.testRun?.environment || 'STAGING';
-
-                return (
-                  <div
-                    key={res.id || idx}
-                    className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/90 space-y-3 transition-all hover:border-slate-300 dark:hover:border-slate-700/80"
-                  >
-                    {/* Header Row: Status + Run Title + Tester + Date */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-800/60 pb-2.5">
-                      <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
-                        {/* Status Badge */}
-                        {res.status === 'PASSED' && (
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px] border border-emerald-500/30">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                            <span>PASSED</span>
-                          </span>
-                        )}
-                        {res.status === 'FAILED' && (
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 font-mono font-bold text-[10px] border border-rose-500/30">
-                            <XCircle className="w-3 h-3 text-rose-500" />
-                            <span>FAILED</span>
-                          </span>
-                        )}
-                        {res.status === 'BLOCKED' && (
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 font-mono font-bold text-[10px] border border-purple-500/30">
-                            <Slash className="w-3 h-3 text-purple-500" />
-                            <span>BLOCKED</span>
-                          </span>
-                        )}
-                        {res.status === 'SKIPPED' && (
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-500/15 text-slate-600 dark:text-slate-400 font-mono font-bold text-[10px] border border-slate-500/30">
-                            <SkipForward className="w-3 h-3 text-slate-500" />
-                            <span>SKIPPED</span>
-                          </span>
-                        )}
-
-                        {/* Run Title */}
-                        <span className="font-semibold text-xs text-slate-800 dark:text-slate-200">
-                          {runTitle}
-                        </span>
-
-                        {/* Version & Environment */}
-                        <span className="font-mono text-[10px] bg-slate-200/70 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600 dark:text-slate-400 border border-slate-300/60 dark:border-slate-700/60">
-                          {runVersion} &bull; {runEnv}
-                        </span>
-                      </div>
-
-                      {/* Right Meta Info: Tester + Duration + Date */}
-                      <div className="flex items-center space-x-2 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                        <span className="font-medium text-slate-700 dark:text-slate-300">
-                          {res.executedBy || res.testRun?.executedBy || 'QA Tester'}
-                        </span>
-                        {res.executionMs && (
-                          <span className="text-slate-400">({res.executionMs}ms)</span>
-                        )}
-                        <span className="text-slate-400">&bull;</span>
-                        <span>{res.executedAt ? new Date(res.executedAt).toLocaleString('tr-TR') : '-'}</span>
-
-                        {res.jiraBugKey && (
-                          <a
-                            href={res.jiraBugUrl || `https://company.atlassian.net/browse/${res.jiraBugKey}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center space-x-1 text-rose-500 font-bold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 hover:underline ml-1"
-                          >
-                            <Bug className="w-3 h-3" />
-                            <span>{res.jiraBugKey}</span>
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Independent Comment / Error Note */}
-                    {res.errorMessage && (
-                      <div
-                        className={`p-3 rounded-xl text-xs font-mono border ${
-                          res.status === 'PASSED'
-                            ? 'bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
-                            : res.status === 'BLOCKED'
-                            ? 'bg-purple-500/5 dark:bg-purple-500/10 border-purple-500/20 text-purple-800 dark:text-purple-300'
-                            : res.status === 'FAILED'
-                            ? 'bg-rose-500/5 dark:bg-rose-500/10 border-rose-500/20 text-rose-800 dark:text-rose-300'
-                            : 'bg-slate-500/5 dark:bg-slate-500/10 border-slate-500/20 text-slate-800 dark:text-slate-300'
-                        }`}
-                      >
-                        <div className="flex items-start space-x-2">
-                          <MessageSquare className="w-3.5 h-3.5 shrink-0 mt-0.5 opacity-80" />
-                          <div className="space-y-0.5">
-                            <span className="font-bold block text-[10px] uppercase tracking-wider opacity-90">
-                              {res.status === 'PASSED'
-                                ? 'Koşu / Başarı Notu:'
-                                : res.status === 'BLOCKED'
-                                ? 'Engellenme Sebebi / Not:'
-                                : res.status === 'FAILED'
-                                ? 'Hata Detayı & Açıklama:'
-                                : 'Koşu Notu:'}
-                            </span>
-                            <p className="whitespace-pre-wrap">{res.errorMessage}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Independent Screenshot / Multiple Screenshots */}
-                    {(() => {
-                      const screenList = parseScreenshots(res.screenshotUrl);
-                      if (screenList.length === 0) return null;
-                      return (
-                        <div className="space-y-1.5 pt-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
-                            <ImageIcon className="w-3.5 h-3.5 text-indigo-500" />
-                            <span>Koşum Ekran Görüntüleri ({screenList.length})</span>
-                          </span>
-                          <div className="flex flex-wrap gap-2">
-                            {screenList.map((imgUrl, imgIdx) => (
-                              <div
-                                key={imgIdx}
-                                className="relative group w-36 h-24 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1 shadow-sm shrink-0"
-                              >
-                                <img
-                                  src={imgUrl}
-                                  alt={`Koşum Ekran Görüntüsü ${imgIdx + 1}`}
-                                  className="w-full h-full object-contain rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                                  onClick={() =>
-                                    setActiveLightbox({
-                                      url: imgUrl,
-                                      caption: `${runTitle} - ${res.status} #${imgIdx + 1} (${res.executedAt ? new Date(res.executedAt).toLocaleString('tr-TR') : ''}) ${res.errorMessage ? `\n${res.errorMessage}` : ''}`,
-                                    })
-                                  }
-                                />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-1.5 backdrop-blur-[1px] rounded-lg">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setActiveLightbox({
-                                        url: imgUrl,
-                                        caption: `${runTitle} - ${res.status} #${imgIdx + 1} ${res.errorMessage ? `- ${res.errorMessage}` : ''}`,
-                                      })
-                                    }
-                                    className="p-1 bg-slate-900/90 text-white rounded-lg hover:bg-slate-800 transition-transform hover:scale-105"
-                                    title="Büyüt / İncele"
-                                  >
-                                    <Maximize2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <a
-                                    href={imgUrl}
-                                    download={`${testCase.code}-run-${runNumber}-${imgIdx + 1}.png`}
-                                    className="p-1 bg-slate-900/90 text-white rounded-lg hover:bg-slate-800 transition-transform hover:scale-105"
-                                    title="İndir"
-                                  >
-                                    <Download className="w-3.5 h-3.5" />
-                                  </a>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </form>
     </main>
   );
