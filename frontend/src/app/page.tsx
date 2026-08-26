@@ -907,11 +907,6 @@ export default function Home() {
                   setIsManualRunOpen(true);
                 }}
                 onSelectCase={(tc) => handleSelectCase(tc)}
-                onCaseCreated={async () => {
-                  if (selectedProject) {
-                    await loadProjectData(selectedProject.id);
-                  }
-                }}
                 onUpdatePlanSuccess={(updated) => {
                   setSelectedPlan(updated);
                   setTestPlans((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));

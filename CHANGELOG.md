@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Removed
+- Test Planı detay sayfasındaki 'Test Senaryoları Ekle' butonları kaldırıldı
 - Test Senaryoları / Test Case detay sayfasındaki test koşum geçmişi ve ilgili bileşenler kaldırıldı
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
@@ -30,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Test Planı detayında yeni senaryo oluşturma kaldırıldı, çoklu mevcut senaryo seçimi ve ekleme özelliği güçlendirildi
 - Enhanced UI information density, collapsible test plan summary, compact metric cards, prominent table headers, and high-contrast badges across views
 - Test Suite ve Test Case kavramları tamamen kaldırılarak 'Test Senaryosu' (Test Scenario) modeli altında birleştirildi; 1 kez yazıp N kez koşma yeteneği, modern TestScenariosView çalışma alanı, sadeleştirilmiş AppSidebar ve tekil/toplu koşum desteği entegre edildi
 - Test Planları gridindeki ve sağ çekmecedeki Düzenle (Pencil) butonları doğrudan ilgili Test Planının detay sayfasına yönlendirecek şekilde güncellendi
