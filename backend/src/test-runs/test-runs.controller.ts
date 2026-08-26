@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { TestRunsService } from './test-runs.service';
 import { CreateAutomationRunDto } from './dto/automation-run-result.dto';
@@ -95,6 +95,14 @@ export class TestRunsController {
   @ApiParam({ name: 'runId', description: 'TestRun UUID' })
   findOne(@Param('runId') runId: string) {
     return this.testRunsService.findOne(runId);
+  }
+
+  @Delete('runs/:runId')
+  @Roles(Role.ADMIN, Role.TEST_LEAD)
+  @ApiOperation({ summary: 'Test Koşusunu Sil (Admin, Lead)' })
+  @ApiParam({ name: 'runId', description: 'TestRun UUID' })
+  deleteRun(@Param('runId') runId: string) {
+    return this.testRunsService.deleteRun(runId);
   }
 }
 
