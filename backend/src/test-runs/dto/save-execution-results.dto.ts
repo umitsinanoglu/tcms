@@ -38,6 +38,46 @@ export class TestCaseResultItemDto {
   @IsString()
   @IsOptional()
   screenshotUrl?: string;
+
+  @ApiProperty({ example: 'UAT', description: 'Ortam (UAT / TEST / PROD)', required: false })
+  @IsString()
+  @IsOptional()
+  environment?: string;
+
+  @ApiProperty({ example: 'iOS', description: 'Platform (iOS / Android / Web / API)', required: false })
+  @IsString()
+  @IsOptional()
+  platform?: string;
+
+  @ApiProperty({ example: 'v1.2.0 (106)', description: 'Uygulama Versiyonu', required: false })
+  @IsString()
+  @IsOptional()
+  appVersion?: string;
+
+  @ApiProperty({ example: 'iphone14', description: 'Cihaz Aliası (iphone 15 / s24)', required: false })
+  @IsString()
+  @IsOptional()
+  device?: string;
+
+  @ApiProperty({ example: 'UMIT', description: 'USER Profili (UMIT / ZEYNEP)', required: false })
+  @IsString()
+  @IsOptional()
+  userProfile?: string;
+
+  @ApiProperty({ example: 'BIREYSEL', description: 'Müşteri Tipi (BIREYSEL / KURUMSAL)', required: false })
+  @IsString()
+  @IsOptional()
+  customerType?: string;
+
+  @ApiProperty({ example: '+1 retry', description: 'Flaky Durumu (+1 retry)', required: false })
+  @IsString()
+  @IsOptional()
+  flakyStatus?: string;
+
+  @ApiProperty({ example: 1, description: 'Retry sayısı', required: false })
+  @IsInt()
+  @IsOptional()
+  retries?: number;
 }
 
 export class SaveExecutionResultsDto {
