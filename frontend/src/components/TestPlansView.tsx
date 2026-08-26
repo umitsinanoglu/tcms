@@ -59,7 +59,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   const [statusDropdownFilter, setStatusDropdownFilter] = useState<string>('ALL');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
   const [isInspectorActionsOpen, setIsInspectorActionsOpen] = useState(false);
 
   // Pagination State
@@ -346,22 +345,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
 
   const activeSelectedStats = activeSelectedPlan ? planStatsMap.get(activeSelectedPlan.id) : null;
 
-  // Toggle selection checkbox
-  const handleToggleSelectAll = () => {
-    if (selectedPlanIds.length === paginatedPlans.length) {
-      setSelectedPlanIds([]);
-    } else {
-      setSelectedPlanIds(paginatedPlans.map((p) => p.id));
-    }
-  };
-
-  const handleToggleSelectOne = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedPlanIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
   if (!project) {
     return (
       <div className="flex-1 flex items-center justify-center p-6 text-slate-400">
@@ -570,40 +553,29 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           {/* Table Container */}
           <div className="flex-1 overflow-x-auto overflow-y-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#121926]/50 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10 backdrop-blur-xs">
-                  <th className="py-3 px-4 w-10">
-                    <input
-                      type="checkbox"
-                      checked={
-                        paginatedPlans.length > 0 &&
-                        selectedPlanIds.length === paginatedPlans.length
-                      }
-                      onChange={handleToggleSelectAll}
-                      className="rounded border-slate-300 text-[#2563eb] focus:ring-0 cursor-pointer"
-                    />
-                  </th>
-                  <th className="py-3 px-3">TEST PLANI</th>
-                  <th className="py-3 px-3">TÜR</th>
-                  <th className="py-3 px-3">KAPSAM</th>
-                  <th className="py-3 px-3 text-center">SENARYO</th>
-                  <th className="py-3 px-3">BAŞARI ORANI</th>
-                  <th className="py-3 px-3">DURUM</th>
-                  <th className="py-3 px-3">SON ÇALIŞTIRMA</th>
-                  <th className="py-3 px-4 text-right">İŞLEMLER</th>
+              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#161f30] shadow-xs">
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-3 px-5 bg-slate-50 dark:bg-[#161f30]">TEST PLANI</th>
+                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30]">TÜR</th>
+                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30]">KAPSAM</th>
+                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30] text-center">SENARYO</th>
+                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30]">BAŞARI ORANI</th>
+                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30]">DURUM</th>
+                  <th className="py-3 px-3 bg-slate-50 dark:bg-[#161f30]">SON ÇALIŞTIRMA</th>
+                  <th className="py-3 px-5 bg-slate-50 dark:bg-[#161f30] text-right">İŞLEMLER</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={9} className="py-16 text-center text-slate-400">
+                    <td colSpan={8} className="py-16 text-center text-slate-400">
                       <div className="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
                       <span>Yükleniyor...</span>
                     </td>
                   </tr>
                 ) : paginatedPlans.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-16 text-center text-slate-400">
+                    <td colSpan={8} className="py-16 text-center text-slate-400">
                       <ClipboardList className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
                       <p>Kayıtlı test planı bulunamadı.</p>
                     </td>
@@ -612,7 +584,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                   paginatedPlans.map((p) => {
                     const stats = planStatsMap.get(p.id);
                     const isSelected = activeSelectedPlan?.id === p.id;
-                    const isChecked = selectedPlanIds.includes(p.id);
 
                     return (
                       <tr
@@ -624,18 +595,8 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                             : ''
                         }`}
                       >
-                        {/* Checkbox */}
-                        <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => handleToggleSelectOne(p.id, e as any)}
-                            className="rounded border-slate-300 text-[#2563eb] focus:ring-0 cursor-pointer"
-                          />
-                        </td>
-
                         {/* Test Plan Name + Subtitle */}
-                        <td className="py-3.5 px-3">
+                        <td className="py-3.5 px-5">
                           <div className="flex items-center space-x-2.5">
                             <div className="w-7 h-7 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                               <Calendar className="w-3.5 h-3.5" />
