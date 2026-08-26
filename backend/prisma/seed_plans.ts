@@ -2,6 +2,7 @@ import '../src/prisma/db-env';
 import { PrismaClient, TestType, Priority, RunStatus, ResultStatus, PlanStatus, Role } from '@prisma/client';
 import { resolveDatabaseEnv } from '../src/prisma/db-env';
 import { seedUsers } from './seed_users';
+import { seedBankingProject } from './seed_banking';
 
 const dbConfig = resolveDatabaseEnv();
 console.log(`🌱 Seeding database target: [${dbConfig.environment}]`);
@@ -92,6 +93,11 @@ export async function seedPlans() {
 
   // 2. Ensure Users exist
   await seedUsers();
+
+  // =========================================================================
+  // 0. PROJE 0: BANK - NeoBank Dijital Bankacılık Platformu
+  // =========================================================================
+  await seedBankingProject(prisma);
 
   // =========================================================================
   // 1. PROJE 1: ECOMM - E-Ticaret Web & Mobil Platformu

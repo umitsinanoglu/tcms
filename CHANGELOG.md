@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manual Execution Dashboard (Manuel Test Koşum Paneli) modalı Türkçe diline çevrildi ve tema ile tam uyumlu hale getirildi.
 
 ### Added
+- NeoBank dijital bankacilik projesi, FAST 7/24 transfer, dinamik CVV kredi karti, Findeks kredi, canli FX, QR ATM ve zengin SVG ekran goruntuleri eklendi.
 - Kapsamlı Test Planı Detay Sayfası (TestPlanDetailView) eklendi; Test Planı Görüntüle butonu ile detay sayfasına geçiş, inline metadata düzenleme (başlık, hedef ortam, sürüm, durum, kapsam, gereksinimler), plana senaryo ekleme/çıkarma/oluşturma, bağlı koşumlar ve özet KPI kartları entegre edildi
 - Test Planları sayfası görsel tasarıma uygun olarak grid/tablo görünümü, KPI özet kartları, durum sekmeleri ve detay paneli ile revize edildi; Arama kutusu top navigasyon sağ üst bölüme taşındı
 - Hiyerarşik refaktör: En üst seviye Test Projeleri olarak yapılandırıldı, TestPlan entity ve API modülü eklendi, sol navigasyon sadeleştirilerek Çalışılan Proje ve 5 ana modül (Ana Sayfa, Test Planları, Test Senaryoları, Test Koşumları, Test Raporları) kuruldu, Header sadeleştirildi ve Test Koşumları merkezi yürütme akışı inşa edildi.
