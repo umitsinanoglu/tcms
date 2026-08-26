@@ -941,12 +941,24 @@ export default function Home() {
           {activeTab === 'RUNS' && (
             <TestRunsView
               projectId={selectedProject?.id || ''}
-              onOpenManualRun={() => {
-                setActiveRunTestPlan(null);
+              testPlans={testPlans}
+              allCases={allCases}
+              onOpenManualRun={(plan) => {
+                setActiveRunTestPlan(plan || null);
                 setActiveSuiteRunCases(null);
                 setIsManualRunOpen(true);
               }}
+              onOpenQuickRun={(tc) => {
+                if (tc) {
+                  setActiveQuickRunCase(tc);
+                  setIsQuickRunOpen(true);
+                }
+              }}
               onSelectCase={(tc) => handleSelectCase(tc)}
+              onSelectPlan={(plan) => {
+                setSelectedPlan(plan);
+                handleTabChange('PLANS');
+              }}
             />
           )}
 

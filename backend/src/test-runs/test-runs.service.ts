@@ -259,6 +259,13 @@ export class TestRunsService {
     return result;
   }
 
+  async deleteRun(runId: string) {
+    await this.findOne(runId);
+    return this.prisma.testRun.delete({
+      where: { id: runId },
+    });
+  }
+
   async findOne(id: string) {
     const testRun = await this.prisma.testRun.findUnique({
       where: { id },

@@ -275,6 +275,8 @@ export const TestRunsService = {
     api.get<TestRun[]>(`/projects/${projectId}/runs`).then((res) => res.data),
   getRunDetails: (runId: string) =>
     api.get<TestRun>(`/runs/${runId}`).then((res) => res.data),
+  deleteRun: (runId: string) =>
+    api.delete(`/runs/${runId}`).then((res) => res.data),
 };
 
 export interface ProjectReportSummary {
