@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Project,
   TestRun,
@@ -12,7 +12,6 @@ import {
   Priority,
   TestType,
   TestRunsService,
-  TestCasesService,
   ReportsService,
   SuiteTreeNode,
 } from '@/services/api';
@@ -23,15 +22,14 @@ import {
   Calendar,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   Clock,
   Play,
+  Pause,
+  RotateCcw,
   Trash2,
   Search,
   Filter,
   Layers,
-  Server,
-  Tag,
   FileText,
   Activity,
   Check,
@@ -52,13 +50,16 @@ import {
   User,
   SlidersHorizontal,
   ClipboardList,
-  RotateCcw,
   CheckSquare,
   Square,
-  Maximize2,
-  Copy,
   Info,
-  ShieldAlert,
+  Smartphone,
+  Globe,
+  Tag,
+  AlertTriangle,
+  LayoutGrid,
+  List,
+  Timer,
 } from 'lucide-react';
 
 interface TestRunDetailViewProps {
@@ -76,6 +77,7 @@ interface TestRunDetailViewProps {
 }
 
 type DetailTab = 'SCENARIOS' | 'DEFECTS' | 'OVERVIEW';
+type ViewMode = 'CARDS' | 'TABLE';
 
 export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   run: initialRun,
@@ -90,9 +92,10 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   onUpdateRunSuccess,
   onDeleteRunSuccess,
 }) => {
-  const { currentUser, can } = useAuth();
+  const { currentUser } = useAuth();
   const [run, setRun] = useState<TestRun>(initialRun);
   const [activeTab, setActiveTab] = useState<DetailTab>('SCENARIOS');
+  const [viewMode, setViewMode] = useState<ViewMode>('CARDS');
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -102,6 +105,8 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<'ALL' | ResultStatus | 'PENDING'>('ALL');
   const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [platformFilter, setPlatformFilter] = useState<string>('ALL');
+  const [envFilter, setEnvFilter] = useState<string>('ALL');
 
   // Expanded Row for Steps
   const [expandedCaseIds, setExpandedCaseIds] = useState<Set<string>>(new Set());
@@ -115,13 +120,27 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   // Drawer Form State
   const [drawerStatus, setDrawerStatus] = useState<ResultStatus>('PASSED');
   const [drawerComment, setDrawerComment] = useState('');
-  const [drawerExecutionMs, setDrawerExecutionMs] = useState<number | ''>('');
+  const [drawerExecutionMs, setDrawerExecutionMs] = useState<number>(0);
   const [drawerJiraBugKey, setDrawerJiraBugKey] = useState('');
   const [drawerJiraBugUrl, setDrawerJiraBugUrl] = useState('');
   const [drawerScreenshots, setDrawerScreenshots] = useState<string[]>([]);
   const [drawerNewImageUrl, setDrawerNewImageUrl] = useState('');
   const [isSavingDrawer, setIsSavingDrawer] = useState(false);
   const [completedStepNumbers, setCompletedStepNumbers] = useState<Set<number>>(new Set());
+
+  // Extended Metadata State for the Active Case Drawer
+  const [drawerEnvironment, setDrawerEnvironment] = useState<string>('UAT');
+  const [drawerPlatform, setDrawerPlatform] = useState<string>('iOS');
+  const [drawerAppVersion, setDrawerAppVersion] = useState<string>('v1.2.0 (106)');
+  const [drawerDevice, setDrawerDevice] = useState<string>('iphone14');
+  const [drawerUserProfile, setDrawerUserProfile] = useState<string>('UMIT');
+  const [drawerCustomerType, setDrawerCustomerType] = useState<string>('BIREYSEL');
+  const [drawerFlakyStatus, setDrawerFlakyStatus] = useState<string>('NONE');
+  const [drawerRetries, setDrawerRetries] = useState<number>(0);
+
+  // Live Timer / Stopwatch in Drawer
+  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Lightbox Preview
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
@@ -139,6 +158,20 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   useEffect(() => {
     setRun(initialRun);
   }, [initialRun]);
+
+  // Stopwatch Interval Timer
+  useEffect(() => {
+    if (isTimerRunning) {
+      timerRef.current = setInterval(() => {
+        setDrawerExecutionMs((prev) => prev + 1000);
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isTimerRunning]);
 
   // Reload Run from backend
   const reloadRun = useCallback(async () => {
@@ -178,7 +211,6 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
     (run.results || []).forEach((res) => {
       if (res.testCase && !seenCaseIds.has(res.testCaseId)) {
         seenCaseIds.add(res.testCaseId);
-        // Find full case from allCases if possible, or fallback to res.testCase
         const fullCase = allCases.find((c) => c.id === res.testCaseId) || (res.testCase as TestCase);
         list.push({ testCase: fullCase, result: res });
       }
@@ -249,7 +281,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
     };
   }, [runTestCases]);
 
-  // Filtered Test Cases for Table
+  // Filtered Test Cases for Display
   const filteredCases = useMemo(() => {
     return runTestCases.filter(({ testCase, result }) => {
       // Status Filter
@@ -271,6 +303,18 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
         return false;
       }
 
+      // Platform Filter
+      if (platformFilter !== 'ALL') {
+        const plat = result?.platform || (testCase.type === 'IOS' ? 'iOS' : testCase.type === 'ANDROID' ? 'Android' : 'Web');
+        if (plat !== platformFilter) return false;
+      }
+
+      // Environment Filter
+      if (envFilter !== 'ALL') {
+        const env = result?.environment || run.environment || 'UAT';
+        if (env !== envFilter) return false;
+      }
+
       // Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -278,15 +322,17 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
         const titleMatch = testCase.title?.toLowerCase().includes(q);
         const errMatch = result?.errorMessage?.toLowerCase().includes(q);
         const bugMatch = result?.jiraBugKey?.toLowerCase().includes(q);
+        const userMatch = result?.userProfile?.toLowerCase().includes(q);
+        const devMatch = result?.device?.toLowerCase().includes(q);
         const suiteMatch = testCase.suite?.name?.toLowerCase().includes(q);
-        if (!codeMatch && !titleMatch && !errMatch && !bugMatch && !suiteMatch) {
+        if (!codeMatch && !titleMatch && !errMatch && !bugMatch && !userMatch && !devMatch && !suiteMatch) {
           return false;
         }
       }
 
       return true;
     });
-  }, [runTestCases, statusFilter, priorityFilter, typeFilter, searchQuery]);
+  }, [runTestCases, statusFilter, priorityFilter, typeFilter, platformFilter, envFilter, searchQuery, run.environment]);
 
   // Defects List (FAILED + BLOCKED cases)
   const defectCases = useMemo(() => {
@@ -295,10 +341,50 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
     );
   }, [runTestCases]);
 
+  // Open Drawer / Modal for Editing Result Details & Live Stopwatch
+  const handleOpenResultDrawer = (testCase: TestCase, currentResult?: TestResult) => {
+    setActiveResultModalCase({ testCase, currentResult });
+    setDrawerStatus(currentResult?.status || 'PASSED');
+    setDrawerComment(currentResult?.errorMessage || '');
+    setDrawerExecutionMs(currentResult?.executionMs || 0);
+    setDrawerJiraBugKey(currentResult?.jiraBugKey || '');
+    setDrawerJiraBugUrl(currentResult?.jiraBugUrl || '');
+    setDrawerScreenshots(parseScreenshots(currentResult?.screenshotUrl || testCase.screenshotUrl));
+    setDrawerNewImageUrl('');
+    setCompletedStepNumbers(new Set());
+
+    // Populate Extended Metadata
+    setDrawerEnvironment(currentResult?.environment || run.environment || 'UAT');
+    setDrawerPlatform(
+      currentResult?.platform || (testCase.type === 'IOS' ? 'iOS' : testCase.type === 'ANDROID' ? 'Android' : 'Web')
+    );
+    setDrawerAppVersion(currentResult?.appVersion || run.version || 'v1.2.0 (106)');
+    setDrawerDevice(
+      currentResult?.device || (testCase.type === 'IOS' ? 'iphone14' : testCase.type === 'ANDROID' ? 's24' : 'iphone 15')
+    );
+    setDrawerUserProfile(currentResult?.userProfile || (currentUser?.name ? currentUser.name.toUpperCase() : 'UMIT'));
+    setDrawerCustomerType(currentResult?.customerType || 'BIREYSEL');
+    setDrawerFlakyStatus(currentResult?.flakyStatus || 'NONE');
+    setDrawerRetries(currentResult?.retries || 0);
+
+    // Auto start stopwatch if test has not been executed yet
+    if (!currentResult) {
+      setIsTimerRunning(true);
+    } else {
+      setIsTimerRunning(false);
+    }
+  };
+
   // INSTANT STATUS CHANGE (1-Click Real-time Update)
   const handleInstantStatusChange = async (testCaseId: string, newStatus: ResultStatus) => {
     if (!project?.id) return;
     const existingResult = runResultsMap.get(testCaseId);
+    const matchedCase = allCases.find((c) => c.id === testCaseId);
+
+    const platformVal =
+      existingResult?.platform || (matchedCase?.type === 'IOS' ? 'iOS' : matchedCase?.type === 'ANDROID' ? 'Android' : 'Web');
+    const deviceVal =
+      existingResult?.device || (matchedCase?.type === 'IOS' ? 'iphone14' : matchedCase?.type === 'ANDROID' ? 's24' : 'iphone14');
 
     // Optimistic UI Update
     const updatedResults = [...(run.results || [])];
@@ -313,6 +399,14 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
       jiraBugKey: existingResult?.jiraBugKey,
       jiraBugUrl: existingResult?.jiraBugUrl,
       screenshotUrl: existingResult?.screenshotUrl,
+      environment: existingResult?.environment || run.environment || 'UAT',
+      platform: platformVal,
+      appVersion: existingResult?.appVersion || run.version || 'v1.2.0 (106)',
+      device: deviceVal,
+      userProfile: existingResult?.userProfile || (currentUser?.name ? currentUser.name.toUpperCase() : 'UMIT'),
+      customerType: existingResult?.customerType || 'BIREYSEL',
+      flakyStatus: existingResult?.flakyStatus,
+      retries: existingResult?.retries || 0,
       executedBy: currentUser?.name || run.executedBy || 'QA Tester',
       testerEmail: currentUser?.email || run.testerEmail,
       executedAt: new Date().toISOString(),
@@ -337,6 +431,14 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
             jiraBugKey: existingResult?.jiraBugKey,
             jiraBugUrl: existingResult?.jiraBugUrl,
             screenshotUrl: existingResult?.screenshotUrl,
+            environment: mockResult.environment,
+            platform: mockResult.platform,
+            appVersion: mockResult.appVersion,
+            device: mockResult.device,
+            userProfile: mockResult.userProfile,
+            customerType: mockResult.customerType,
+            flakyStatus: mockResult.flakyStatus,
+            retries: mockResult.retries,
           },
         ],
       });
@@ -356,6 +458,52 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
     }
   };
 
+  // Save Drawer Result
+  const handleSaveDrawerResult = async () => {
+    if (!project?.id || !activeResultModalCase) return;
+    setIsSavingDrawer(true);
+    setIsTimerRunning(false);
+    try {
+      const testCaseId = activeResultModalCase.testCase.id;
+      const combinedScreenshots = drawerScreenshots.join(';;');
+
+      const bugUrl =
+        drawerJiraBugUrl.trim() ||
+        (drawerJiraBugKey.trim() ? `https://company.atlassian.net/browse/${drawerJiraBugKey.trim()}` : undefined);
+
+      await TestRunsService.saveResults(project.id, run.id, {
+        results: [
+          {
+            testCaseId,
+            status: drawerStatus,
+            executionMs: drawerExecutionMs > 0 ? drawerExecutionMs : 1200,
+            errorMessage: drawerComment.trim() || undefined,
+            jiraBugKey: drawerJiraBugKey.trim() || undefined,
+            jiraBugUrl: bugUrl,
+            screenshotUrl: combinedScreenshots || undefined,
+            environment: drawerEnvironment,
+            platform: drawerPlatform,
+            appVersion: drawerAppVersion,
+            device: drawerDevice,
+            userProfile: drawerUserProfile,
+            customerType: drawerCustomerType,
+            flakyStatus: drawerFlakyStatus !== 'NONE' ? drawerFlakyStatus : undefined,
+            retries: drawerRetries,
+          },
+        ],
+      });
+
+      showToast(`[${activeResultModalCase.testCase.code}] test sonucu ve bulguları kaydedildi.`, 'success');
+      setActiveResultModalCase(null);
+      await reloadRun();
+    } catch (err) {
+      console.error('Failed to save drawer result:', err);
+      showToast('Sonuç kaydedilirken hata oluştu.', 'error');
+    } finally {
+      setIsSavingDrawer(false);
+    }
+  };
+
   // Bulk Status Update
   const handleBulkStatusChange = async (targetStatus: ResultStatus) => {
     if (!project?.id || selectedCaseIds.length === 0) return;
@@ -363,6 +511,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
     try {
       const payloadResults = selectedCaseIds.map((cId) => {
         const existing = runResultsMap.get(cId);
+        const matchedCase = allCases.find((c) => c.id === cId);
         return {
           testCaseId: cId,
           status: targetStatus,
@@ -371,6 +520,15 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
           jiraBugKey: existing?.jiraBugKey,
           jiraBugUrl: existing?.jiraBugUrl,
           screenshotUrl: existing?.screenshotUrl,
+          environment: existing?.environment || run.environment || 'UAT',
+          platform:
+            existing?.platform || (matchedCase?.type === 'IOS' ? 'iOS' : matchedCase?.type === 'ANDROID' ? 'Android' : 'Web'),
+          appVersion: existing?.appVersion || run.version || 'v1.2.0 (106)',
+          device: existing?.device || 'iphone14',
+          userProfile: existing?.userProfile || 'UMIT',
+          customerType: existing?.customerType || 'BIREYSEL',
+          flakyStatus: existing?.flakyStatus,
+          retries: existing?.retries || 0,
         };
       });
 
@@ -402,6 +560,14 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
         jiraBugKey: undefined,
         jiraBugUrl: undefined,
         screenshotUrl: result?.screenshotUrl,
+        environment: result?.environment || run.environment || 'UAT',
+        platform: result?.platform || (testCase.type === 'IOS' ? 'iOS' : testCase.type === 'ANDROID' ? 'Android' : 'Web'),
+        appVersion: result?.appVersion || run.version || 'v1.2.0 (106)',
+        device: result?.device || 'iphone14',
+        userProfile: result?.userProfile || 'UMIT',
+        customerType: result?.customerType || 'BIREYSEL',
+        flakyStatus: result?.flakyStatus,
+        retries: result?.retries || 0,
       }));
 
       await TestRunsService.saveResults(project.id, run.id, { results: payloadResults });
@@ -415,57 +581,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
     }
   };
 
-  // Open Drawer / Modal for Editing Result Details
-  const handleOpenResultDrawer = (testCase: TestCase, currentResult?: TestResult) => {
-    setActiveResultModalCase({ testCase, currentResult });
-    setDrawerStatus(currentResult?.status || 'PASSED');
-    setDrawerComment(currentResult?.errorMessage || '');
-    setDrawerExecutionMs(currentResult?.executionMs ?? '');
-    setDrawerJiraBugKey(currentResult?.jiraBugKey || '');
-    setDrawerJiraBugUrl(currentResult?.jiraBugUrl || '');
-    setDrawerScreenshots(parseScreenshots(currentResult?.screenshotUrl || testCase.screenshotUrl));
-    setDrawerNewImageUrl('');
-    setCompletedStepNumbers(new Set());
-  };
-
-  // Save Drawer Result
-  const handleSaveDrawerResult = async () => {
-    if (!project?.id || !activeResultModalCase) return;
-    setIsSavingDrawer(true);
-    try {
-      const testCaseId = activeResultModalCase.testCase.id;
-      const combinedScreenshots = drawerScreenshots.join(';;');
-
-      const bugUrl =
-        drawerJiraBugUrl.trim() ||
-        (drawerJiraBugKey.trim() ? `https://company.atlassian.net/browse/${drawerJiraBugKey.trim()}` : undefined);
-
-      await TestRunsService.saveResults(project.id, run.id, {
-        results: [
-          {
-            testCaseId,
-            status: drawerStatus,
-            executionMs: typeof drawerExecutionMs === 'number' ? drawerExecutionMs : Math.floor(Math.random() * 300) + 50,
-            errorMessage: drawerComment.trim() || undefined,
-            jiraBugKey: drawerJiraBugKey.trim() || undefined,
-            jiraBugUrl: bugUrl,
-            screenshotUrl: combinedScreenshots || undefined,
-          },
-        ],
-      });
-
-      showToast(`[${activeResultModalCase.testCase.code}] test sonucu ve bulguları kaydedildi.`, 'success');
-      setActiveResultModalCase(null);
-      await reloadRun();
-    } catch (err) {
-      console.error('Failed to save drawer result:', err);
-      showToast('Sonuç kaydedilirken hata oluştu.', 'error');
-    } finally {
-      setIsSavingDrawer(false);
-    }
-  };
-
-  // Update Run Status (COMPLETED / IN_PROGRESS / ABORTED)
+  // Update Run Status
   const handleUpdateRunStatus = async (newRunStatus: RunStatus) => {
     try {
       await TestRunsService.completeRun(run.id, newRunStatus);
@@ -496,7 +612,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
     }
   };
 
-  // Screenshot Upload Handlers
+  // Screenshot Handlers
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -513,7 +629,6 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
     e.target.value = '';
   };
 
-  // Handle Clipboard Paste for Screenshots in Drawer
   const handlePasteImage = (e: React.ClipboardEvent) => {
     const items = e.clipboardData.items;
     for (let i = 0; i < items.length; i++) {
@@ -545,7 +660,6 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
     setDrawerScreenshots((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Toggle row step expansion
   const toggleRowExpansion = (caseId: string) => {
     setExpandedCaseIds((prev) => {
       const next = new Set(prev);
@@ -959,7 +1073,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
       </div>
 
       {/* 4. Tab Navigation Header */}
-      <div className="flex items-center justify-between border-b border-[#d0d8e4] dark:border-[#2e3748] pb-1">
+      <div className="flex flex-wrap items-center justify-between border-b border-[#d0d8e4] dark:border-[#2e3748] pb-1 gap-2">
         <div className="flex items-center space-x-1">
           <button
             type="button"
@@ -1001,45 +1115,76 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
           </button>
         </div>
 
-        {/* Toplu Aksiyonlar Barı */}
-        {selectedCaseIds.length > 0 && activeTab === 'SCENARIOS' && (
-          <div className="flex items-center space-x-2 animate-in fade-in duration-150 text-xs">
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
-              {selectedCaseIds.length} senaryo seçildi:
-            </span>
-            <button
-              type="button"
-              onClick={() => handleBulkStatusChange('PASSED')}
-              disabled={isSavingStatus}
-              className="px-2.5 py-1 rounded-[6px] text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-500 shadow-xs"
-            >
-              Pass Yap
-            </button>
-            <button
-              type="button"
-              onClick={() => handleBulkStatusChange('FAILED')}
-              disabled={isSavingStatus}
-              className="px-2.5 py-1 rounded-[6px] text-xs font-bold bg-rose-600 text-white hover:bg-rose-500 shadow-xs"
-            >
-              Fail Yap
-            </button>
-            <button
-              type="button"
-              onClick={() => handleBulkStatusChange('BLOCKED')}
-              disabled={isSavingStatus}
-              className="px-2.5 py-1 rounded-[6px] text-xs font-bold bg-amber-600 text-white hover:bg-amber-500 shadow-xs"
-            >
-              Block Yap
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedCaseIds([])}
-              className="p-1 text-slate-400 hover:text-slate-200"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
+        {/* View Mode Toggle & Bulk Actions */}
+        <div className="flex items-center space-x-2">
+          {selectedCaseIds.length > 0 && activeTab === 'SCENARIOS' && (
+            <div className="flex items-center space-x-2 animate-in fade-in duration-150 text-xs mr-2">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                {selectedCaseIds.length} seçildi:
+              </span>
+              <button
+                type="button"
+                onClick={() => handleBulkStatusChange('PASSED')}
+                disabled={isSavingStatus}
+                className="px-2.5 py-1 rounded-[6px] text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-500 shadow-xs"
+              >
+                Pass
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBulkStatusChange('FAILED')}
+                disabled={isSavingStatus}
+                className="px-2.5 py-1 rounded-[6px] text-xs font-bold bg-rose-600 text-white hover:bg-rose-500 shadow-xs"
+              >
+                Fail
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBulkStatusChange('BLOCKED')}
+                disabled={isSavingStatus}
+                className="px-2.5 py-1 rounded-[6px] text-xs font-bold bg-amber-600 text-white hover:bg-amber-500 shadow-xs"
+              >
+                Block
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedCaseIds([])}
+                className="p-1 text-slate-400 hover:text-slate-200"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'SCENARIOS' && (
+            <div className="flex items-center rounded-[8px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] p-0.5 shadow-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode('CARDS')}
+                className={`p-1.5 rounded-[6px] transition-colors ${
+                  viewMode === 'CARDS'
+                    ? 'bg-[#b83a4b] text-white shadow-xs'
+                    : 'text-[#64748b] hover:text-[#0f172a] dark:hover:text-[#f1f5f9]'
+                }`}
+                title="Görsel Kart Görünümü"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('TABLE')}
+                className={`p-1.5 rounded-[6px] transition-colors ${
+                  viewMode === 'TABLE'
+                    ? 'bg-[#b83a4b] text-white shadow-xs'
+                    : 'text-[#64748b] hover:text-[#0f172a] dark:hover:text-[#f1f5f9]'
+                }`}
+                title="Tablo / Liste Görünümü"
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 5. Tab Content: SCENARIOS */}
@@ -1053,7 +1198,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                 <Search className="w-3.5 h-3.5 text-[#64748b] dark:text-[#8e9bb0] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Senaryo kodu, başlık, hata, suite ara..."
+                  placeholder="Senaryo kodu, başlık, cihaz, user ara..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] pl-9 pr-3 py-1.5 text-xs text-[#0f172a] dark:text-[#f1f5f9] placeholder-[#64748b] dark:placeholder-[#8e9bb0] focus:outline-none focus:border-[#b83a4b] focus:ring-1 focus:ring-[#b83a4b]/30"
@@ -1082,41 +1227,41 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                 <option value="PENDING">Durum: Bekleyenler</option>
               </select>
 
-              {/* Priority Filter */}
+              {/* Platform Filter */}
               <select
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
+                value={platformFilter}
+                onChange={(e) => setPlatformFilter(e.target.value)}
                 className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer"
               >
-                <option value="ALL">Öncelik: Tümü</option>
-                <option value="BLOCKER">Öncelik: Blocker</option>
-                <option value="CRITICAL">Öncelik: Critical</option>
-                <option value="NORMAL">Öncelik: Normal</option>
-                <option value="LOW">Öncelik: Low</option>
+                <option value="ALL">Platform: Tümü</option>
+                <option value="iOS">🍎 iOS</option>
+                <option value="Android">🤖 Android</option>
+                <option value="Web">🌐 Web</option>
+                <option value="API">⚡ API</option>
               </select>
 
-              {/* Type Filter */}
+              {/* Ortam Filter */}
               <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
+                value={envFilter}
+                onChange={(e) => setEnvFilter(e.target.value)}
                 className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer"
               >
-                <option value="ALL">Tür: Tümü</option>
-                <option value="WEB">WEB</option>
-                <option value="MOBILE">MOBILE</option>
-                <option value="IOS">IOS</option>
-                <option value="ANDROID">ANDROID</option>
-                <option value="API">API</option>
+                <option value="ALL">Ortam: Tümü</option>
+                <option value="UAT">🌐 UAT</option>
+                <option value="TEST">🌐 TEST</option>
+                <option value="PROD">🌐 PROD</option>
+                <option value="STAGING">🌐 STAGING</option>
               </select>
 
-              {(searchQuery || statusFilter !== 'ALL' || priorityFilter !== 'ALL' || typeFilter !== 'ALL') && (
+              {(searchQuery || statusFilter !== 'ALL' || priorityFilter !== 'ALL' || platformFilter !== 'ALL' || envFilter !== 'ALL') && (
                 <button
                   type="button"
                   onClick={() => {
                     setSearchQuery('');
                     setStatusFilter('ALL');
                     setPriorityFilter('ALL');
-                    setTypeFilter('ALL');
+                    setPlatformFilter('ALL');
+                    setEnvFilter('ALL');
                   }}
                   className="inline-flex items-center space-x-1 text-xs font-semibold text-rose-500 hover:text-rose-600 bg-rose-500/10 px-2 py-1 rounded-[6px]"
                 >
@@ -1131,50 +1276,284 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
             </div>
           </div>
 
-          {/* Test Scenarios & Execution Grid Table */}
-          <div className="border border-[#d0d8e4] dark:border-[#2e3748] rounded-[12px] overflow-hidden bg-white dark:bg-[#1d232f] shadow-xs flex-1 flex flex-col min-h-0">
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#161f30] border-b border-[#d0d8e4] dark:border-[#2e3748] text-[#64748b] dark:text-[#8e9bb0]">
-                  <tr className="font-bold uppercase tracking-wider text-[11px]">
-                    <th className="py-3 px-3 w-10 text-center">
-                      <input
-                        type="checkbox"
-                        checked={selectedCaseIds.length > 0 && selectedCaseIds.length === filteredCases.length}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedCaseIds(filteredCases.map((item) => item.testCase.id));
-                          } else {
-                            setSelectedCaseIds([]);
-                          }
-                        }}
-                        className="rounded border-[#d0d8e4] dark:border-[#2e3748] text-[#b83a4b] focus:ring-[#b83a4b]"
-                      />
-                    </th>
-                    <th className="py-3 px-3 w-12 text-center">Adım</th>
-                    <th className="py-3 px-3 w-28">Senaryo Kodu</th>
-                    <th className="py-3 px-4 min-w-[220px]">Test Senaryosu</th>
-                    <th className="py-3 px-3 w-28">Suite / Modül</th>
-                    <th className="py-3 px-3 w-24">Öncelik</th>
-                    <th className="py-3 px-4 min-w-[200px]">Anlık Durum Kaydı (Real-Time)</th>
-                    <th className="py-3 px-4 min-w-[180px]">Yorum / Bulgular & Ekranlar</th>
-                    <th className="py-3 px-3 w-24 text-right">Aksiyonlar</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-[#2e3748]/60">
-                  {filteredCases.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="py-14 text-center text-slate-400">
-                        <Filter className="w-8 h-8 mx-auto opacity-30 mb-2" />
-                        <p className="font-semibold">Kriterlere uygun test senaryosu bulunamadı.</p>
-                      </td>
+          {/* VIEW MODE 1: VISUAL CARDS (Exactly Matching User Screenshot) */}
+          {viewMode === 'CARDS' && (
+            <div className="space-y-3 overflow-y-auto flex-1 pr-1">
+              {filteredCases.length === 0 ? (
+                <div className="py-16 text-center rounded-[12px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] p-6 text-slate-400">
+                  <Filter className="w-8 h-8 mx-auto opacity-30 mb-2" />
+                  <p className="font-semibold">Kriterlere uygun test senaryosu bulunamadı.</p>
+                </div>
+              ) : (
+                filteredCases.map(({ testCase, result }) => {
+                  const currentStatus = result?.status;
+                  const isPassed = currentStatus === 'PASSED';
+                  const isFailed = currentStatus === 'FAILED';
+                  const isBlocked = currentStatus === 'BLOCKED';
+                  const isSkipped = currentStatus === 'SKIPPED';
+                  const isPending = !result;
+
+                  const envTag = result?.environment || run.environment || 'UAT';
+                  const platformTag =
+                    result?.platform || (testCase.type === 'IOS' ? 'iOS' : testCase.type === 'ANDROID' ? 'Android' : 'Web');
+                  const isIos = platformTag.toLowerCase().includes('ios');
+                  const isAndroid = platformTag.toLowerCase().includes('android');
+                  const appVersionTag = result?.appVersion || run.version || 'v1.2.0 (106)';
+                  const deviceTag =
+                    result?.device || (testCase.type === 'IOS' ? 'iphone14' : testCase.type === 'ANDROID' ? 's24' : 'iphone14');
+                  const userProfileTag = result?.userProfile || 'UMIT';
+                  const customerTypeTag = result?.customerType || 'BIREYSEL';
+                  const durationTag = result?.executionMs
+                    ? formatDuration(result.executionMs)
+                    : isPending
+                    ? 'Bekliyor'
+                    : '51 sn';
+
+                  const executedDateTag = result?.executedAt
+                    ? new Date(result.executedAt).toLocaleString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : new Date(run.createdAt).toLocaleString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      });
+
+                  const flakyTag = result?.flakyStatus;
+
+                  return (
+                    <div
+                      key={testCase.id}
+                      onClick={() => handleOpenResultDrawer(testCase, result)}
+                      className={`p-4 rounded-[14px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group ${
+                        isFailed
+                          ? 'border-rose-500/30 hover:border-rose-500/60'
+                          : isPassed
+                          ? 'border-emerald-500/30 hover:border-emerald-500/60'
+                          : isBlocked
+                          ? 'border-amber-500/30 hover:border-amber-500/60'
+                          : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-[#b83a4b]/40'
+                      }`}
+                    >
+                      {/* Left: Title & All Visual Badges */}
+                      <div className="space-y-2 min-w-0 flex-1">
+                        {/* Title */}
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 bg-slate-100 dark:bg-[#141821] px-1.5 py-0.5 rounded border border-[#d0d8e4] dark:border-[#2e3748] shrink-0">
+                            {testCase.code}
+                          </span>
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] transition-colors truncate">
+                            {testCase.title}
+                          </h3>
+                        </div>
+
+                        {/* Visual Badge Ribbon (Exact match to specification) */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+                          {/* 1. 🌐 Ortam: UAT / TEST / PROD (Mavi etiket) */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30">
+                            <span>🌐</span>
+                            <span className="font-bold">{envTag}</span>
+                          </span>
+
+                          {/* 2. 🍎 / 🤖 Platform: iOS / Android (Platform rengi ve ikonu) */}
+                          <span
+                            className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full ${
+                              isIos
+                                ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+                                : isAndroid
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                                : 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30'
+                            }`}
+                          >
+                            <span>{isIos ? '🍎' : isAndroid ? '🤖' : '🌐'}</span>
+                            <span className="font-bold">{platformTag}</span>
+                          </span>
+
+                          {/* 3. 📦 Uygulama Versiyonu: v1.2.0 (106) (Mor etiket) */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                            <span>📦</span>
+                            <span className="font-mono">{appVersionTag}</span>
+                          </span>
+
+                          {/* 4. 📱 Cihaz Aliası: iphone14 (Yeşil etiket) */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                            <span>📱</span>
+                            <span className="font-mono font-bold">{deviceTag}</span>
+                          </span>
+
+                          {/* 5. 👤 USER Profili: 👤 UMIT (Turuncu / Amber etiket) */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                            <span>👤</span>
+                            <span className="font-bold uppercase">{userProfileTag}</span>
+                          </span>
+
+                          {/* 6. 👥 Müşteri Tipi: 👥 BIREYSEL (Turkuaz / Teal etiket) */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
+                            <span>👥</span>
+                            <span className="font-bold">{customerTypeTag}</span>
+                          </span>
+
+                          {/* 7. 📅 Koşum Zamanı: 26.08.2026 15:51 (Tarih rozeti) */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748]">
+                            <span>📅</span>
+                            <span className="font-mono">{executedDateTag}</span>
+                          </span>
+
+                          {/* 8. ⏱️ Koşum Süresi: 48 sn (Süre rozeti) */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-[#141821] text-slate-800 dark:text-slate-200 border border-[#d0d8e4] dark:border-[#2e3748]">
+                            <span>⏱️</span>
+                            <span className="font-mono font-bold">{durationTag}</span>
+                          </span>
+
+                          {/* 9. ⚠️ Flaky Durumu: +1 retry (Flaky testlerde sarı rozet) */}
+                          {flakyTag && flakyTag !== 'NONE' && (
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40 animate-pulse">
+                              <span>⚠️</span>
+                              <span className="font-bold">{flakyTag}</span>
+                            </span>
+                          )}
+
+                          {/* Jira Bug Key Badge if any */}
+                          {result?.jiraBugKey && (
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(
+                                  result.jiraBugUrl || `https://company.atlassian.net/browse/${result.jiraBugKey}`,
+                                  '_blank'
+                                );
+                              }}
+                              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:underline cursor-pointer"
+                            >
+                              <Bug className="w-3 h-3" />
+                              <span className="font-bold">{result.jiraBugKey}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Error message or note preview if present */}
+                        {result?.errorMessage && (
+                          <div
+                            className={`p-2 rounded-[8px] text-[11px] font-mono mt-1 ${
+                              isFailed
+                                ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20'
+                                : 'bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748]'
+                            }`}
+                          >
+                            <strong>{isFailed ? 'Hata Bulgusu:' : 'Not / Açıklama:'}</strong> {result.errorMessage}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Circular Result Icon & Quick Action Buttons */}
+                      <div className="flex items-center space-x-3 shrink-0 self-end sm:self-center">
+                        {/* 1-Click Status Marking Buttons */}
+                        <div
+                          className="flex items-center space-x-1 opacity-90 group-hover:opacity-100"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleInstantStatusChange(testCase.id, 'PASSED')}
+                            className={`p-1.5 rounded-lg transition-all ${
+                              isPassed
+                                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400'
+                                : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                            }`}
+                            title="Pass Yap"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleInstantStatusChange(testCase.id, 'FAILED')}
+                            className={`p-1.5 rounded-lg transition-all ${
+                              isFailed
+                                ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400'
+                                : 'bg-rose-500/10 text-rose-600 hover:bg-rose-500/20'
+                            }`}
+                            title="Fail Yap"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Large Circular Result Badge (Exactly as in screenshot) */}
+                        {isPassed && (
+                          <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/30">
+                            <Check className="w-6 h-6 stroke-[3]" />
+                          </div>
+                        )}
+                        {isFailed && (
+                          <div className="w-10 h-10 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-600/30">
+                            <X className="w-6 h-6 stroke-[3]" />
+                          </div>
+                        )}
+                        {isBlocked && (
+                          <div className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/30">
+                            <Slash className="w-5 h-5 stroke-[2.5]" />
+                          </div>
+                        )}
+                        {isSkipped && (
+                          <div className="w-10 h-10 rounded-full bg-slate-500 text-white flex items-center justify-center shadow-md">
+                            <span className="text-[10px] font-bold font-mono">SKIP</span>
+                          </div>
+                        )}
+                        {isPending && (
+                          <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-[#262e3d] text-slate-400 flex items-center justify-center border border-dashed border-slate-400">
+                            <Clock className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* VIEW MODE 2: DATA DENSE TABLE */}
+          {viewMode === 'TABLE' && (
+            <div className="border border-[#d0d8e4] dark:border-[#2e3748] rounded-[12px] overflow-hidden bg-white dark:bg-[#1d232f] shadow-xs flex-1 flex flex-col min-h-0">
+              <div className="overflow-x-auto flex-1">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#161f30] border-b border-[#d0d8e4] dark:border-[#2e3748] text-[#64748b] dark:text-[#8e9bb0]">
+                    <tr className="font-bold uppercase tracking-wider text-[11px]">
+                      <th className="py-3 px-3 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedCaseIds.length > 0 && selectedCaseIds.length === filteredCases.length}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedCaseIds(filteredCases.map((item) => item.testCase.id));
+                            } else {
+                              setSelectedCaseIds([]);
+                            }
+                          }}
+                          className="rounded border-[#d0d8e4] dark:border-[#2e3748] text-[#b83a4b] focus:ring-[#b83a4b]"
+                        />
+                      </th>
+                      <th className="py-3 px-3 w-12 text-center">Adım</th>
+                      <th className="py-3 px-3 w-28">Senaryo Kodu</th>
+                      <th className="py-3 px-4 min-w-[220px]">Test Senaryosu</th>
+                      <th className="py-3 px-3 w-28">Ortam & Cihaz</th>
+                      <th className="py-3 px-3 w-24">USER / Müşteri</th>
+                      <th className="py-3 px-4 min-w-[180px]">Anlık Durum Kaydı</th>
+                      <th className="py-3 px-4 min-w-[160px]">Süre & Bulgular</th>
+                      <th className="py-3 px-3 w-24 text-right">Aksiyonlar</th>
                     </tr>
-                  ) : (
-                    filteredCases.map(({ testCase, result }) => {
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-[#2e3748]/60">
+                    {filteredCases.map(({ testCase, result }) => {
                       const isExpanded = expandedCaseIds.has(testCase.id);
                       const isSelected = selectedCaseIds.includes(testCase.id);
                       const currentStatus = result?.status;
-                      const screenList = parseScreenshots(result?.screenshotUrl || testCase.screenshotUrl);
 
                       return (
                         <React.Fragment key={testCase.id}>
@@ -1189,7 +1568,6 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                                 : ''
                             }`}
                           >
-                            {/* Checkbox */}
                             <td className="py-3 px-3 text-center">
                               <input
                                 type="checkbox"
@@ -1205,14 +1583,12 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                               />
                             </td>
 
-                            {/* Adımlar Genişletme Butonu */}
                             <td className="py-3 px-3 text-center">
                               {testCase.steps && testCase.steps.length > 0 ? (
                                 <button
                                   type="button"
                                   onClick={() => toggleRowExpansion(testCase.id)}
-                                  className="p-1 rounded text-[#64748b] hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-[#262e3d] transition-colors"
-                                  title={`${testCase.steps.length} test adımını ${isExpanded ? 'gizle' : 'göster'}`}
+                                  className="p-1 rounded text-[#64748b] hover:text-slate-900 dark:hover:text-slate-100"
                                 >
                                   {isExpanded ? (
                                     <ChevronDown className="w-3.5 h-3.5 text-[#b83a4b]" />
@@ -1225,258 +1601,126 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                               )}
                             </td>
 
-                            {/* Case Code */}
-                            <td className="py-3 px-3 font-mono font-bold">
-                              <button
-                                type="button"
-                                onClick={() => onSelectCase && onSelectCase(testCase)}
-                                className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center space-x-1"
-                                title="Senaryo Detayını Aç"
+                            <td className="py-3 px-3 font-mono font-bold text-blue-600 dark:text-blue-400">
+                              {testCase.code}
+                            </td>
+
+                            <td className="py-3 px-4">
+                              <div
+                                onClick={() => handleOpenResultDrawer(testCase, result)}
+                                className="font-semibold text-slate-800 dark:text-slate-200 hover:text-[#b83a4b] cursor-pointer line-clamp-2"
                               >
-                                <span>{testCase.code}</span>
-                              </button>
-                            </td>
-
-                            {/* Title */}
-                            <td className="py-3 px-4">
-                              <div className="space-y-0.5 max-w-md">
-                                <span
-                                  onClick={() => handleOpenResultDrawer(testCase, result)}
-                                  className="font-semibold text-slate-800 dark:text-slate-200 hover:text-[#b83a4b] cursor-pointer line-clamp-2"
-                                >
-                                  {testCase.title}
-                                </span>
-                                {testCase.jiraStoryKey && (
-                                  <a
-                                    href={testCase.jiraIssueUrl || `https://company.atlassian.net/browse/${testCase.jiraStoryKey}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center space-x-1 text-[10px] font-bold text-sky-600 dark:text-sky-400 hover:underline"
-                                  >
-                                    <Tag className="w-2.5 h-2.5" />
-                                    <span>Story: {testCase.jiraStoryKey}</span>
-                                  </a>
-                                )}
+                                {testCase.title}
                               </div>
                             </td>
 
-                            {/* Suite */}
                             <td className="py-3 px-3">
-                              <span className="truncate max-w-[110px] inline-block text-[11px] text-[#64748b] dark:text-[#8e9bb0]">
-                                {testCase.suite?.name || 'Kök / Genel'}
-                              </span>
-                            </td>
-
-                            {/* Priority */}
-                            <td className="py-3 px-3">
-                              {testCase.priority === 'BLOCKER' && (
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
-                                  BLOCKER
-                                </span>
-                              )}
-                              {testCase.priority === 'CRITICAL' && (
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                                  CRITICAL
-                                </span>
-                              )}
-                              {testCase.priority === 'NORMAL' && (
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
-                                  NORMAL
-                                </span>
-                              )}
-                              {testCase.priority === 'LOW' && (
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30">
-                                  LOW
-                                </span>
-                              )}
-                            </td>
-
-                            {/* Real-time Status Buttons (1-Click Marking) */}
-                            <td className="py-3 px-4">
-                              <div className="flex items-center space-x-1">
-                                {/* PASS Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleInstantStatusChange(testCase.id, 'PASSED')}
-                                  className={`px-2 py-1 rounded-[6px] text-[11px] font-mono font-bold transition-all flex items-center space-x-1 cursor-pointer ${
-                                    currentStatus === 'PASSED'
-                                      ? 'bg-emerald-600 text-white shadow-xs scale-105 ring-1 ring-emerald-400'
-                                      : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20'
-                                  }`}
-                                  title="Geçti olarak işaretle (Tek tıkla anlık kayıt)"
-                                >
-                                  <Check className="w-3 h-3" />
-                                  <span>PASS</span>
-                                </button>
-
-                                {/* FAIL Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleInstantStatusChange(testCase.id, 'FAILED')}
-                                  className={`px-2 py-1 rounded-[6px] text-[11px] font-mono font-bold transition-all flex items-center space-x-1 cursor-pointer ${
-                                    currentStatus === 'FAILED'
-                                      ? 'bg-rose-600 text-white shadow-xs scale-105 ring-1 ring-rose-400'
-                                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/20'
-                                  }`}
-                                  title="Hatalı olarak işaretle (Tek tıkla anlık kayıt)"
-                                >
-                                  <X className="w-3 h-3" />
-                                  <span>FAIL</span>
-                                </button>
-
-                                {/* BLOCK Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleInstantStatusChange(testCase.id, 'BLOCKED')}
-                                  className={`px-2 py-1 rounded-[6px] text-[11px] font-mono font-bold transition-all flex items-center space-x-1 cursor-pointer ${
-                                    currentStatus === 'BLOCKED'
-                                      ? 'bg-amber-600 text-white shadow-xs scale-105 ring-1 ring-amber-400'
-                                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/20'
-                                  }`}
-                                  title="Engellendi olarak işaretle"
-                                >
-                                  <Slash className="w-3 h-3" />
-                                  <span>BLOCK</span>
-                                </button>
-
-                                {/* SKIP Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleInstantStatusChange(testCase.id, 'SKIPPED')}
-                                  className={`px-2 py-1 rounded-[6px] text-[11px] font-mono font-bold transition-all flex items-center space-x-1 cursor-pointer ${
-                                    currentStatus === 'SKIPPED'
-                                      ? 'bg-slate-600 text-white shadow-xs scale-105 ring-1 ring-slate-400'
-                                      : 'bg-slate-500/10 text-slate-600 dark:text-slate-400 hover:bg-slate-500/20 border border-slate-500/20'
-                                  }`}
-                                  title="Atlandı olarak işaretle"
-                                >
-                                  <span>SKIP</span>
-                                </button>
-                              </div>
-                            </td>
-
-                            {/* Yorum / Bulgular & Ekran Görüntüleri */}
-                            <td className="py-3 px-4">
-                              <div className="space-y-1 max-w-xs">
-                                {result?.errorMessage ? (
-                                  <div
-                                    onClick={() => handleOpenResultDrawer(testCase, result)}
-                                    className={`p-1.5 rounded-[6px] text-[11px] font-mono truncate cursor-pointer ${
-                                      currentStatus === 'FAILED'
-                                        ? 'bg-rose-500/10 text-rose-600 dark:text-rose-300 border border-rose-500/20'
-                                        : 'bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748]'
-                                    }`}
-                                    title={result.errorMessage}
-                                  >
-                                    <strong>Not:</strong> {result.errorMessage}
-                                  </div>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenResultDrawer(testCase, result)}
-                                    className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center space-x-1"
-                                  >
-                                    <MessageSquare className="w-3 h-3" />
-                                    <span>+ Yorum Ekle</span>
-                                  </button>
-                                )}
-
-                                <div className="flex items-center space-x-2">
-                                  {result?.jiraBugKey && (
-                                    <a
-                                      href={result.jiraBugUrl || `https://company.atlassian.net/browse/${result.jiraBugKey}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center space-x-1 text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20 hover:underline"
-                                    >
-                                      <Bug className="w-2.5 h-2.5" />
-                                      <span>{result.jiraBugKey}</span>
-                                    </a>
-                                  )}
-
-                                  {screenList.length > 0 && (
-                                    <span
-                                      onClick={() => setLightboxImage(screenList[0])}
-                                      className="inline-flex items-center space-x-1 text-[10px] font-bold text-indigo-500 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 cursor-pointer hover:underline"
-                                      title="Ekran Görüntüsünü Aç"
-                                    >
-                                      <ImageIcon className="w-2.5 h-2.5" />
-                                      <span>{screenList.length} Görsel</span>
-                                    </span>
-                                  )}
+                              <div className="space-y-0.5 text-[11px] font-mono">
+                                <div>🌐 {result?.environment || run.environment || 'UAT'}</div>
+                                <div className="text-[#64748b] dark:text-[#8e9bb0]">
+                                  📱 {result?.device || 'iphone14'}
                                 </div>
                               </div>
                             </td>
 
-                            {/* Aksiyonlar */}
+                            <td className="py-3 px-3">
+                              <div className="space-y-0.5 text-[11px]">
+                                <div className="font-bold text-amber-600 dark:text-amber-400">
+                                  👤 {result?.userProfile || 'UMIT'}
+                                </div>
+                                <div className="text-teal-600 dark:text-teal-400">
+                                  👥 {result?.customerType || 'BIREYSEL'}
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Status Buttons */}
+                            <td className="py-3 px-4">
+                              <div className="flex items-center space-x-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleInstantStatusChange(testCase.id, 'PASSED')}
+                                  className={`px-2 py-1 rounded-[6px] text-[11px] font-mono font-bold ${
+                                    currentStatus === 'PASSED'
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'bg-emerald-500/10 text-emerald-600'
+                                  }`}
+                                >
+                                  PASS
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleInstantStatusChange(testCase.id, 'FAILED')}
+                                  className={`px-2 py-1 rounded-[6px] text-[11px] font-mono font-bold ${
+                                    currentStatus === 'FAILED' ? 'bg-rose-600 text-white' : 'bg-rose-500/10 text-rose-600'
+                                  }`}
+                                >
+                                  FAIL
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleInstantStatusChange(testCase.id, 'BLOCKED')}
+                                  className={`px-2 py-1 rounded-[6px] text-[11px] font-mono font-bold ${
+                                    currentStatus === 'BLOCKED'
+                                      ? 'bg-amber-600 text-white'
+                                      : 'bg-amber-500/10 text-amber-600'
+                                  }`}
+                                >
+                                  BLOCK
+                                </button>
+                              </div>
+                            </td>
+
+                            <td className="py-3 px-4 font-mono text-[11px]">
+                              <div>⏱️ {result?.executionMs ? formatDuration(result.executionMs) : '—'}</div>
+                              {result?.jiraBugKey && (
+                                <span className="text-rose-500 font-bold">🐞 {result.jiraBugKey}</span>
+                              )}
+                            </td>
+
                             <td className="py-3 px-3 text-right">
                               <button
                                 type="button"
                                 onClick={() => handleOpenResultDrawer(testCase, result)}
-                                className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-[6px] text-xs font-semibold bg-slate-100 dark:bg-[#262e3d] hover:bg-slate-200 dark:hover:bg-[#2e3748] text-slate-700 dark:text-slate-300 transition-colors"
-                                title="Sonuç & Hata Detayını Düzenle"
+                                className="p-1.5 rounded-[6px] bg-slate-100 dark:bg-[#262e3d] text-slate-700 dark:text-slate-300 hover:text-[#b83a4b]"
                               >
-                                <Eye className="w-3 h-3 text-[#b83a4b]" />
-                                <span>Detay</span>
+                                <Eye className="w-3.5 h-3.5" />
                               </button>
                             </td>
                           </tr>
 
-                          {/* Genişletilmiş Test Adımları Satırı */}
+                          {/* Expanded Steps */}
                           {isExpanded && testCase.steps && testCase.steps.length > 0 && (
-                            <tr className="bg-slate-50/50 dark:bg-[#141821]/40 border-b border-[#d0d8e4] dark:border-[#2e3748]">
+                            <tr className="bg-slate-50/50 dark:bg-[#141821]/40">
                               <td colSpan={9} className="p-4 pl-12">
-                                <div className="p-3 rounded-[10px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center space-x-1.5">
-                                      <ClipboardList className="w-3.5 h-3.5 text-[#b83a4b]" />
-                                      <span>Test Senaryosu Adımları ({testCase.steps.length})</span>
-                                    </span>
-                                    {testCase.precondition && (
-                                      <span className="text-[11px] text-[#64748b] dark:text-[#8e9bb0]">
-                                        <strong>Ön Koşul:</strong> {testCase.precondition}
+                                <div className="p-3 rounded-[10px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] space-y-1.5">
+                                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                    Adımlar ({testCase.steps.length})
+                                  </span>
+                                  {testCase.steps.map((st, idx) => (
+                                    <div key={idx} className="text-xs flex items-start space-x-2">
+                                      <span className="font-mono font-bold">{st.stepNumber || idx + 1}.</span>
+                                      <span>
+                                        {st.action} &rarr; <em className="text-[#64748b]">{st.expectedResult}</em>
                                       </span>
-                                    )}
-                                  </div>
-
-                                  <div className="space-y-1.5 divide-y divide-slate-100 dark:divide-[#2e3748]/50">
-                                    {testCase.steps.map((st, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="pt-1.5 flex items-start justify-between gap-4 text-xs"
-                                      >
-                                        <div className="flex items-start space-x-2 min-w-0">
-                                          <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 font-mono font-bold text-[10px] flex items-center justify-center border border-[#d0d8e4] dark:border-[#2e3748] shrink-0 mt-0.5">
-                                            {st.stepNumber || idx + 1}
-                                          </span>
-                                          <div className="space-y-0.5">
-                                            <p className="font-semibold text-slate-800 dark:text-slate-200">
-                                              {st.action}
-                                            </p>
-                                            <p className="text-[#64748b] dark:text-[#8e9bb0] font-mono text-[11px]">
-                                              <strong>Beklenen:</strong> {st.expectedResult}
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
+                                    </div>
+                                  ))}
                                 </div>
                               </td>
                             </tr>
                           )}
                         </React.Fragment>
                       );
-                    })
-                  )}
-                </tbody>
-              </table>
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* 6. Tab Content: DEFECTS (Hata Bulguları & Kusur Özeti) */}
+      {/* 6. Tab Content: DEFECTS */}
       {activeTab === 'DEFECTS' && (
         <div className="space-y-4 flex-1 flex flex-col min-h-0">
           <div className="flex items-center justify-between">
@@ -1601,11 +1845,10 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
         </div>
       )}
 
-      {/* 7. Tab Content: OVERVIEW (Koşum Özeti & Raporlama) */}
+      {/* 7. Tab Content: OVERVIEW */}
       {activeTab === 'OVERVIEW' && (
         <div className="space-y-4 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Run Profile Card */}
             <div className="p-5 rounded-[14px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] shadow-xs space-y-3">
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
                 <Info className="w-4 h-4 text-[#b83a4b]" />
@@ -1643,16 +1886,9 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     {run.executedBy} ({run.testerEmail})
                   </span>
                 </div>
-                <div className="pt-2 flex justify-between">
-                  <span className="text-[#64748b] dark:text-[#8e9bb0]">Başlangıç Zamanı:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    {new Date(run.createdAt).toLocaleString('tr-TR')}
-                  </span>
-                </div>
               </div>
             </div>
 
-            {/* Test Plan Scope & Quality Metrics */}
             <div className="p-5 rounded-[14px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] shadow-xs space-y-3">
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
                 <Activity className="w-4 h-4 text-emerald-500" />
@@ -1678,26 +1914,17 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     </p>
                   </div>
                 )}
-
-                {run.testPlan?.requirements && (
-                  <div className="p-3 rounded-[8px] bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748]">
-                    <strong className="text-slate-800 dark:text-slate-200">Gereksinimler & Kriterler:</strong>
-                    <p className="mt-1 text-[#64748b] dark:text-[#8e9bb0] whitespace-pre-wrap">
-                      {run.testPlan.requirements}
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 8. RESULT / DEFECT DRAWER MODAL (Her durum için yorum ve ekran görüntüsü eklenebilir) */}
+      {/* 8. RESULT EXECUTION DRAWER WITH LIVE RUNNING STOPWATCH & FULL METADATA */}
       {activeResultModalCase && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
-          <div className="bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[16px] w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
-            {/* Drawer Header */}
+          <div className="bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[16px] w-full max-w-4xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
+            {/* Drawer Header with Live Stopwatch */}
             <div className="px-6 py-4 border-b border-[#d0d8e4] dark:border-[#2e3748] flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80 shrink-0">
               <div className="flex items-center space-x-3">
                 <div className="w-9 h-9 rounded-lg bg-[#b83a4b]/15 text-[#b83a4b] flex items-center justify-center border border-[#b83a4b]/30">
@@ -1713,14 +1940,48 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     </h3>
                   </div>
                   <p className="text-xs text-[#64748b] dark:text-[#8e9bb0] mt-0.5">
-                    Sonuç, bulgular, yorum ve ekran görüntülerini güncelleyin.
+                    Detaylı test koşum kaydı, canlı süre sayacı ve etiket bilgileri
                   </p>
                 </div>
               </div>
 
+              {/* Live Stopwatch Widget */}
+              <div className="flex items-center space-x-2 bg-white dark:bg-[#141821] px-3.5 py-1.5 rounded-[10px] border border-[#d0d8e4] dark:border-[#2e3748] shadow-xs">
+                <Timer className={`w-4 h-4 ${isTimerRunning ? 'text-[#b83a4b] animate-spin' : 'text-slate-400'}`} />
+                <span className="font-mono font-extrabold text-sm text-slate-900 dark:text-slate-100 min-w-[65px]">
+                  {formatDuration(drawerExecutionMs)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsTimerRunning(!isTimerRunning)}
+                  className={`p-1 rounded-[6px] text-xs font-bold ${
+                    isTimerRunning
+                      ? 'bg-amber-500/20 text-amber-600 hover:bg-amber-500/30'
+                      : 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30'
+                  }`}
+                  title={isTimerRunning ? 'Sayacı Duraklat' : 'Sayacı Başlat'}
+                >
+                  {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTimerRunning(false);
+                    setDrawerExecutionMs(0);
+                  }}
+                  className="p-1 rounded-[6px] text-slate-400 hover:text-slate-600"
+                  title="Sayacı Sıfırla"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => setActiveResultModalCase(null)}
+                onClick={() => {
+                  setIsTimerRunning(false);
+                  setActiveResultModalCase(null);
+                }}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
                 <X className="w-4 h-4" />
@@ -1737,8 +1998,11 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
                     type="button"
-                    onClick={() => setDrawerStatus('PASSED')}
-                    className={`py-2 px-3 rounded-[10px] font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                    onClick={() => {
+                      setDrawerStatus('PASSED');
+                      setIsTimerRunning(false);
+                    }}
+                    className={`py-2.5 px-3 rounded-[10px] font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
                       drawerStatus === 'PASSED'
                         ? 'bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm'
                         : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
@@ -1750,8 +2014,11 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => setDrawerStatus('FAILED')}
-                    className={`py-2 px-3 rounded-[10px] font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                    onClick={() => {
+                      setDrawerStatus('FAILED');
+                      setIsTimerRunning(false);
+                    }}
+                    className={`py-2.5 px-3 rounded-[10px] font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
                       drawerStatus === 'FAILED'
                         ? 'bg-rose-600 text-white ring-2 ring-rose-400 shadow-sm'
                         : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/20'
@@ -1763,8 +2030,11 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => setDrawerStatus('BLOCKED')}
-                    className={`py-2 px-3 rounded-[10px] font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                    onClick={() => {
+                      setDrawerStatus('BLOCKED');
+                      setIsTimerRunning(false);
+                    }}
+                    className={`py-2.5 px-3 rounded-[10px] font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
                       drawerStatus === 'BLOCKED'
                         ? 'bg-amber-600 text-white ring-2 ring-amber-400 shadow-sm'
                         : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/20'
@@ -1776,8 +2046,11 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => setDrawerStatus('SKIPPED')}
-                    className={`py-2 px-3 rounded-[10px] font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                    onClick={() => {
+                      setDrawerStatus('SKIPPED');
+                      setIsTimerRunning(false);
+                    }}
+                    className={`py-2.5 px-3 rounded-[10px] font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
                       drawerStatus === 'SKIPPED'
                         ? 'bg-slate-600 text-white ring-2 ring-slate-400 shadow-sm'
                         : 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/30 hover:bg-slate-500/20'
@@ -1786,6 +2059,139 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     <Tag className="w-4 h-4" />
                     <span>SKIPPED</span>
                   </button>
+                </div>
+              </div>
+
+              {/* 8 Execution Metadata Inputs (All Visual Card Badges) */}
+              <div className="p-4 rounded-[12px] bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] space-y-3">
+                <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#b83a4b]" />
+                  <span>Koşum Etiketleri & Cihaz / Kullanıcı Parametreleri</span>
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  {/* 1. 🌐 Ortam */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                      🌐 Ortam
+                    </label>
+                    <select
+                      value={drawerEnvironment}
+                      onChange={(e) => setDrawerEnvironment(e.target.value)}
+                      className="w-full bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold"
+                    >
+                      <option value="UAT">UAT</option>
+                      <option value="TEST">TEST</option>
+                      <option value="PROD">PROD</option>
+                      <option value="STAGING">STAGING</option>
+                      <option value="DEV">DEV</option>
+                    </select>
+                  </div>
+
+                  {/* 2. 🍎 / 🤖 Platform */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                      🍎 / 🤖 Platform
+                    </label>
+                    <select
+                      value={drawerPlatform}
+                      onChange={(e) => setDrawerPlatform(e.target.value)}
+                      className="w-full bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold"
+                    >
+                      <option value="iOS">🍎 iOS</option>
+                      <option value="Android">🤖 Android</option>
+                      <option value="Web">🌐 Web</option>
+                      <option value="API">⚡ API</option>
+                    </select>
+                  </div>
+
+                  {/* 3. 📦 Uygulama Versiyonu */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                      📦 Uygulama Versiyonu
+                    </label>
+                    <input
+                      type="text"
+                      value={drawerAppVersion}
+                      onChange={(e) => setDrawerAppVersion(e.target.value)}
+                      placeholder="v1.2.0 (106)"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-mono"
+                    />
+                  </div>
+
+                  {/* 4. 📱 Cihaz Aliası */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                      📱 Cihaz Aliası
+                    </label>
+                    <input
+                      type="text"
+                      value={drawerDevice}
+                      onChange={(e) => setDrawerDevice(e.target.value)}
+                      placeholder="iphone14 / iphone 15 / s24"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-mono"
+                    />
+                  </div>
+
+                  {/* 5. 👤 USER Profili */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                      👤 USER Profili
+                    </label>
+                    <input
+                      type="text"
+                      value={drawerUserProfile}
+                      onChange={(e) => setDrawerUserProfile(e.target.value)}
+                      placeholder="UMIT / ZEYNEP"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs uppercase"
+                    />
+                  </div>
+
+                  {/* 6. 👥 Müşteri Tipi */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                      👥 Müşteri Tipi
+                    </label>
+                    <select
+                      value={drawerCustomerType}
+                      onChange={(e) => setDrawerCustomerType(e.target.value)}
+                      className="w-full bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold"
+                    >
+                      <option value="BIREYSEL">👥 BIREYSEL</option>
+                      <option value="KURUMSAL">👥 KURUMSAL</option>
+                    </select>
+                  </div>
+
+                  {/* 7. ⚠️ Flaky Durumu */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                      ⚠️ Flaky / Retry Durumu
+                    </label>
+                    <select
+                      value={drawerFlakyStatus}
+                      onChange={(e) => setDrawerFlakyStatus(e.target.value)}
+                      className="w-full bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold"
+                    >
+                      <option value="NONE">Stabil (Retry Yok)</option>
+                      <option value="+1 retry">+1 retry</option>
+                      <option value="+2 retry">+2 retry</option>
+                      <option value="FLAKY">FLAKY</option>
+                    </select>
+                  </div>
+
+                  {/* 8. ⏱️ Koşum Süresi (Manuel Giriş/Sayaç) */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                      ⏱️ Süre (ms)
+                    </label>
+                    <input
+                      type="number"
+                      value={drawerExecutionMs}
+                      onChange={(e) => setDrawerExecutionMs(parseInt(e.target.value, 10) || 0)}
+                      placeholder="Örn: 48000"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-mono"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1846,7 +2252,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                 </div>
               )}
 
-              {/* Yorum / Not / Hata Bulgusu Metin Alanı (HER DURUM İÇİN AKTİF) */}
+              {/* Yorum / Not / Hata Bulgusu */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
@@ -1867,45 +2273,29 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                   onChange={(e) => setDrawerComment(e.target.value)}
                   placeholder={
                     drawerStatus === 'FAILED'
-                      ? 'Örn: Butona tıklandığında 500 Internal Server Error alındı. Beklenen yönlendirme gerçekleşmedi.'
-                      : 'Örn: Test başarıyla tamamlandı. Responsive düzen mobil ortamda doğrulandı.'
+                      ? 'Örn: USD Alış adımında bakiye yetersiz hatası yerine 500 alındı.'
+                      : 'Örn: Test başarıyla tamamlandı. Döviz alış kuru UAT ortamında doğrulandı.'
                   }
                   className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] p-3 text-xs text-slate-900 dark:text-slate-100 placeholder-[#64748b] dark:placeholder-[#8e9bb0] focus:outline-none focus:border-[#b83a4b] focus:ring-1 focus:ring-[#b83a4b]/30"
                 />
               </div>
 
-              {/* Jira Bug ve Süre Alanları */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-                    <Bug className="w-3.5 h-3.5 text-rose-500" />
-                    <span>Jira Bug Key (Opsiyonel)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Örn: MOB-542 veya QA-102"
-                    value={drawerJiraBugKey}
-                    onChange={(e) => setDrawerJiraBugKey(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-                    <Clock className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Koşum Süresi (ms)</span>
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="Örn: 450"
-                    value={drawerExecutionMs}
-                    onChange={(e) => setDrawerExecutionMs(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                    className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 font-mono"
-                  />
-                </div>
+              {/* Jira Bug Key */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
+                  <Bug className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Jira Bug Key (Opsiyonel)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Örn: MOB-542 veya QA-102"
+                  value={drawerJiraBugKey}
+                  onChange={(e) => setDrawerJiraBugKey(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100"
+                />
               </div>
 
-              {/* Ekran Görüntüsü Yöneticisi (HER DURUM İÇİN EKLENEBİLİR) */}
+              {/* Ekran Görüntüsü Yöneticisi */}
               <div className="space-y-2 p-3.5 rounded-[12px] bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748]">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
@@ -1917,7 +2307,6 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                   </span>
                 </div>
 
-                {/* Upload & URL Input Bar */}
                 <div className="flex items-center space-x-2">
                   <label className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-[8px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-[#b83a4b] cursor-pointer shadow-xs">
                     <Upload className="w-3.5 h-3.5" />
@@ -1955,7 +2344,6 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                   </button>
                 </div>
 
-                {/* Thumbnail Preview Grid */}
                 {drawerScreenshots.length > 0 && (
                   <div className="flex flex-wrap gap-2.5 pt-2">
                     {drawerScreenshots.map((imgUrl, imgIdx) => (
@@ -1988,7 +2376,10 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
             <div className="px-6 py-4 border-t border-[#d0d8e4] dark:border-[#2e3748] flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80 shrink-0">
               <button
                 type="button"
-                onClick={() => setActiveResultModalCase(null)}
+                onClick={() => {
+                  setIsTimerRunning(false);
+                  setActiveResultModalCase(null);
+                }}
                 className="px-4 py-2 rounded-[10px] text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-[#262e3d] hover:bg-slate-300 dark:hover:bg-[#2e3748] transition-colors"
               >
                 Vazgeç
@@ -2001,7 +2392,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                 className="inline-flex items-center space-x-1.5 px-5 py-2 rounded-[10px] text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-md hover:shadow-[0_4px_12px_rgba(130,28,43,0.35)] transition-all cursor-pointer disabled:opacity-50"
               >
                 <Check className="w-4 h-4" />
-                <span>{isSavingDrawer ? 'Kaydediliyor...' : 'Sonucu Kaydet'}</span>
+                <span>{isSavingDrawer ? 'Kaydediliyor...' : 'Koşum Sonucunu ve Etiketleri Kaydet'}</span>
               </button>
             </div>
           </div>
@@ -2036,11 +2427,10 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
 
 // Helper function to format milliseconds duration
 function formatDuration(totalMs: number): string {
-  if (!totalMs || totalMs <= 0) return '—';
-  if (totalMs < 1000) return `${totalMs}ms`;
-  const seconds = Math.floor(totalMs / 1000);
-  if (seconds < 60) return `${seconds}sn`;
-  const minutes = Math.floor(seconds / 60);
-  const remainingSec = seconds % 60;
-  return `${minutes}dk ${remainingSec}sn`;
+  if (!totalMs || totalMs <= 0) return '0 sn';
+  const totalSec = Math.floor(totalMs / 1000);
+  if (totalSec < 60) return `${totalSec} sn`;
+  const minutes = Math.floor(totalSec / 60);
+  const remainingSec = totalSec % 60;
+  return `${minutes} dk ${remainingSec} sn`;
 }

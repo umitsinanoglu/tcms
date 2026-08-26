@@ -5,6 +5,9 @@ import { TestCase, ResultStatus, TestRunsService } from '@/services/api';
 import {
   X,
   Play,
+  Pause,
+  RotateCcw,
+  Timer,
   CheckCircle2,
   XCircle,
   SkipForward,
@@ -21,6 +24,7 @@ import {
   ChevronRight,
   Plus,
   Download,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 export const parseScreenshots = (raw?: string | null): string[] => {
@@ -68,6 +72,13 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
 }) => {
   const [version, setVersion] = useState(initialVersion);
   const [environment, setEnvironment] = useState(initialEnvironment);
+  const [platform, setPlatform] = useState<string>('iOS');
+  const [appVersion, setAppVersion] = useState<string>('v1.2.0 (106)');
+  const [device, setDevice] = useState<string>('iphone14');
+  const [userProfile, setUserProfile] = useState<string>('UMIT');
+  const [customerType, setCustomerType] = useState<string>('BIREYSEL');
+  const [flakyStatus, setFlakyStatus] = useState<string>('NONE');
+
   const [executedBy, setExecutedBy] = useState('QA Tester');
   const [status, setStatus] = useState<ResultStatus>('PASSED');
   const [errorMessage, setErrorMessage] = useState('');
@@ -77,6 +88,25 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Stopwatch state
+  const [executionMs, setExecutionMs] = useState<number>(0);
+  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
+
+  // Stopwatch interval
+  useEffect(() => {
+    let interval: any = null;
+    if (isTimerRunning) {
+      interval = setInterval(() => {
+        setExecutionMs((prev) => prev + 1000);
+      }, 1000);
+    } else {
+      if (interval) clearInterval(interval);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerRunning]);
 
   useEffect(() => {
     if (isOpen && testCase) {
@@ -91,8 +121,19 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
       
       setVersion(initialVersion || 'v1.0.0');
       setEnvironment(initialEnvironment || 'STAGING');
+      setPlatform(testCase.type === 'IOS' ? 'iOS' : testCase.type === 'ANDROID' ? 'Android' : 'Web');
+      setAppVersion(initialVersion ? `${initialVersion} (106)` : 'v1.2.0 (106)');
+      setDevice(testCase.type === 'IOS' ? 'iphone14' : testCase.type === 'ANDROID' ? 's24' : 'iphone 15');
+      setUserProfile('UMIT');
+      setCustomerType('BIREYSEL');
+      setFlakyStatus('NONE');
+      setExecutionMs(0);
+      setIsTimerRunning(true); // Auto-start stopwatch on modal open
+
       setLightboxIndex(null);
       setErrorMsg('');
+    } else {
+      setIsTimerRunning(false);
     }
   }, [isOpen, testCase, initialVersion, initialEnvironment]);
 
@@ -192,6 +233,12 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
         status,
         version: version.trim() || 'v1.0.0',
         environment: environment.trim() || 'STAGING',
+        platform,
+        appVersion: appVersion.trim() || version,
+        device: device.trim() || 'iphone14',
+        userProfile: userProfile.trim() || 'UMIT',
+        customerType,
+        flakyStatus: flakyStatus !== 'NONE' ? flakyStatus : undefined,
         errorMessage: errorMessage.trim() ? errorMessage.trim() : undefined,
         jiraBugKey: status === 'FAILED' ? jiraBugKey : undefined,
         jiraBugUrl: status === 'FAILED' ? jiraBugUrl : undefined,
@@ -389,6 +436,37 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
           </div>
 
           <div className="flex items-center space-x-2.5">
+            {/* Live Stopwatch Widget in QuickRun */}
+            <div className="flex items-center space-x-2 bg-white dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs">
+              <Timer className={`w-3.5 h-3.5 ${isTimerRunning ? 'text-[#b83a4b] animate-spin' : 'text-slate-400'}`} />
+              <span className="font-mono font-extrabold text-xs text-slate-800 dark:text-slate-200 min-w-[55px]">
+                {Math.floor(executionMs / 1000)} sn
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsTimerRunning(!isTimerRunning)}
+                className={`p-1 rounded text-[10px] font-bold ${
+                  isTimerRunning
+                    ? 'bg-amber-500/20 text-amber-600 hover:bg-amber-500/30'
+                    : 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30'
+                }`}
+                title={isTimerRunning ? 'Sayacı Duraklat' : 'Sayacı Başlat'}
+              >
+                {isTimerRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTimerRunning(false);
+                  setExecutionMs(0);
+                }}
+                className="p-1 rounded text-slate-400 hover:text-slate-600"
+                title="Sayacı Sıfırla"
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
+            </div>
+
             <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center space-x-1.5">
               <FileCode2 className="w-3.5 h-3.5" />
               <span>{testCase.code}</span>
@@ -433,54 +511,134 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                 )}
               </div>
 
-              {/* Test Run Parameters: Version, Environment & Executed By */}
+              {/* Test Run Parameters: Extended Metadata Inputs */}
               <div className="p-3.5 bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2.5 shadow-xs">
-                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                  Koşu Parametreleri
+                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center space-x-1">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#b83a4b]" />
+                  <span>Koşu Parametreleri & Görsel Etiketler</span>
                 </span>
+
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-1">
                     <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-                      Versiyon No:
-                    </label>
-                    <input
-                      type="text"
-                      value={version}
-                      onChange={(e) => setVersion(e.target.value)}
-                      placeholder="Örn: v1.0.0"
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-                      Test Ortamı:
+                      🌐 Test Ortamı:
                     </label>
                     <select
                       value={environment}
                       onChange={(e) => setEnvironment(e.target.value)}
                       className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
                     >
-                      <option value="STAGING">STAGING</option>
-                      <option value="DEV">DEV (Geliştirme)</option>
-                      <option value="TEST">TEST / QA</option>
-                      <option value="UAT">UAT (Kullanıcı)</option>
-                      <option value="PROD">PROD (Canlı)</option>
+                      <option value="UAT">🌐 UAT</option>
+                      <option value="TEST">🌐 TEST</option>
+                      <option value="PROD">🌐 PROD</option>
+                      <option value="STAGING">🌐 STAGING</option>
+                      <option value="DEV">🌐 DEV</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                      🍎/🤖 Platform:
+                    </label>
+                    <select
+                      value={platform}
+                      onChange={(e) => setPlatform(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                    >
+                      <option value="iOS">🍎 iOS</option>
+                      <option value="Android">🤖 Android</option>
+                      <option value="Web">🌐 Web</option>
+                      <option value="API">⚡ API</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="space-y-1 pt-1">
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-                    Koşturan / Tester:
-                  </label>
-                  <input
-                    type="text"
-                    value={executedBy}
-                    onChange={(e) => setExecutedBy(e.target.value)}
-                    placeholder="Tester Adı"
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                      📦 Versiyon:
+                    </label>
+                    <input
+                      type="text"
+                      value={appVersion}
+                      onChange={(e) => setAppVersion(e.target.value)}
+                      placeholder="v1.2.0 (106)"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                      📱 Cihaz Aliası:
+                    </label>
+                    <input
+                      type="text"
+                      value={device}
+                      onChange={(e) => setDevice(e.target.value)}
+                      placeholder="iphone14 / s24"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                      👤 USER Profili:
+                    </label>
+                    <input
+                      type="text"
+                      value={userProfile}
+                      onChange={(e) => setUserProfile(e.target.value)}
+                      placeholder="UMIT / ZEYNEP"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs uppercase"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                      👥 Müşteri Tipi:
+                    </label>
+                    <select
+                      value={customerType}
+                      onChange={(e) => setCustomerType(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold"
+                    >
+                      <option value="BIREYSEL">👥 BIREYSEL</option>
+                      <option value="KURUMSAL">👥 KURUMSAL</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                      ⚠️ Flaky / Retry:
+                    </label>
+                    <select
+                      value={flakyStatus}
+                      onChange={(e) => setFlakyStatus(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold"
+                    >
+                      <option value="NONE">Stabil</option>
+                      <option value="+1 retry">+1 retry</option>
+                      <option value="+2 retry">+2 retry</option>
+                      <option value="FLAKY">FLAKY</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                      Koşturan / Tester:
+                    </label>
+                    <input
+                      type="text"
+                      value={executedBy}
+                      onChange={(e) => setExecutedBy(e.target.value)}
+                      placeholder="Tester Adı"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs"
+                    />
+                  </div>
                 </div>
               </div>
 

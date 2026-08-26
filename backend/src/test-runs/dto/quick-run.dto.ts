@@ -46,4 +46,34 @@ export class QuickRunDto {
   @IsString()
   @IsOptional()
   screenshotUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Platform (iOS / Android / Web / API)' })
+  @IsString()
+  @IsOptional()
+  platform?: string;
+
+  @ApiPropertyOptional({ description: 'Uygulama Versiyonu (Örn: v1.2.0 (106))' })
+  @IsString()
+  @IsOptional()
+  appVersion?: string;
+
+  @ApiPropertyOptional({ description: 'Cihaz Aliası (Örn: iphone14, iphone 15, s24)' })
+  @IsString()
+  @IsOptional()
+  device?: string;
+
+  @ApiPropertyOptional({ description: 'USER Profili (Örn: UMIT, ZEYNEP)' })
+  @IsString()
+  @IsOptional()
+  userProfile?: string;
+
+  @ApiPropertyOptional({ description: 'Müşteri Tipi (Örn: BIREYSEL, KURUMSAL)' })
+  @IsString()
+  @IsOptional()
+  customerType?: string;
+
+  @ApiPropertyOptional({ description: 'Flaky Durumu (Örn: +1 retry)' })
+  @IsString()
+  @IsOptional()
+  flakyStatus?: string;
 }
