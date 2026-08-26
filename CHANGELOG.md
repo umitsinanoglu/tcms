@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Removed
+- Test Senaryoları / Test Case detay sayfasındaki test koşum geçmişi ve ilgili bileşenler kaldırıldı
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
@@ -49,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manual Execution Dashboard (Manuel Test Koşum Paneli) modalı Türkçe diline çevrildi ve tema ile tam uyumlu hale getirildi.
 
 ### Added
+- Test adımlarına Ctrl+V ile panodan doğrudan görsel yapıştırma ve sürükle-bırak desteği eklendi
+- Test adımlarına görsel yükleme/ekleme ve boş durum kutusuna Adım Ekle butonu eklendi
 - NeoBank dijital bankacilik projesi, FAST 7/24 transfer, dinamik CVV kredi karti, Findeks kredi, canli FX, QR ATM ve zengin SVG ekran goruntuleri eklendi.
 - Kapsamlı Test Planı Detay Sayfası (TestPlanDetailView) eklendi; Test Planı Görüntüle butonu ile detay sayfasına geçiş, inline metadata düzenleme (başlık, hedef ortam, sürüm, durum, kapsam, gereksinimler), plana senaryo ekleme/çıkarma/oluşturma, bağlı koşumlar ve özet KPI kartları entegre edildi
 - Test Planları sayfası görsel tasarıma uygun olarak grid/tablo görünümü, KPI özet kartları, durum sekmeleri ve detay paneli ile revize edildi; Arama kutusu top navigasyon sağ üst bölüme taşındı
