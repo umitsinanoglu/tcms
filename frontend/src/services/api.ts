@@ -579,5 +579,148 @@ export const UsersService = {
   deleteUser: (id: string) => api.delete<{ message: string }>(`/users/${id}`).then((res) => res.data),
 };
 
+export type DefectSeverity = 'BLOCKER' | 'CRITICAL' | 'MAJOR' | 'MINOR' | 'TRIVIAL';
+export type DefectStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'REOPENED' | 'WONT_FIX';
+
+export interface Defect {
+  id: string;
+  key: string;
+  title: string;
+  description?: string | null;
+  severity: DefectSeverity;
+  status: DefectStatus;
+  projectId: string;
+  project?: {
+    id: string;
+    name: string;
+    key: string;
+  };
+  testCaseId?: string | null;
+  testCase?: {
+    id: string;
+    code: string;
+    title: string;
+    priority: Priority;
+    type: TestType;
+    suite?: { id: string; name: string };
+    steps?: TestStep[];
+  } | null;
+  testRunId?: string | null;
+  testRun?: {
+    id: string;
+    title: string;
+    version: string;
+    environment: string;
+  } | null;
+  testResultId?: string | null;
+  testResult?: {
+    id: string;
+    status: ResultStatus;
+    errorMessage?: string | null;
+    screenshotUrl?: string | null;
+  } | null;
+  assignedTo?: string | null;
+  reportedBy?: string | null;
+  environment?: string;
+  channel?: string;
+  jiraBugKey?: string | null;
+  jiraBugUrl?: string | null;
+  resolutionNotes?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDefectDto {
+  projectId: string;
+  title: string;
+  description?: string;
+  severity?: DefectSeverity;
+  status?: DefectStatus;
+  testCaseId?: string;
+  testRunId?: string;
+  testResultId?: string;
+  assignedTo?: string;
+  reportedBy?: string;
+  environment?: string;
+  channel?: string;
+  jiraBugKey?: string;
+  jiraBugUrl?: string;
+  resolutionNotes?: string;
+}
+
+export interface UpdateDefectDto {
+  title?: string;
+  description?: string;
+  severity?: DefectSeverity;
+  status?: DefectStatus;
+  testCaseId?: string | null;
+  testRunId?: string | null;
+  testResultId?: string | null;
+  assignedTo?: string;
+  reportedBy?: string;
+  environment?: string;
+  channel?: string;
+  jiraBugKey?: string;
+  jiraBugUrl?: string;
+  resolutionNotes?: string;
+  resolvedAt?: string;
+}
+
+export interface DefectStats {
+  projectId: string;
+  projectName: string;
+  projectKey: string;
+  metrics: {
+    total: number;
+    active: number;
+    open: number;
+    inProgress: number;
+    resolved: number;
+    closed: number;
+    reopened: number;
+    wontFix: number;
+    activeBlockerCritical: number;
+    resolutionRate: number;
+  };
+  distributions: {
+    bySeverity: Record<string, number>;
+    byStatus: Record<string, number>;
+    byEnvironment: Record<string, number>;
+    byChannel: Record<string, number>;
+    byAssignee: Record<string, number>;
+  };
+  recentDefects: Defect[];
+}
+
+export const DefectsService = {
+  getAllByProject: (
+    projectId: string,
+    filters?: {
+      status?: DefectStatus;
+      severity?: DefectSeverity;
+      environment?: string;
+      assignedTo?: string;
+      search?: string;
+    },
+  ) =>
+    api.get<Defect[]>(`/defects/project/${projectId}`, { params: filters }).then((res) => res.data),
+  getStatsByProject: (projectId: string) =>
+    api.get<DefectStats>(`/defects/stats/project/${projectId}`).then((res) => res.data),
+  getOne: (id: string) =>
+    api.get<Defect>(`/defects/${id}`).then((res) => res.data),
+  create: (data: CreateDefectDto) =>
+    api.post<Defect>('/defects', data).then((res) => res.data),
+  update: (id: string, data: UpdateDefectDto) =>
+    api.put<Defect>(`/defects/${id}`, data).then((res) => res.data),
+  updateStatus: (id: string, status: DefectStatus, resolutionNotes?: string) =>
+    api.patch<Defect>(`/defects/${id}/status`, { status, resolutionNotes }).then((res) => res.data),
+  syncFromFailed: (projectId: string) =>
+    api.post<{ syncedCount: number; createdDefects: Defect[] }>(`/defects/sync-failed/project/${projectId}`).then((res) => res.data),
+  delete: (id: string) =>
+    api.delete(`/defects/${id}`).then((res) => res.data),
+};
+
+
 
 

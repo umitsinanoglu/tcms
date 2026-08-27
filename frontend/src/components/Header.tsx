@@ -185,6 +185,9 @@ export const Header: React.FC<HeaderProps> = ({
     if (activeTab === 'RUNS') {
       return selectedRun ? selectedRun.title : 'Test Koşumları';
     }
+    if (activeTab === 'DEFECTS') {
+      return 'Defectler & Hatalar';
+    }
     if (activeTab === 'REPORTS') {
       return 'Test Raporları';
     }

@@ -13,6 +13,7 @@ import {
   TestCasesService,
   TestPlansService,
   TestRunsService,
+  DefectsService,
 } from '@/services/api';
 import { Header } from '@/components/Header';
 import { AppSidebar, SidebarTab } from '@/components/AppSidebar';
@@ -23,6 +24,7 @@ import { TestPlanDetailView } from '@/components/TestPlanDetailView';
 import { TestRunsView } from '@/components/TestRunsView';
 import { TestRunDetailView } from '@/components/TestRunDetailView';
 import { DashboardView } from '@/components/DashboardView';
+import { DefectsView } from '@/components/DefectsView';
 import { ManualRunModal } from '@/components/ManualRunModal';
 import { NewProjectModal } from '@/components/NewProjectModal';
 import { EditProjectModal } from '@/components/EditProjectModal';
@@ -46,6 +48,7 @@ export default function Home() {
   const [testPlans, setTestPlans] = useState<TestPlan[]>([]);
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
   const [testRunsCount, setTestRunsCount] = useState<number>(0);
+  const [defectsCount, setDefectsCount] = useState<number>(0);
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null);
   const [selectedSuite, setSelectedSuite] = useState<SuiteTreeNode | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<TestPlan | null>(null);
@@ -197,14 +200,15 @@ export default function Home() {
   const [activeSuiteRunCases, setActiveSuiteRunCases] = useState<TestCase[] | null>(null);
   const [activeParentSuiteId, setActiveParentSuiteId] = useState<string | null>(null);
 
-  // Load Tree & Plans & Runs count when selected project changes
+  // Load Tree & Plans & Runs count & Defects when selected project changes
   const loadProjectData = useCallback(async (projectId: string) => {
     setIsLoadingTree(true);
     try {
-      const [treeRes, plansRes, runsRes] = await Promise.all([
+      const [treeRes, plansRes, runsRes, defectsStats] = await Promise.all([
         ProjectsService.getTree(projectId).catch(() => ({ tree: [], rootTestCases: [] })),
         TestPlansService.getAllByProject(projectId).catch(() => []),
         TestRunsService.getRuns(projectId).catch(() => []),
+        DefectsService.getStatsByProject(projectId).catch(() => null),
       ]);
 
       const newTree = (treeRes && 'tree' in treeRes && treeRes.tree) || [];
@@ -214,6 +218,7 @@ export default function Home() {
       setTestPlans(plansRes || []);
       setTestRuns(runsRes || []);
       setTestRunsCount(runsRes?.length || 0);
+      setDefectsCount(defectsStats?.metrics?.active || 0);
 
       return { tree: newTree, rootCases: newRootCases, plans: plansRes || [], runs: runsRes || [] };
     } catch (err) {
@@ -223,6 +228,7 @@ export default function Home() {
       setTestPlans([]);
       setTestRuns([]);
       setTestRunsCount(0);
+      setDefectsCount(0);
       return { tree: [], rootCases: [], plans: [], runs: [] };
     } finally {
       setIsLoadingTree(false);
@@ -251,6 +257,7 @@ export default function Home() {
         let label = 'Ana Sayfa';
         if (tab === 'PLANS') label = 'Test Planları';
         else if (tab === 'RUNS') label = 'Test Koşumları';
+        else if (tab === 'DEFECTS') label = 'Defectler & Hatalar';
         else if (tab === 'REPORTS') label = 'Test Raporları';
         else if (tab === 'EXPLORER') label = 'Test Senaryoları';
 
@@ -856,6 +863,7 @@ export default function Home() {
           testCasesCount={allCases.length}
           testPlansCount={testPlans.length}
           testRunsCount={testRunsCount}
+          defectsCount={defectsCount}
           onOpenUserManagement={() => setIsUserManagementOpen(true)}
         />
 
@@ -1081,6 +1089,27 @@ export default function Home() {
                 }}
               />
             )
+          )}
+
+          {activeTab === 'DEFECTS' && (
+            <DefectsView
+              selectedProject={selectedProject}
+              allCases={allCases}
+              onDefectsCountChange={(count) => setDefectsCount(count)}
+              onNavigateToCase={(caseId) => {
+                const target = allCases.find((c) => c.id === caseId);
+                if (target) {
+                  handleSelectCase(target);
+                }
+              }}
+              onNavigateToRun={(runId) => {
+                const targetRun = testRuns.find((r) => r.id === runId);
+                if (targetRun) {
+                  setSelectedRun(targetRun);
+                  setActiveTab('RUNS');
+                }
+              }}
+            />
           )}
 
           {activeTab === 'REPORTS' && (
