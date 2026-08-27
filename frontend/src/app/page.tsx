@@ -26,8 +26,6 @@ import { DashboardView } from '@/components/DashboardView';
 import { ManualRunModal } from '@/components/ManualRunModal';
 import { NewProjectModal } from '@/components/NewProjectModal';
 import { EditProjectModal } from '@/components/EditProjectModal';
-import { NewSuiteModal } from '@/components/NewSuiteModal';
-import { EditSuiteModal } from '@/components/EditSuiteModal';
 import { NewCaseModal } from '@/components/NewCaseModal';
 import { NewTestPlanModal } from '@/components/NewTestPlanModal';
 import { QuickRunModal } from '@/components/QuickRunModal';
@@ -188,9 +186,6 @@ export default function Home() {
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
   const [activeEditProject, setActiveEditProject] = useState<Project | null>(null);
-  const [isNewSuiteOpen, setIsNewSuiteOpen] = useState(false);
-  const [isEditSuiteOpen, setIsEditSuiteOpen] = useState(false);
-  const [activeEditSuite, setActiveEditSuite] = useState<SuiteTreeNode | null>(null);
   const [isNewCaseOpen, setIsNewCaseOpen] = useState(false);
   const [isNewTestPlanOpen, setIsNewTestPlanOpen] = useState(false);
   const [isManualRunOpen, setIsManualRunOpen] = useState(false);
@@ -663,33 +658,7 @@ export default function Home() {
     }
   };
 
-  // Handlers for Suite actions
-  const handleCreateSuite = async (data: { name: string; projectId: string; parentId?: string }) => {
-    await SuitesService.create(data);
-    if (selectedProject) await loadProjectData(selectedProject.id);
-  };
 
-  const handleUpdateSuite = async (suiteId: string, data: { name?: string; parentId?: string | null }) => {
-    await SuitesService.update(suiteId, {
-      name: data.name,
-      parentId: data.parentId !== undefined ? (data.parentId || undefined) : undefined,
-    });
-    if (selectedProject) await loadProjectData(selectedProject.id);
-  };
-
-  const handleDeleteSuite = async (suiteId: string) => {
-    await SuitesService.delete(suiteId);
-    if (selectedSuite?.id === suiteId) {
-      setSelectedSuite(null);
-      saveSessionState({ suiteId: null });
-    }
-    if (selectedProject) await loadProjectData(selectedProject.id);
-  };
-
-  const handleReorderSuite = async (suiteId: string, targetParentId: string | null, newOrder: number) => {
-    await SuitesService.reorder(suiteId, { parentId: targetParentId, orderIndex: newOrder });
-    if (selectedProject) await loadProjectData(selectedProject.id);
-  };
 
   // Handlers for TestCase actions
   const handleCreateCase = async (data: Partial<TestCase>) => {
@@ -909,16 +878,11 @@ export default function Home() {
               onOpenNewPlan={() => {
                 setIsNewTestPlanOpen(true);
               }}
-              onOpenNewSuite={() => {
-                setActiveParentSuiteId(null);
-                setIsNewSuiteOpen(true);
-              }}
               onOpenNewCase={() => {
                 setActiveParentSuiteId(selectedSuite?.id || null);
                 setIsNewCaseOpen(true);
               }}
               onSelectCase={(tc) => handleSelectCase(tc)}
-              onSelectSuite={(suite) => handleSelectSuite(suite)}
               onSelectPlan={(plan) => handleSelectPlan(plan)}
               onSelectRun={(run) => {
                 if (run) {
@@ -1154,29 +1118,6 @@ export default function Home() {
         project={activeEditProject}
         onUpdate={handleUpdateProject}
         onDelete={handleDeleteProject}
-      />
-
-      <NewSuiteModal
-        isOpen={isNewSuiteOpen}
-        onClose={() => setIsNewSuiteOpen(false)}
-        projectId={selectedProject?.id || ''}
-        projectName={selectedProject?.name}
-        projectKey={selectedProject?.key}
-        parentSuiteId={activeParentSuiteId}
-        suites={tree}
-        onSubmit={handleCreateSuite}
-      />
-
-      <EditSuiteModal
-        isOpen={isEditSuiteOpen}
-        onClose={() => {
-          setIsEditSuiteOpen(false);
-          setActiveEditSuite(null);
-        }}
-        suite={activeEditSuite}
-        suites={tree}
-        onUpdate={handleUpdateSuite}
-        onDelete={handleDeleteSuite}
       />
 
       <NewCaseModal

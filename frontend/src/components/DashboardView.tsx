@@ -52,9 +52,7 @@ interface DashboardViewProps {
   onOpenManualRun: () => void;
   onOpenNewCase: () => void;
   onOpenNewPlan?: () => void;
-  onOpenNewSuite?: () => void;
   onSelectCase?: (testCase: TestCase) => void;
-  onSelectSuite?: (suite: SuiteTreeNode) => void;
   onSelectPlan?: (plan: TestPlan) => void;
   onSelectRun?: (run: TestRun) => void;
   onNavigateToPlans?: () => void;
@@ -74,9 +72,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenManualRun,
   onOpenNewCase,
   onOpenNewPlan,
-  onOpenNewSuite,
   onSelectCase,
-  onSelectSuite,
   onSelectPlan,
   onSelectRun,
   onNavigateToPlans,
@@ -674,14 +670,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-[#2e3748] bg-slate-50/75 dark:bg-slate-900/40 text-xs font-bold text-slate-500 dark:text-[#8e9bb0] uppercase tracking-wider">
-                      <th className="py-2.5 px-3.5">ID</th>
+                      <th className="py-2.5 px-3.5 whitespace-nowrap min-w-[100px] w-28">ID</th>
                       <th className="py-2.5 px-3.5 min-w-[170px]">Test Senaryosu</th>
-                      <th className="py-2.5 px-3.5">Proje</th>
-                      <th className="py-2.5 px-3.5">Test Planı</th>
-                      <th className="py-2.5 px-2.5">Tip</th>
-                      <th className="py-2.5 px-3.5">Otomasyon</th>
-                      <th className="py-2.5 px-3.5 text-right">Son Çalıştırma</th>
-                      <th className="py-2.5 px-3.5 text-right">Sonuç</th>
+                      <th className="py-2.5 px-3.5 whitespace-nowrap">Proje</th>
+                      <th className="py-2.5 px-3.5 whitespace-nowrap">Test Planı</th>
+                      <th className="py-2.5 px-2.5 whitespace-nowrap">Tip</th>
+                      <th className="py-2.5 px-3.5 whitespace-nowrap">Otomasyon</th>
+                      <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Son Çalıştırma</th>
+                      <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Sonuç</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-[#2e3748]/50 text-sm">
@@ -696,7 +692,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           onClick={() => onSelectCase && onSelectCase(tc)}
                           className="hover:bg-slate-50/90 dark:hover:bg-[#262e3d]/60 transition-colors cursor-pointer group"
                         >
-                          <td className="py-2.5 px-3.5 font-mono font-bold text-xs text-blue-600 dark:text-blue-400 shrink-0">
+                          <td className="py-2.5 px-3.5 font-mono font-bold text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap min-w-[100px]">
                             {tc.code}
                           </td>
                           <td className="py-2.5 px-3.5">
@@ -1092,7 +1088,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#8e9bb0]">
           Hızlı İşlemler
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {/* Action 1: Yeni Test Senaryosu */}
           <button
             onClick={onOpenNewCase}
@@ -1136,15 +1132,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           >
             <BarChart3 className="w-4 h-4 text-amber-500" />
             <span className="truncate">Raporlar & Analiz</span>
-          </button>
-
-          {/* Action 6: Test Suite Ekle */}
-          <button
-            onClick={onOpenNewSuite}
-            className="flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-[#262e3d]/60 hover:bg-teal-500/10 hover:border-teal-500/30 border border-slate-200 dark:border-[#2e3748] text-slate-800 dark:text-slate-200 hover:text-teal-600 dark:hover:text-teal-400 transition-all font-semibold text-xs sm:text-sm cursor-pointer shadow-xs active:scale-98"
-          >
-            <FolderPlus className="w-4 h-4 text-teal-500" />
-            <span className="truncate">Yeni Test Suite</span>
           </button>
         </div>
       </div>

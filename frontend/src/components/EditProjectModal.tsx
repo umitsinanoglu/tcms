@@ -113,7 +113,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 <span>Test Planı Silme Onayı</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                <strong>"{project.name}"</strong> test planını ve altındaki tüm Suite, Test Case ve Test Koşusu kayıtlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz!
+                <strong>"{project.name}"</strong> test planını ve altındaki tüm Modül, Test Case ve Test Koşusu kayıtlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz!
               </p>
             </div>
 

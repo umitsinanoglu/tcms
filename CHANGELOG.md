@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Ana Sayfa 'Yeni Test Suite' butonu kaldırıldı, Suite modalları sistemden temizlendi ve Dashboard ID kolonu wrap text sorunu düzeltildi.
 - Test Planları ve Test Senaryoları sayfalarındaki grid kolonları wrap-text yapmadan esnek sığdırıldı, plan başlığı ve kapsam kolonları daraltıldı
 - Test koşumu detay sayfası modernleştirildi ve yeni UI tasarımına uyarlandı
 - Test Planı detayında Test Senaryosu Ekle butonu, Modül öz niteliği, Test Koşumları Geçmişi başlığı ve sekme sadeleştirmeleri
