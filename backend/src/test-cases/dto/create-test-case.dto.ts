@@ -15,6 +15,11 @@ export class CreateTestCaseDto {
   @IsOptional()
   description?: string;
 
+  @ApiProperty({ example: 'MANUAL', description: 'Test yöntemi (MANUAL veya AUTOMATION)', required: false })
+  @IsString()
+  @IsOptional()
+  executionType?: string = 'MANUAL';
+
   @ApiProperty({ enum: TestType, example: TestType.WEB, description: 'Test tipi' })
   @IsEnum(TestType)
   @IsOptional()
@@ -30,10 +35,15 @@ export class CreateTestCaseDto {
   @IsOptional()
   precondition?: string;
 
-  @ApiProperty({ example: 'uuid-suite-id', description: 'Ait olduğu Suite UUID' })
+  @ApiProperty({ example: 'uuid-project-id', description: 'Ait olduğu Test Planı / Proje UUID', required: false })
   @IsUUID()
-  @IsNotEmpty()
-  suiteId: string;
+  @IsOptional()
+  projectId?: string;
+
+  @ApiProperty({ example: 'uuid-suite-id', description: 'Ait olduğu Suite UUID', required: false })
+  @IsUUID()
+  @IsOptional()
+  suiteId?: string;
 
   @ApiProperty({ example: 0, description: 'Sıralama indeksi', required: false })
   @IsInt()

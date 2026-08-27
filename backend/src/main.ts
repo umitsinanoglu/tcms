@@ -1,7 +1,10 @@
+import './prisma/db-env';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
+import { resolveDatabaseEnv } from './prisma/db-env';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,6 +14,10 @@ async function bootstrap() {
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   });
+
+  // Increase payload size limit to 50MB (for base64 screenshots and large execution logs)
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ extended: true, limit: '50mb' }));
 
   // Enable global validation pipe
   app.useGlobalPipes(
@@ -38,7 +45,9 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
 
+  const dbConfig = resolveDatabaseEnv();
   console.log(`🚀 TCMS Backend Server running on: http://localhost:${port}`);
+  console.log(`🗄️ Active Database Environment: [${dbConfig.environment}]`);
   console.log(`📚 Swagger API Documentation available at: http://localhost:${port}/api/docs`);
 }
 bootstrap();

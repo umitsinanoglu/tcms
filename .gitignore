@@ -61,3 +61,6 @@ coverage/
 *.sqlite
 *.sqlite-journal
 *.db
+
+Scripts
+*.ps1

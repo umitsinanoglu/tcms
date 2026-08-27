@@ -26,6 +26,7 @@ export class TestRunsService {
         environment: dto.environment || 'STAGING',
         executedBy: dto.executedBy || 'QA Tester',
         testerEmail: dto.testerEmail || 'tester@company.com',
+        testPlanId: dto.testPlanId || null,
         status: RunStatus.IN_PROGRESS,
       },
     });
@@ -164,8 +165,37 @@ export class TestRunsService {
     return this.prisma.testRun.findMany({
       where: { projectId },
       include: {
+        testPlan: {
+          select: {
+            id: true,
+            title: true,
+            version: true,
+            environment: true,
+          },
+        },
         _count: {
           select: { results: true },
+        },
+        results: {
+          include: {
+            testCase: {
+              select: {
+                id: true,
+                code: true,
+                title: true,
+                type: true,
+                priority: true,
+                suiteId: true,
+                suite: {
+                  select: {
+                    id: true,
+                    name: true,
+                    parentId: true,
+                  },
+                },
+              },
+            },
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -189,12 +219,15 @@ export class TestRunsService {
 
     const bugUrl = dto.jiraBugUrl || (dto.jiraBugKey ? `https://company.atlassian.net/browse/${dto.jiraBugKey}` : null);
 
+    const version = dto.version?.trim() || 'v1.0.0';
+    const environment = dto.environment?.trim() || 'STAGING';
+
     const testRun = await this.prisma.testRun.create({
       data: {
         projectId,
-        title: `Quick Run - ${testCase.code}`,
-        version: 'v1.0.0',
-        environment: 'STAGING',
+        title: `Run - ${testCase.code} (${version} / ${environment})`,
+        version,
+        environment,
         executedBy: dto.executedBy || 'QA Tester',
         testerEmail: 'tester@company.com',
         status: RunStatus.COMPLETED,
@@ -230,10 +263,36 @@ export class TestRunsService {
     const testRun = await this.prisma.testRun.findUnique({
       where: { id },
       include: {
+        testPlan: {
+          select: {
+            id: true,
+            title: true,
+            version: true,
+            environment: true,
+            scope: true,
+            requirements: true,
+          },
+        },
         results: {
           include: {
             testCase: {
-              select: { id: true, code: true, title: true, type: true, priority: true, jiraStoryKey: true, jiraIssueUrl: true },
+              select: {
+                id: true,
+                code: true,
+                title: true,
+                type: true,
+                priority: true,
+                jiraStoryKey: true,
+                jiraIssueUrl: true,
+                suiteId: true,
+                suite: {
+                  select: {
+                    id: true,
+                    name: true,
+                    parentId: true,
+                  },
+                },
+              },
             },
           },
         },

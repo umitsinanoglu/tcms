@@ -9,6 +9,22 @@ export const api = axios.create({
   },
 });
 
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const activeUserId = localStorage.getItem('tcms_active_user_id');
+    const activeUserRole = localStorage.getItem('tcms_active_user_role');
+    const activeUserEmail = localStorage.getItem('tcms_active_user_email');
+    const activeUserName = localStorage.getItem('tcms_active_user_name');
+
+    if (activeUserId) config.headers['x-user-id'] = activeUserId;
+    if (activeUserRole) config.headers['x-user-role'] = activeUserRole;
+    if (activeUserEmail) config.headers['x-user-email'] = activeUserEmail;
+    if (activeUserName) config.headers['x-user-name'] = encodeURIComponent(activeUserName);
+  }
+  return config;
+});
+
+
 export interface Project {
   id: string;
   name: string;
@@ -17,9 +33,62 @@ export interface Project {
   jiraProjectKey?: string;
   createdAt: string;
   _count?: {
+    testPlans?: number;
     suites: number;
     testRuns: number;
   };
+}
+
+export type PlanStatus = 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
+
+export interface TestPlan {
+  id: string;
+  title: string;
+  description?: string;
+  version: string;
+  environment: string;
+  status: PlanStatus;
+  scope?: string;
+  requirements?: string;
+  projectId: string;
+  project?: {
+    id: string;
+    name: string;
+    key: string;
+  };
+  testRuns?: TestRun[];
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    testRuns: number;
+  };
+}
+
+export interface CreateTestPlanDto {
+  title: string;
+  description?: string;
+  version?: string;
+  environment?: string;
+  status?: PlanStatus;
+  scope?: string;
+  requirements?: string;
+  projectId: string;
+}
+
+export interface UpdateTestPlanDto {
+  title?: string;
+  description?: string;
+  version?: string;
+  environment?: string;
+  status?: PlanStatus;
+  scope?: string;
+  requirements?: string;
+}
+
+export interface StepAttachment {
+  id?: string;
+  url: string;
+  comment?: string;
 }
 
 export interface TestStep {
@@ -27,9 +96,11 @@ export interface TestStep {
   stepNumber: number;
   action: string;
   expectedResult: string;
+  attachments?: StepAttachment[];
 }
 
-export type TestType = 'WEB' | 'MOBILE' | 'API' | 'MANUAL';
+export type ExecutionType = 'MANUAL' | 'AUTOMATION';
+export type TestType = 'WEB' | 'IOS' | 'ANDROID' | 'API' | 'PERFORMANCE' | 'OTHER' | 'MANUAL' | 'MOBILE';
 export type Priority = 'BLOCKER' | 'CRITICAL' | 'NORMAL' | 'LOW';
 export type RunStatus = 'IN_PROGRESS' | 'COMPLETED' | 'ABORTED';
 export type ResultStatus = 'PASSED' | 'FAILED' | 'SKIPPED' | 'BLOCKED';
@@ -39,12 +110,19 @@ export interface TestCase {
   code: string;
   title: string;
   description?: string;
+  executionType?: ExecutionType;
   type: TestType;
   priority: Priority;
   precondition?: string;
   preconditions?: string;
   orderIndex?: number;
-  suiteId: string;
+  suiteId?: string | null;
+  suite?: {
+    id: string;
+    name: string;
+    parentId?: string | null;
+  };
+  projectId?: string;
   jiraStoryKey?: string;
   jiraIssueUrl?: string;
   screenshotUrl?: string;
@@ -74,11 +152,13 @@ export interface TreeResponse {
   projectId?: string;
   tree: SuiteTreeNode[];
   children?: SuiteTreeNode[];
+  rootTestCases?: TestCase[];
 }
 
 export interface TestResult {
   id?: string;
   testRunId?: string;
+  testRun?: Partial<TestRun>;
   testCaseId: string;
   testCase?: Partial<TestCase>;
   status: ResultStatus;
@@ -101,6 +181,15 @@ export interface TestRun {
   executedBy: string;
   testerEmail: string;
   projectId: string;
+  testPlanId?: string | null;
+  testPlan?: {
+    id: string;
+    title: string;
+    version: string;
+    environment: string;
+    scope?: string;
+    requirements?: string;
+  } | null;
   results: TestResult[];
   createdAt: string;
   _count?: {
@@ -114,6 +203,7 @@ export interface CreateRunDto {
   environment?: string;
   executedBy?: string;
   testerEmail?: string;
+  testPlanId?: string;
 }
 
 export interface SaveResultsDto {
@@ -134,9 +224,22 @@ export const ProjectsService = {
   getOne: (id: string) => api.get<Project>(`/projects/${id}`).then((res) => res.data),
   create: (data: { name: string; key: string; description?: string; jiraProjectKey?: string }) =>
     api.post<Project>('/projects', data).then((res) => res.data),
+  update: (id: string, data: { name?: string; key?: string; description?: string; jiraProjectKey?: string }) =>
+    api.patch<Project>(`/projects/${id}`, data).then((res) => res.data),
   getTree: (projectId: string) =>
     api.get<TreeResponse>(`/projects/${projectId}/tree`).then((res) => res.data),
   delete: (id: string) => api.delete(`/projects/${id}`).then((res) => res.data),
+};
+
+export const TestPlansService = {
+  getAllByProject: (projectId: string) =>
+    api.get<TestPlan[]>(`/projects/${projectId}/test-plans`).then((res) => res.data),
+  getOne: (id: string) => api.get<TestPlan>(`/test-plans/${id}`).then((res) => res.data),
+  create: (data: CreateTestPlanDto) =>
+    api.post<TestPlan>('/test-plans', data).then((res) => res.data),
+  update: (id: string, data: UpdateTestPlanDto) =>
+    api.patch<TestPlan>(`/test-plans/${id}`, data).then((res) => res.data),
+  delete: (id: string) => api.delete(`/test-plans/${id}`).then((res) => res.data),
 };
 
 export const SuitesService = {
@@ -166,11 +269,265 @@ export const TestRunsService = {
     api.post<TestRun>(`/projects/${projectId}/runs/${runId}/results`, data).then((res) => res.data),
   completeRun: (runId: string, status: RunStatus = 'COMPLETED') =>
     api.patch<TestRun>(`/runs/${runId}/complete`, { status }).then((res) => res.data),
-  quickRun: (projectId: string, data: { testCaseId: string; status: ResultStatus; errorMessage?: string; jiraBugKey?: string; jiraBugUrl?: string; screenshotUrl?: string; executedBy?: string }) =>
+  quickRun: (projectId: string, data: { testCaseId: string; status: ResultStatus; version?: string; environment?: string; errorMessage?: string; jiraBugKey?: string; jiraBugUrl?: string; screenshotUrl?: string; executedBy?: string }) =>
     api.post<TestResult>(`/projects/${projectId}/quick-run`, data).then((res) => res.data),
   getRuns: (projectId: string) =>
     api.get<TestRun[]>(`/projects/${projectId}/runs`).then((res) => res.data),
   getRunDetails: (runId: string) =>
     api.get<TestRun>(`/runs/${runId}`).then((res) => res.data),
 };
+
+export interface ProjectReportSummary {
+  project: Project;
+  metrics: {
+    totalCases: number;
+    totalSuites: number;
+    totalRuns: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    skipped: number;
+    untested: number;
+    executedTotal: number;
+    passRate: number;
+    executedPassRate: number;
+  };
+  readiness?: {
+    status: 'GO' | 'CAUTION' | 'NO_GO';
+    score: number;
+    reason: string;
+    blockerCount: number;
+    criticalCount: number;
+  };
+  channels?: {
+    key: string;
+    name: string;
+    icon: string;
+    total: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    untested: number;
+    passRate: number;
+  }[];
+  automation?: {
+    manual: number;
+    automation: number;
+    percentage: number;
+  };
+  topRiskySuites?: {
+    id: string;
+    name: string;
+    totalCases: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    untested: number;
+    passRate: number;
+  }[];
+  distributions: {
+    priority: Record<string, number>;
+    type: Record<string, number>;
+    executionType: Record<string, number>;
+  };
+  suites: {
+    id: string;
+    name: string;
+    parentId?: string | null;
+    totalCases: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    untested: number;
+    passRate: number;
+  }[];
+  recentRuns: {
+    id: string;
+    title: string;
+    version: string;
+    environment: string;
+    status: RunStatus;
+    executedBy: string;
+    createdAt: string;
+    totalResults: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    passRate: number;
+  }[];
+  failedCases: {
+    code: string;
+    title: string;
+    suiteName: string;
+    priority: Priority;
+    errorMessage?: string;
+    jiraBugKey?: string;
+    jiraBugUrl?: string;
+    executedBy?: string;
+    executedAt?: string;
+  }[];
+  defects: {
+    jiraBugKey: string;
+    jiraBugUrl?: string;
+    testCaseCode: string;
+    testCaseTitle: string;
+    errorMessage?: string;
+    executedAt: string;
+  }[];
+  testCases: (TestCase & {
+    suiteName: string;
+    stepsCount: number;
+    latestStatus: ResultStatus | 'UNTESTED';
+    latestErrorMessage?: string;
+    latestJiraBugKey?: string;
+    latestJiraBugUrl?: string;
+    latestExecutionMs?: number;
+    latestExecutedAt?: string;
+  })[];
+  generatedAt: string;
+}
+
+export interface RunReportSummary {
+  run: TestRun & { projectName: string; projectKey: string };
+  metrics: {
+    total: number;
+    passed: number;
+    failed: number;
+    blocked: number;
+    skipped: number;
+    passRate: number;
+    totalExecutionMs: number;
+    avgExecutionMs: number;
+  };
+  defects: {
+    jiraBugKey: string;
+    jiraBugUrl?: string;
+    testCaseCode: string;
+    testCaseTitle: string;
+    errorMessage?: string;
+    screenshotUrl?: string;
+  }[];
+  results: {
+    id: string;
+    testCaseId: string;
+    testCaseCode: string;
+    testCaseTitle: string;
+    suiteName: string;
+    priority: Priority;
+    type: TestType;
+    executionType: ExecutionType;
+    status: ResultStatus;
+    executionMs?: number;
+    errorMessage?: string;
+    jiraBugKey?: string;
+    jiraBugUrl?: string;
+    screenshotUrl?: string;
+    executedBy?: string;
+    executedAt?: string;
+  }[];
+  generatedAt: string;
+}
+
+export const ReportsService = {
+  getProjectSummary: (projectId: string) =>
+    api.get<ProjectReportSummary>(`/reports/projects/${projectId}/summary`).then((res) => res.data),
+  getRunSummary: (runId: string) =>
+    api.get<RunReportSummary>(`/reports/runs/${runId}/summary`).then((res) => res.data),
+  getSuiteSummary: (suiteId: string) =>
+    api.get<any>(`/reports/suites/${suiteId}/summary`).then((res) => res.data),
+  getTestCaseSummary: (caseId: string) =>
+    api.get<any>(`/reports/test-cases/${caseId}/summary`).then((res) => res.data),
+
+  // Export URLs for browser direct download or new window
+  getProjectExportUrl: (projectId: string, format: 'json' | 'csv' | 'html') =>
+    `${API_BASE_URL}/reports/projects/${projectId}/export?format=${format}`,
+  getRunExportUrl: (runId: string, format: 'json' | 'csv' | 'html') =>
+    `${API_BASE_URL}/reports/runs/${runId}/export?format=${format}`,
+
+  // Trigger browser download via blob / direct link
+  downloadProjectReport: async (projectId: string, format: 'json' | 'csv' | 'html', projectKey?: string) => {
+    const url = `${API_BASE_URL}/reports/projects/${projectId}/export?format=${format}`;
+    if (format === 'html') {
+      window.open(url, '_blank');
+      return;
+    }
+    const response = await api.get(url, { responseType: 'blob' });
+    const blob = new Blob([response.data], {
+      type: format === 'csv' ? 'text/csv;charset=utf-8;' : 'application/json',
+    });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    const date = new Date().toISOString().split('T')[0];
+    link.setAttribute('download', `${projectKey || 'TCMS'}_Test_Report_${date}.${format}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  },
+
+  downloadRunReport: async (runId: string, format: 'json' | 'csv' | 'html', runTitle?: string) => {
+    const url = `${API_BASE_URL}/reports/runs/${runId}/export?format=${format}`;
+    if (format === 'html') {
+      window.open(url, '_blank');
+      return;
+    }
+    const response = await api.get(url, { responseType: 'blob' });
+    const blob = new Blob([response.data], {
+      type: format === 'csv' ? 'text/csv;charset=utf-8;' : 'application/json',
+    });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    const date = new Date().toISOString().split('T')[0];
+    const safeTitle = (runTitle || 'Run').replace(/[^a-zA-Z0-9_-]/g, '_');
+    link.setAttribute('download', `${safeTitle}_Report_${date}.${format}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  },
+};
+
+export type UserRole = 'ADMIN' | 'TEST_LEAD' | 'TESTER' | 'VIEWER';
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  department?: string | null;
+  avatarUrl?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateUserInput {
+  email: string;
+  name: string;
+  role?: UserRole;
+  department?: string;
+  avatarUrl?: string;
+}
+
+export interface UpdateUserInput {
+  email?: string;
+  name?: string;
+  role?: UserRole;
+  department?: string;
+  avatarUrl?: string;
+  isActive?: boolean;
+}
+
+export const UsersService = {
+  getUsers: () => api.get<User[]>('/users').then((res) => res.data),
+  getUser: (id: string) => api.get<User>(`/users/${id}`).then((res) => res.data),
+  getCurrentUser: () => api.get<any>('/users/me').then((res) => res.data),
+  createUser: (data: CreateUserInput) => api.post<User>('/users', data).then((res) => res.data),
+  updateUser: (id: string, data: UpdateUserInput) => api.patch<User>(`/users/${id}`, data).then((res) => res.data),
+  deleteUser: (id: string) => api.delete<{ message: string }>(`/users/${id}`).then((res) => res.data),
+};
+
+
 

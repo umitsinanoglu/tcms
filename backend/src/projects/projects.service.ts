@@ -89,7 +89,10 @@ export class ProjectsService {
     // Fetch all test cases in the project including steps and latest result
     const testCases = await this.prisma.testCase.findMany({
       where: {
-        suite: { projectId },
+        OR: [
+          { projectId },
+          { suite: { projectId } },
+        ],
       },
       include: {
         steps: {
@@ -97,19 +100,36 @@ export class ProjectsService {
         },
         results: {
           orderBy: { executedAt: 'desc' },
-          take: 1,
+          include: {
+            testRun: {
+              select: {
+                id: true,
+                title: true,
+                version: true,
+                environment: true,
+                status: true,
+                executedBy: true,
+              },
+            },
+          },
         },
       },
       orderBy: { createdAt: 'asc' },
     });
 
-    // Group test cases by suiteId
+    // Group test cases by suiteId or rootTestCases
     const testCasesBySuiteMap = new Map<string, any[]>();
+    const rootTestCases: any[] = [];
+
     for (const tc of testCases) {
-      if (!testCasesBySuiteMap.has(tc.suiteId)) {
-        testCasesBySuiteMap.set(tc.suiteId, []);
+      if (tc.suiteId) {
+        if (!testCasesBySuiteMap.has(tc.suiteId)) {
+          testCasesBySuiteMap.set(tc.suiteId, []);
+        }
+        testCasesBySuiteMap.get(tc.suiteId)!.push(tc);
+      } else {
+        rootTestCases.push(tc);
       }
-      testCasesBySuiteMap.get(tc.suiteId)!.push(tc);
     }
 
     // Build hierarchical suite tree structure
@@ -145,6 +165,7 @@ export class ProjectsService {
       },
       tree: rootSuites,
       children: rootSuites,
+      rootTestCases,
     };
   }
 }

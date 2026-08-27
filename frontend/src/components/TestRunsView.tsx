@@ -1,0 +1,808 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { TestRun, TestRunsService, RunStatus, ResultStatus, TestCase, ReportsService } from '@/services/api';
+import { parseScreenshots } from './QuickRunModal';
+import {
+  Play,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Slash,
+  Search,
+  Filter,
+  Plus,
+  RefreshCw,
+  ExternalLink,
+  Code,
+  Terminal,
+  ChevronRight,
+  Eye,
+  X,
+  Bug,
+  Image as ImageIcon,
+  CheckCircle,
+  AlertCircle,
+  Copy,
+  Check,
+  FileSpreadsheet,
+  Printer,
+  Download,
+  Globe,
+  Smartphone,
+  Zap,
+  Folder,
+} from 'lucide-react';
+
+interface TestRunsViewProps {
+  projectId: string;
+  onOpenManualRun: () => void;
+  onSelectCase?: (testCase: TestCase) => void;
+}
+
+export const TestRunsView: React.FC<TestRunsViewProps> = ({
+  projectId,
+  onOpenManualRun,
+  onSelectCase,
+}) => {
+  const [runs, setRuns] = useState<TestRun[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | RunStatus>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRunDetails, setSelectedRunDetails] = useState<TestRun | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isAutomationModalOpen, setIsAutomationModalOpen] = useState(false);
+  const [copiedCurl, setCopiedCurl] = useState(false);
+
+  // Fetch test runs list
+  const loadRuns = useCallback(async () => {
+    if (!projectId) return;
+    setLoading(true);
+    try {
+      const data = await TestRunsService.getRuns(projectId);
+      setRuns(data);
+    } catch (err) {
+      console.error('Failed to load test runs:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    loadRuns();
+  }, [loadRuns]);
+
+  // Open detailed run view
+  const handleOpenDetail = async (runId: string) => {
+    try {
+      const details = await TestRunsService.getRunDetails(runId);
+      setSelectedRunDetails(details);
+      setIsDetailOpen(true);
+    } catch (err) {
+      console.error('Failed to fetch run details:', err);
+    }
+  };
+
+  // Complete / Abort run action
+  const handleUpdateRunStatus = async (runId: string, status: RunStatus) => {
+    try {
+      await TestRunsService.completeRun(runId, status);
+      await loadRuns();
+      if (selectedRunDetails && selectedRunDetails.id === runId) {
+        const updated = await TestRunsService.getRunDetails(runId);
+        setSelectedRunDetails(updated);
+      }
+    } catch (err) {
+      console.error('Failed to update run status:', err);
+    }
+  };
+
+  // Filter runs logic
+  const filteredRuns = runs.filter((run) => {
+    if (statusFilter !== 'ALL' && run.status !== statusFilter) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const titleMatch = run.title.toLowerCase().includes(q);
+      const versionMatch = run.version.toLowerCase().includes(q);
+      const envMatch = run.environment.toLowerCase().includes(q);
+      const testerMatch = run.executedBy ? run.executedBy.toLowerCase().includes(q) : false;
+      return titleMatch || versionMatch || envMatch || testerMatch;
+    }
+    return true;
+  });
+
+  // Global Run KPI Stats
+  const totalRuns = runs.length;
+  const inProgressRuns = runs.filter((r) => r.status === 'IN_PROGRESS').length;
+  const completedRuns = runs.filter((r) => r.status === 'COMPLETED').length;
+  const abortedRuns = runs.filter((r) => r.status === 'ABORTED').length;
+
+  const automationCurlExample = `curl -X POST "http://localhost:3001/api/v1/projects/${projectId}/runs/automation" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "title": "Mobile Appium Automation Suite",
+    "version": "v2.5.0-ci",
+    "environment": "STAGING",
+    "executedBy": "Jenkins CI Bot",
+    "testerEmail": "qa-automation@company.com",
+    "results": [
+      {
+        "caseCode": "TC-101",
+        "status": "PASSED",
+        "durationMs": 420
+      },
+      {
+        "caseCode": "TC-102",
+        "status": "FAILED",
+        "durationMs": 1250,
+        "errorMessage": "Element #submit-btn not found within 10s timeout",
+        "jiraBugKey": "MOB-452"
+      }
+    ]
+  }'`;
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCurl(true);
+    setTimeout(() => setCopiedCurl(false), 2000);
+  };
+
+  // Helper to extract parent suite names from test cases in the run
+  const getRunParentSuites = (run: TestRun): string[] => {
+    if (!run.results || run.results.length === 0) return ['Plan Kökü'];
+    const suiteNames = new Set<string>();
+    run.results.forEach((res) => {
+      if (res.testCase?.suite?.name) {
+        suiteNames.add(res.testCase.suite.name);
+      } else {
+        suiteNames.add('Plan Kökü');
+      }
+    });
+    return Array.from(suiteNames);
+  };
+
+  // Helper to extract unique product/test types from test cases in the run
+  const getRunProductTypes = (run: TestRun): string[] => {
+    if (!run.results || run.results.length === 0) return ['WEB'];
+    const types = new Set<string>();
+    run.results.forEach((res) => {
+      if (res.testCase?.type) {
+        types.add(res.testCase.type);
+      } else {
+        types.add('WEB');
+      }
+    });
+    return Array.from(types);
+  };
+
+  const renderTypeBadge = (t: string) => {
+    switch (t) {
+      case 'WEB':
+        return (
+          <span key={t} className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono font-bold text-[10px] border border-blue-500/20">
+            <Globe className="w-3 h-3" />
+            <span>WEB</span>
+          </span>
+        );
+      case 'MOBILE':
+      case 'IOS':
+      case 'ANDROID':
+        return (
+          <span key={t} className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-mono font-bold text-[10px] border border-purple-500/20">
+            <Smartphone className="w-3 h-3" />
+            <span>{t}</span>
+          </span>
+        );
+      case 'API':
+        return (
+          <span key={t} className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px] border border-emerald-500/20">
+            <Terminal className="w-3 h-3" />
+            <span>API</span>
+          </span>
+        );
+      case 'PERFORMANCE':
+        return (
+          <span key={t} className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono font-bold text-[10px] border border-amber-500/20">
+            <Zap className="w-3 h-3" />
+            <span>PERF</span>
+          </span>
+        );
+      default:
+        return (
+          <span key={t} className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 font-mono font-bold text-[10px] border border-slate-500/20">
+            <span>{t}</span>
+          </span>
+        );
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col bg-slate-50 dark:bg-[#090d16] text-slate-800 dark:text-slate-100 p-4 sm:p-6 space-y-6 overflow-y-auto transition-colors duration-200">
+      {/* Top Banner / Title & Primary Action */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div>
+          <div className="flex items-center space-x-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-md shadow-emerald-500/10">
+              <Play className="w-5 h-5 fill-current text-emerald-500" />
+            </div>
+            <div>
+              <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+                Test Koşumları (Test Executions)
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Test planı tabanlı manuel ve otomasyon (Appium/Selenium/Playwright) koşularını yönetin ve yürütün.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2.5">
+          <button
+            type="button"
+            onClick={() => setIsAutomationModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shadow-xs"
+          >
+            <Code className="w-3.5 h-3.5 text-[#b83a4b]" />
+            <span>Otomasyon API (CI/CD)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenManualRun}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-500/25 active:scale-98 transition-all cursor-pointer"
+          >
+            <Play className="w-4 h-4 fill-white" />
+            <span>Yeni Test Koşumu Başlat</span>
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Cards Row (4 Compact Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Total Runs */}
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <Play className="w-4 h-4 fill-current text-emerald-500" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Toplam Koşu
+              </span>
+              <button onClick={loadRuns} className="text-slate-400 hover:text-slate-200 transition-colors" title="Yenile">
+                <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black text-slate-900 dark:text-slate-100 font-mono leading-none">
+                {totalRuns}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Koşu</span>
+            </div>
+          </div>
+        </div>
+
+        {/* In Progress Runs */}
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+              Devam Eden Koşular
+            </span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black font-mono text-blue-600 dark:text-blue-400 leading-none">
+                {inProgressRuns}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Aktif</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Completed Runs */}
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+              Tamamlanan
+            </span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-300 leading-none">
+                {completedRuns}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Başarılı</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Aborted Runs */}
+        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+            <XCircle className="w-4 h-4 text-rose-500" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+              İptal / Durdurulan
+            </span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black font-mono text-rose-700 dark:text-rose-300 leading-none">
+                {abortedRuns}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Durduruldu</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Controls & Filter Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900/80 p-2.5 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Koşu başlığı, modül, versiyon veya ortam ara..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+        </div>
+
+        {/* Status Filter Buttons */}
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl space-x-1 text-xs overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setStatusFilter('ALL')}
+            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
+              statusFilter === 'ALL'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Tümü ({runs.length})
+          </button>
+          <button
+            onClick={() => setStatusFilter('IN_PROGRESS')}
+            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
+              statusFilter === 'IN_PROGRESS'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Devam Eden ({inProgressRuns})
+          </button>
+          <button
+            onClick={() => setStatusFilter('COMPLETED')}
+            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
+              statusFilter === 'COMPLETED'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Tamamlanan ({completedRuns})
+          </button>
+          <button
+            onClick={() => setStatusFilter('ABORTED')}
+            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
+              statusFilter === 'ABORTED'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            İptal ({abortedRuns})
+          </button>
+        </div>
+      </div>
+
+      {/* Test Runs Table */}
+      <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#161f30] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
+              <tr className="text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider text-[11px]">
+                <th className="py-2.5 px-4 min-w-[180px]">Test Koşusu Başlığı</th>
+                <th className="py-2.5 px-4 min-w-[140px]">Ebeveyn / Modül</th>
+                <th className="py-2.5 px-4 min-w-[110px]">Ürün Tipi</th>
+                <th className="py-2.5 px-4 w-24">Versiyon</th>
+                <th className="py-2.5 px-4 w-24">Ortam</th>
+                <th className="py-2.5 px-4 w-32">Çalıştıran</th>
+                <th className="py-2.5 px-4 w-28">Durum</th>
+                <th className="py-2.5 px-4 w-24 text-center">Case Sayısı</th>
+                <th className="py-2.5 px-4 w-32">Tarih</th>
+                <th className="py-2.5 px-4 w-24 text-right">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+              {filteredRuns.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-slate-400 dark:text-slate-500">
+                    <Filter className="w-6 h-6 mx-auto mb-2 opacity-30 text-slate-400" />
+                    <p>Kriterlere uygun test koşusu kaydı bulunamadı.</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredRuns.map((run) => {
+                  const parentSuites = getRunParentSuites(run);
+                  const productTypes = getRunProductTypes(run);
+
+                  return (
+                    <tr
+                      key={run.id}
+                      onClick={() => handleOpenDetail(run.id)}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition-colors"
+                    >
+                      <td className="py-2.5 px-4 font-bold text-slate-900 dark:text-slate-100">
+                        <div className="flex items-center space-x-2">
+                          <Play className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span className="truncate max-w-xs">{run.title}</span>
+                        </div>
+                      </td>
+
+                      {/* Parent Suite / Modül Column */}
+                      <td className="py-2.5 px-4">
+                        <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                          {parentSuites.map((s, sIdx) => (
+                            <span
+                              key={sIdx}
+                              className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium text-[11px] border border-amber-500/20"
+                              title={`Ebeveyn Suite: ${s}`}
+                            >
+                              <Folder className="w-3 h-3 text-amber-500 shrink-0" />
+                              <span className="truncate max-w-[120px]">{s}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+
+                      {/* Product Type / Test Type Column */}
+                      <td className="py-2.5 px-4">
+                        <div className="flex items-center space-x-1 flex-wrap gap-y-1">
+                          {productTypes.map((t) => renderTypeBadge(t))}
+                        </div>
+                      </td>
+
+                      <td className="py-2.5 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">
+                        {run.version}
+                      </td>
+
+                      <td className="py-2.5 px-4 font-mono text-[11px]">
+                        <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold border border-slate-300 dark:border-slate-700">
+                          {run.environment}
+                        </span>
+                      </td>
+
+                      <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300 font-medium truncate max-w-[130px]">
+                        {run.executedBy || 'QA Tester'}
+                      </td>
+
+                      <td className="py-2.5 px-4">
+                        {run.status === 'IN_PROGRESS' && (
+                          <span className="inline-flex items-center space-x-1.5 text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/80 px-2.5 py-0.5 rounded-full border border-blue-300 dark:border-blue-700/60 shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+                            <span>DEVAM EDİYOR</span>
+                          </span>
+                        )}
+                        {run.status === 'COMPLETED' && (
+                          <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                            <span>TAMAMLANDI</span>
+                          </span>
+                        )}
+                        {run.status === 'ABORTED' && (
+                          <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2.5 py-0.5 rounded-full border border-rose-300 dark:border-rose-700/60 shadow-xs">
+                            <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                            <span>İPTAL EDİLDİ</span>
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-4 font-mono font-bold text-center text-slate-700 dark:text-slate-300">
+                        {run._count?.results ?? run.results?.length ?? 0} Test
+                      </td>
+
+                      <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
+                        {new Date(run.createdAt).toLocaleDateString('tr-TR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </td>
+
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end space-x-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              ReportsService.downloadRunReport(run.id, 'csv', run.title);
+                            }}
+                            className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
+                            title="Koşum Raporunu CSV Olarak İndir"
+                          >
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              ReportsService.downloadRunReport(run.id, 'html', run.title);
+                            }}
+                            className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition-colors"
+                            title="HTML Koşum Raporunu Aç"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDetail(run.id);
+                            }}
+                            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+                            title="Detayları İncele"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Test Run Detail Drawer / Modal */}
+      {isDetailOpen && selectedRunDetails && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                  <Play className="w-5 h-5 fill-current" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold flex items-center space-x-2">
+                    <span>{selectedRunDetails.title}</span>
+                    <span className="text-xs font-mono bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300">
+                      {selectedRunDetails.version}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                    Ortam: {selectedRunDetails.environment} &bull; Tester: {selectedRunDetails.executedBy} &bull;{' '}
+                    {new Date(selectedRunDetails.createdAt).toLocaleString('tr-TR')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => ReportsService.downloadRunReport(selectedRunDetails.id, 'csv', selectedRunDetails.title)}
+                  className="flex items-center space-x-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-all"
+                  title="CSV Formatında İndir"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>CSV İndir</span>
+                </button>
+
+                <button
+                  onClick={() => ReportsService.downloadRunReport(selectedRunDetails.id, 'html', selectedRunDetails.title)}
+                  className="flex items-center space-x-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 text-white border border-slate-700 rounded-lg text-xs font-semibold shadow-sm transition-all"
+                  title="HTML Raporu Yeni Sekmede Aç / Yazdır"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>HTML Rapor</span>
+                </button>
+
+                {selectedRunDetails.status === 'IN_PROGRESS' && (
+                  <button
+                    onClick={() => handleUpdateRunStatus(selectedRunDetails.id, 'COMPLETED')}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-all"
+                  >
+                    Koşuyu Tamamla
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setIsDetailOpen(false)}
+                  className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Koşu Sonuçları ({selectedRunDetails.results?.length || 0} Test Case)
+                </h4>
+              </div>
+
+              {!selectedRunDetails.results || selectedRunDetails.results.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-xs">
+                  Bu koşuya ait henüz kaydedilmiş test sonucu bulunmamaktadır.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {selectedRunDetails.results.map((res) => (
+                    <div
+                      key={res.id}
+                      className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 space-y-2 text-xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2.5 min-w-0">
+                          {res.status === 'PASSED' && (
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px] shrink-0">
+                              PASS
+                            </span>
+                          )}
+                          {res.status === 'FAILED' && (
+                            <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-600 dark:text-rose-400 font-mono font-bold text-[10px] shrink-0">
+                              FAIL
+                            </span>
+                          )}
+                          {res.status === 'BLOCKED' && (
+                            <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-600 dark:text-purple-400 font-mono font-bold text-[10px] shrink-0">
+                              BLOCK
+                            </span>
+                          )}
+                          {res.status === 'SKIPPED' && (
+                            <span className="px-2 py-0.5 rounded bg-slate-500/20 text-slate-600 dark:text-slate-400 font-mono font-bold text-[10px] shrink-0">
+                              SKIP
+                            </span>
+                          )}
+
+                          <span className="font-mono font-bold text-blue-600 dark:text-blue-400 shrink-0">
+                            {res.testCase?.code || 'TC'}
+                          </span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-xs">
+                            {res.testCase?.title || 'Test Case'}
+                          </span>
+
+                          {/* Parent Suite & Type in Detail */}
+                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium text-[10px] border border-amber-500/20 shrink-0">
+                            <Folder className="w-2.5 h-2.5 text-amber-500" />
+                            <span>{res.testCase?.suite?.name || 'Plan Kökü'}</span>
+                          </span>
+
+                          {res.testCase?.type && renderTypeBadge(res.testCase.type)}
+                        </div>
+
+                        <div className="flex items-center space-x-3 shrink-0 font-mono text-[11px] text-slate-400">
+                          {res.executionMs && <span>{res.executionMs} ms</span>}
+                          {res.jiraBugKey && (
+                            <a
+                              href={res.jiraBugUrl || `https://company.atlassian.net/browse/${res.jiraBugKey}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center space-x-1 text-rose-500 font-bold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 hover:underline"
+                            >
+                              <Bug className="w-3 h-3" />
+                              <span>{res.jiraBugKey}</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {res.errorMessage && (
+                        <div
+                          className={`p-2.5 rounded-lg text-[11px] font-mono ${
+                            res.status === 'PASSED'
+                              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                              : res.status === 'BLOCKED'
+                              ? 'bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300'
+                              : res.status === 'FAILED'
+                              ? 'bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-300'
+                              : 'bg-slate-500/10 border border-slate-500/20 text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          <strong>
+                            {res.status === 'PASSED'
+                              ? 'Başarı Yorumu / Not:'
+                              : res.status === 'BLOCKED'
+                              ? 'Engellenme Nedeni:'
+                              : res.status === 'FAILED'
+                              ? 'Hata:'
+                              : 'Not / Yorum:'}
+                          </strong>{' '}
+                          {res.errorMessage}
+                        </div>
+                      )}
+
+                      {(() => {
+                        const screenList = parseScreenshots(res.screenshotUrl);
+                        if (screenList.length === 0) return null;
+                        return (
+                          <div className="pt-1.5 space-y-1">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center space-x-1">
+                              <ImageIcon className="w-3 h-3 text-indigo-400" />
+                              <span>Ekran Görüntüleri ({screenList.length})</span>
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              {screenList.map((imgUrl, imgIdx) => (
+                                <img
+                                  key={imgIdx}
+                                  src={imgUrl}
+                                  alt={`Execution Screenshot ${imgIdx + 1}`}
+                                  className="max-h-28 rounded-lg border border-slate-700 object-contain cursor-pointer hover:opacity-90 transition-opacity bg-black/20"
+                                  onClick={() => window.open(imgUrl, '_blank')}
+                                  title="Tam boyutta aç"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Automation Ingestion API Modal */}
+      {isAutomationModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
+              <div className="flex items-center space-x-2.5">
+                <Terminal className="w-5 h-5 text-blue-500" />
+                <h3 className="text-base font-bold">Otomasyon Test Entegrasyon Rehberi</h3>
+              </div>
+              <button
+                onClick={() => setIsAutomationModalOpen(false)}
+                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs overflow-y-auto max-h-[75vh]">
+              <p className="text-slate-600 dark:text-slate-300">
+                Mobil (Appium/Java) veya Web (Selenium/Playwright) otomasyon projelerinizden test sonuçlarını otomatik olarak TCMS veritabanına aktarabilirsiniz.
+              </p>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">HTTP POST Endpoint:</span>
+                  <button
+                    onClick={() => copyToClipboard(automationCurlExample)}
+                    className="flex items-center space-x-1 text-[11px] text-blue-500 hover:underline font-mono"
+                  >
+                    {copiedCurl ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedCurl ? 'Kopyalandı!' : 'cURL Kopyala'}</span>
+                  </button>
+                </div>
+
+                <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-emerald-400 font-mono text-[11px] overflow-x-auto whitespace-pre">
+                  {automationCurlExample}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-slate-700 dark:text-slate-300 space-y-1">
+                <h4 className="font-bold text-blue-500 flex items-center space-x-1">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>Entegrasyon Notları</span>
+                </h4>
+                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                  <li><code className="text-blue-400">caseCode</code> (örn: TC-101) ile eşleşen Test Case'ler otomatik ilişkilendirilir.</li>
+                  <li>FAILED olan Test Case'lere <code className="text-blue-400">jiraBugKey</code> eklenirse Jira kartı otomatik oluşturulur.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

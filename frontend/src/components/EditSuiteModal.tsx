@@ -58,7 +58,7 @@ export const EditSuiteModal: React.FC<EditSuiteModalProps> = ({
     try {
       await onUpdate(suite.id, {
         name: name.trim(),
-        parentId: selectedParentId || null,
+        parentId: null,
       });
       onClose();
     } catch (err) {
@@ -108,24 +108,6 @@ export const EditSuiteModal: React.FC<EditSuiteModalProps> = ({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Üst Klasör (Parent Suite)
-            </label>
-            <select
-              value={selectedParentId}
-              onChange={(e) => setSelectedParentId(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer shadow-sm"
-            >
-              <option value="">🚀 Proje Ana Dizini (Kök Klasör)</option>
-              {flatSuiteList.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {'—'.repeat(s.depth + 1)} 📂 {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
             <button
               type="button"
@@ -149,7 +131,7 @@ export const EditSuiteModal: React.FC<EditSuiteModalProps> = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex items-center space-x-2 px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-amber-600/20 disabled:opacity-50"
+                className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white text-xs font-semibold rounded-xl shadow-md shadow-[#821c2b]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Save className="w-4 h-4" />
                 <span>{isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}</span>

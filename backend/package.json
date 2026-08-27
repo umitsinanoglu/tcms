@@ -12,9 +12,12 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed"
+    "prisma": "node prisma/run-prisma.js",
+    "prisma:generate": "node prisma/run-prisma.js generate",
+    "prisma:push": "node prisma/run-prisma.js db push",
+    "prisma:migrate": "node prisma/run-prisma.js migrate dev",
+    "prisma:studio": "node prisma/run-prisma.js studio",
+    "prisma:seed": "ts-node prisma/seed.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -27,6 +30,7 @@
     "@prisma/client": "^5.10.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "dotenv": "^17.4.2",
     "reflect-metadata": "^0.2.1",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.0"

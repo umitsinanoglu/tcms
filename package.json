@@ -6,7 +6,9 @@
     "dev": "npx concurrently -k -n \"BACKEND,FRONTEND\" -c \"cyan,magenta\" \"cd backend && npm run start:dev\" \"cd frontend && npm run dev\"",
     "start": "npm run dev",
     "stop": "./stop.sh",
-    "restart": "./restart.sh"
+    "restart": "./restart.sh",
+    "changelog": "python3 scripts/update_changelog.py",
+    "context:build": "python3 scripts/generate_vector_context.py"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

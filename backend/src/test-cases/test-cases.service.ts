@@ -8,40 +8,75 @@ export class TestCasesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createTestCaseDto: CreateTestCaseDto) {
-    const suite = await this.prisma.suite.findUnique({
-      where: { id: createTestCaseDto.suiteId },
-      include: { project: true },
-    });
+    let projectKey: string;
+    let projectId: string;
+    let suiteId: string | null = createTestCaseDto.suiteId || null;
 
-    if (!suite) {
-      throw new NotFoundException(`Suite with ID ${createTestCaseDto.suiteId} not found`);
+    if (suiteId) {
+      const suite = await this.prisma.suite.findUnique({
+        where: { id: suiteId },
+        include: { project: true },
+      });
+
+      if (!suite) {
+        throw new NotFoundException(`Suite with ID ${suiteId} not found`);
+      }
+
+      projectKey = suite.project.key;
+      projectId = suite.projectId;
+    } else if (createTestCaseDto.projectId) {
+      const project = await this.prisma.project.findUnique({
+        where: { id: createTestCaseDto.projectId },
+      });
+
+      if (!project) {
+        throw new NotFoundException(`Project with ID ${createTestCaseDto.projectId} not found`);
+      }
+
+      projectKey = project.key;
+      projectId = project.id;
+    } else {
+      throw new NotFoundException('Either suiteId or projectId must be provided to create a Test Case');
     }
 
-    const projectKey = suite.project.key;
-
-    // Count existing test cases for project to generate incrementing code e.g. PRJ-TC-1
-    const totalCasesInProject = await this.prisma.testCase.count({
+    // Find highest test case number for the project to generate unique code
+    const existingCases = await this.prisma.testCase.findMany({
       where: {
-        suite: {
-          projectId: suite.projectId,
-        },
+        OR: [
+          { projectId },
+          { suite: { projectId } },
+        ],
       },
+      select: { code: true },
     });
 
-    const nextNumber = totalCasesInProject + 1;
-    const code = `${projectKey}-TC-${nextNumber}`;
+    let maxNumber = 0;
+    const prefix = `${projectKey}-TC-`;
+    for (const tc of existingCases) {
+      if (tc.code.startsWith(prefix)) {
+        const num = parseInt(tc.code.substring(prefix.length), 10);
+        if (!isNaN(num) && num > maxNumber) {
+          maxNumber = num;
+        }
+      }
+    }
+
+    const code = `${projectKey}-TC-${maxNumber + 1}`;
 
     const { steps, ...caseData } = createTestCaseDto;
 
     return this.prisma.testCase.create({
       data: {
         ...caseData,
+        projectId,
+        suiteId: suiteId || undefined,
         code,
         steps: steps && steps.length > 0 ? {
           create: steps.map((step, idx) => ({
             stepNumber: step.stepNumber || idx + 1,
             action: step.action,
             expectedResult: step.expectedResult || '',
+            attachments: step.attachments ? JSON.parse(JSON.stringify(step.attachments)) : [],
           })),
         } : undefined,
       },
@@ -83,7 +118,18 @@ export class TestCasesService {
         },
         results: {
           orderBy: { executedAt: 'desc' },
-          take: 1,
+          include: {
+            testRun: {
+              select: {
+                id: true,
+                title: true,
+                version: true,
+                environment: true,
+                status: true,
+                executedBy: true,
+              },
+            },
+          },
         },
       },
     });
@@ -99,12 +145,28 @@ export class TestCasesService {
     const testCase = await this.prisma.testCase.findUnique({
       where: { code },
       include: {
+        suite: {
+          include: {
+            project: true,
+          },
+        },
         steps: {
           orderBy: { stepNumber: 'asc' },
         },
         results: {
           orderBy: { executedAt: 'desc' },
-          take: 1,
+          include: {
+            testRun: {
+              select: {
+                id: true,
+                title: true,
+                version: true,
+                environment: true,
+                status: true,
+                executedBy: true,
+              },
+            },
+          },
         },
       },
     });
@@ -117,34 +179,50 @@ export class TestCasesService {
   }
 
   async update(id: string, updateTestCaseDto: UpdateTestCaseDto) {
-    await this.findOne(id);
-
     const { steps, ...caseData } = updateTestCaseDto;
 
-    // If steps are provided, replace existing steps
-    if (steps) {
-      await this.prisma.testStep.deleteMany({
-        where: { testCaseId: id },
-      });
-    }
+    return this.prisma.$transaction(async (tx) => {
+      // If steps are provided, replace existing steps
+      if (steps) {
+        await tx.testStep.deleteMany({
+          where: { testCaseId: id },
+        });
+      }
 
-    return this.prisma.testCase.update({
-      where: { id },
-      data: {
-        ...caseData,
-        steps: steps ? {
-          create: steps.map((step, idx) => ({
-            stepNumber: step.stepNumber || idx + 1,
-            action: step.action,
-            expectedResult: step.expectedResult || '',
-          })),
-        } : undefined,
-      },
-      include: {
-        steps: {
-          orderBy: { stepNumber: 'asc' },
+      return tx.testCase.update({
+        where: { id },
+        data: {
+          ...caseData,
+          steps: steps ? {
+            create: steps.map((step, idx) => ({
+              stepNumber: step.stepNumber || idx + 1,
+              action: step.action,
+              expectedResult: step.expectedResult || '',
+              attachments: step.attachments ? JSON.parse(JSON.stringify(step.attachments)) : [],
+            })),
+          } : undefined,
         },
-      },
+        include: {
+          steps: {
+            orderBy: { stepNumber: 'asc' },
+          },
+          results: {
+            orderBy: { executedAt: 'desc' },
+            include: {
+              testRun: {
+                select: {
+                  id: true,
+                  title: true,
+                  version: true,
+                  environment: true,
+                  status: true,
+                  executedBy: true,
+                },
+              },
+            },
+          },
+        },
+      });
     });
   }
 
