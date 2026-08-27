@@ -125,18 +125,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
   };
 
   const getTypeBadge = (type: TestType) => {
-    switch (type) {
-      case 'WEB':
-        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
-      case 'MOBILE':
-      case 'IOS':
-      case 'ANDROID':
-        return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30';
-      case 'API':
-        return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30';
-      default:
-        return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30';
-    }
+    return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
   };
 
   const renderStatusPill = (tc: TestCase) => {

@@ -1,4 +1,4 @@
-export type ThemeId = 'crimson-dark' | 'crimson-light';
+export type ThemeId = 'crimson-dark' | 'crimson-light' | 'corporate-light';
 
 export interface ThemeMeta {
   id: ThemeId;
@@ -57,7 +57,7 @@ export interface DesignTokens {
 export const THEME_METADATA: Record<ThemeId, ThemeMeta> = {
   'crimson-dark': {
     id: 'crimson-dark',
-    name: 'Kurumsal Kırmızı (Koyu)',
+    name: 'Kurumsal Grafit (Koyu)',
     description: 'Derin arduvaz zemin ve mat kurumsal kırmızı vurgulu koyu tema',
     swatchColors: ['#141821', '#b83a4b', '#1d232f'],
   },
@@ -67,4 +67,11 @@ export const THEME_METADATA: Record<ThemeId, ThemeMeta> = {
     description: 'Açık kurumsal zemin ve mat kurumsal kırmızı vurgulu aydınlık tema',
     swatchColors: ['#f2f5f8', '#b83a4b', '#ffffff'],
   },
+  'corporate-light': {
+    id: 'corporate-light',
+    name: 'Kurumsal Platin & Gri (Açık)',
+    description: 'Göz yormayan gri-platin zemin, siyah tipografi ve sade kırmızı detaylar',
+    swatchColors: ['#eef2f6', '#991b1b', '#ffffff'],
+  },
 };
+

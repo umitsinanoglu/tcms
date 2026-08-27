@@ -201,7 +201,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
       case 'BLOCKED':
         return (
           <span
-            className="flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 font-mono font-bold"
+            className="flex items-center space-x-1 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-mono font-bold"
             title="Sonuç: BLOCKED"
           >
             <Slash className="w-2.5 h-2.5" />
@@ -582,8 +582,8 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
             onClick={() => setStatusFilter('BLOCKED')}
             className={`px-2 py-0.5 rounded-full border transition-colors ${
               statusFilter === 'BLOCKED'
-                ? 'bg-purple-600 text-white border-purple-600'
-                : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30'
+                ? 'bg-amber-600 text-white border-amber-600'
+                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
             }`}
           >
             Block

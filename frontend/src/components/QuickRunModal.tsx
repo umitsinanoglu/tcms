@@ -267,7 +267,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   };
 
   // Reusable multi-screenshot gallery section
-  const renderScreenshotUploader = (theme: 'emerald' | 'red' | 'slate' | 'purple', label: string) => {
+  const renderScreenshotUploader = (theme: 'emerald' | 'red' | 'slate' | 'purple' | 'amber', label: string) => {
     const colors = {
       emerald: {
         border: 'border-emerald-500/30',
@@ -292,6 +292,14 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
         icon: 'text-slate-400',
         focus: 'focus:ring-slate-500',
         activeBtn: 'bg-slate-700 hover:bg-slate-600 text-white',
+      },
+      amber: {
+        border: 'border-amber-500/30',
+        badge: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30',
+        uploadBtn: 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30',
+        icon: 'text-amber-500',
+        focus: 'focus:ring-amber-500',
+        activeBtn: 'bg-amber-600 hover:bg-amber-500 text-white',
       },
       purple: {
         border: 'border-purple-500/30',
@@ -746,11 +754,11 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                     onClick={() => setStatus('BLOCKED')}
                     className={`flex flex-col items-center justify-center p-2.5 rounded-xl border font-bold text-xs transition-all ${
                       status === 'BLOCKED'
-                        ? 'bg-purple-600 text-white border-purple-500 shadow-lg shadow-purple-500/20'
+                        ? 'bg-amber-600 text-white border-amber-500 shadow-lg shadow-amber-500/20'
                         : 'bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
                     }`}
                   >
-                    <Slash className="w-5 h-5 mb-1 text-purple-500 dark:text-purple-400" />
+                    <Slash className="w-5 h-5 mb-1 text-amber-500 dark:text-amber-400" />
                     <span>BLOCKED</span>
                   </button>
                 </div>
@@ -851,10 +859,10 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
 
               {/* BLOCKED Status: Reason / Comment & Multi-Screenshot */}
               {status === 'BLOCKED' && (
-                <div className="p-3.5 bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/20 dark:border-purple-500/30 rounded-xl space-y-3 animate-fadeIn">
+                <div className="p-3.5 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 dark:border-amber-500/30 rounded-xl space-y-3 animate-fadeIn">
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-purple-600 dark:text-purple-300 flex items-center space-x-1">
-                      <Slash className="w-3.5 h-3.5 text-purple-500" />
+                    <label className="text-xs font-semibold text-amber-600 dark:text-amber-300 flex items-center space-x-1">
+                      <Slash className="w-3.5 h-3.5 text-amber-500" />
                       <span>Engellenme Nedeni / Blocker Detayı (İsteğe bağlı):</span>
                     </label>
                     <textarea
@@ -862,11 +870,11 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                       value={errorMessage}
                       onChange={(e) => setErrorMessage(e.target.value)}
                       placeholder="Testin engellenme nedenini ve blocker detaylarını yazın (örn: Bağımlı servis çalışmıyor)..."
-                      className="w-full bg-white dark:bg-slate-900 border border-purple-500/30 rounded-lg p-2 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-purple-500 shadow-sm"
+                      className="w-full bg-white dark:bg-slate-900 border border-amber-500/30 rounded-lg p-2 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500 shadow-sm"
                     />
                   </div>
 
-                  {renderScreenshotUploader('purple', 'Ekran Görüntüleri / Blocker Kanıtı (İsteğe Bağlı)')}
+                  {renderScreenshotUploader('amber', 'Ekran Görüntüleri / Blocker Kanıtı (İsteğe Bağlı)')}
                 </div>
               )}
             </div>

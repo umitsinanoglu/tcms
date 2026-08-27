@@ -17,7 +17,8 @@
     "prisma:push": "node prisma/run-prisma.js db push",
     "prisma:migrate": "node prisma/run-prisma.js migrate dev",
     "prisma:studio": "node prisma/run-prisma.js studio",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "sync:supabase": "ts-node prisma/sync-to-supabase.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
