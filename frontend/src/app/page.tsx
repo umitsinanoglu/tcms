@@ -7,6 +7,7 @@ import {
   TestCase,
   TestPlan,
   TestRun,
+  Defect,
   CreateTestPlanDto,
   ProjectsService,
   SuitesService,
@@ -47,6 +48,8 @@ export default function Home() {
   const [rootCases, setRootCases] = useState<TestCase[]>([]);
   const [testPlans, setTestPlans] = useState<TestPlan[]>([]);
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
+  const [defects, setDefects] = useState<Defect[]>([]);
+  const [selectedDefectForModal, setSelectedDefectForModal] = useState<Defect | null>(null);
   const [testRunsCount, setTestRunsCount] = useState<number>(0);
   const [defectsCount, setDefectsCount] = useState<number>(0);
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null);
@@ -204,10 +207,11 @@ export default function Home() {
   const loadProjectData = useCallback(async (projectId: string) => {
     setIsLoadingTree(true);
     try {
-      const [treeRes, plansRes, runsRes, defectsStats] = await Promise.all([
+      const [treeRes, plansRes, runsRes, defectsRes, defectsStats] = await Promise.all([
         ProjectsService.getTree(projectId).catch(() => ({ tree: [], rootTestCases: [] })),
         TestPlansService.getAllByProject(projectId).catch(() => []),
         TestRunsService.getRuns(projectId).catch(() => []),
+        DefectsService.getAllByProject(projectId).catch(() => []),
         DefectsService.getStatsByProject(projectId).catch(() => null),
       ]);
 
@@ -217,19 +221,21 @@ export default function Home() {
       setRootCases(newRootCases);
       setTestPlans(plansRes || []);
       setTestRuns(runsRes || []);
+      setDefects(defectsRes || []);
       setTestRunsCount(runsRes?.length || 0);
       setDefectsCount(defectsStats?.metrics?.active || 0);
 
-      return { tree: newTree, rootCases: newRootCases, plans: plansRes || [], runs: runsRes || [] };
+      return { tree: newTree, rootCases: newRootCases, plans: plansRes || [], runs: runsRes || [], defects: defectsRes || [] };
     } catch (err) {
       console.error('Failed to load project data:', err);
       setTree([]);
       setRootCases([]);
       setTestPlans([]);
       setTestRuns([]);
+      setDefects([]);
       setTestRunsCount(0);
       setDefectsCount(0);
-      return { tree: [], rootCases: [], plans: [], runs: [] };
+      return { tree: [], rootCases: [], plans: [], runs: [], defects: [] };
     } finally {
       setIsLoadingTree(false);
     }
@@ -242,6 +248,7 @@ export default function Home() {
       setSelectedSuite(null);
       setSelectedPlan(null);
       setSelectedRun(null);
+      setSelectedDefectForModal(null);
 
       setActiveTab(tab);
       saveSessionState({
@@ -282,10 +289,13 @@ export default function Home() {
       setSelectedSuite(null);
       setSelectedPlan(null);
       setSelectedRun(null);
+      setSelectedDefectForModal(null);
       setSelectedProject(p);
       setTree([]);
       setRootCases([]);
       setTestPlans([]);
+      setTestRuns([]);
+      setDefects([]);
       saveSessionState({
         projectId: p.id,
         tab: activeTab,
@@ -319,6 +329,7 @@ export default function Home() {
       setSelectedCase(null);
       setSelectedPlan(null);
       setSelectedRun(null);
+      setSelectedDefectForModal(null);
       setSelectedSuite(suite);
       setActiveTab('EXPLORER');
       saveSessionState({
@@ -351,6 +362,7 @@ export default function Home() {
       setSelectedCase(null);
       setSelectedSuite(null);
       setSelectedRun(null);
+      setSelectedDefectForModal(null);
       setSelectedPlan(plan);
       setActiveRunTestPlan(plan);
       setActiveTab('PLANS');
@@ -384,6 +396,7 @@ export default function Home() {
       setSelectedSuite(null);
       setSelectedPlan(null);
       setSelectedRun(null);
+      setSelectedDefectForModal(null);
       setSelectedCase(tc);
       setActiveTab('EXPLORER');
       saveSessionState({
@@ -415,6 +428,90 @@ export default function Home() {
     },
     [pushState, selectedProject]
   );
+
+  // Handle Test Run Selection with Navigation Push
+  const handleSelectRun = useCallback(
+    async (run: TestRun, shouldPushState = true) => {
+      setSelectedCase(null);
+      setSelectedSuite(null);
+      setSelectedPlan(null);
+      setSelectedDefectForModal(null);
+      setActiveTab('RUNS');
+      saveSessionState({
+        projectId: selectedProject?.id || null,
+        tab: 'RUNS',
+        suiteId: null,
+        caseId: null,
+        runId: run.id,
+        planId: null,
+      });
+
+      try {
+        const runDetails = await TestRunsService.getRunDetails(run.id);
+        setSelectedRun(runDetails || run);
+      } catch {
+        setSelectedRun(run);
+      }
+
+      if (shouldPushState) {
+        pushState({
+          tab: 'RUNS',
+          projectId: selectedProject?.id || null,
+          suiteId: null,
+          caseId: null,
+          runId: run.id,
+          planId: null,
+          label: `Koşum: ${run.title}`,
+        });
+      }
+    },
+    [pushState, selectedProject]
+  );
+
+  // Handle Defect Selection with Navigation Push
+  const handleSelectDefect = useCallback(
+    (defect: Defect, shouldPushState = true) => {
+      setSelectedCase(null);
+      setSelectedSuite(null);
+      setSelectedPlan(null);
+      setSelectedRun(null);
+      setActiveTab('DEFECTS');
+      setSelectedDefectForModal(defect);
+      saveSessionState({
+        projectId: selectedProject?.id || null,
+        tab: 'DEFECTS',
+        suiteId: null,
+        caseId: null,
+        runId: null,
+        planId: null,
+      });
+
+      if (shouldPushState) {
+        pushState({
+          tab: 'DEFECTS',
+          projectId: selectedProject?.id || null,
+          suiteId: null,
+          caseId: null,
+          runId: null,
+          planId: null,
+          label: `Defect: [${defect.key}] ${defect.title}`,
+        });
+      }
+    },
+    [pushState, selectedProject]
+  );
+
+  const handleClearInitialDefect = useCallback(() => {
+    setSelectedDefectForModal(null);
+  }, []);
+
+  const handleDefectsLoaded = useCallback((loaded: Defect[]) => {
+    setDefects(loaded);
+  }, []);
+
+  const handleDefectsCountChange = useCallback((count: number) => {
+    setDefectsCount(count);
+  }, []);
 
   // Handle closing case editor
   const handleCloseCase = useCallback(() => {
@@ -834,6 +931,8 @@ export default function Home() {
         selectedProject={selectedProject}
         testCases={allCases}
         testPlans={testPlans}
+        testRuns={testRuns}
+        defects={defects}
         activeTab={activeTab}
         selectedSuite={selectedSuite}
         selectedCase={selectedCase}
@@ -849,6 +948,8 @@ export default function Home() {
         onNavigateHome={() => handleTabChange('DASHBOARD')}
         onSelectCase={(tc) => handleSelectCase(tc)}
         onSelectPlan={(plan) => handleSelectPlan(plan)}
+        onSelectRun={(run) => handleSelectRun(run)}
+        onSelectDefect={(defect) => handleSelectDefect(defect)}
         onTabChange={handleTabChange}
       />
 
@@ -894,20 +995,7 @@ export default function Home() {
               onSelectPlan={(plan) => handleSelectPlan(plan)}
               onSelectRun={(run) => {
                 if (run) {
-                  setSelectedCase(null);
-                  setSelectedSuite(null);
-                  setSelectedPlan(null);
-                  setSelectedRun(run);
-                  setActiveTab('RUNS');
-                  pushState({
-                    tab: 'RUNS',
-                    projectId: selectedProject?.id || null,
-                    suiteId: null,
-                    caseId: null,
-                    runId: run.id,
-                    planId: null,
-                    label: `Koşum: ${run.title}`,
-                  });
+                  handleSelectRun(run);
                 } else {
                   handleTabChange('RUNS');
                 }
@@ -963,14 +1051,16 @@ export default function Home() {
                 projects={projects}
                 allCases={allCases}
                 testPlans={testPlans}
-                onStartRunWithPlan={handleStartRunWithPlan}
-                onSelectPlanToView={(p) => handleSelectPlan(p)}
+                onStartRunWithPlan={(plan: TestPlan) => {
+                  setActiveRunTestPlan(plan);
+                  setIsManualRunOpen(true);
+                }}
+                onSelectPlanToView={(p: TestPlan) => handleSelectPlan(p)}
                 onNavigateToRuns={() => handleTabChange('RUNS')}
                 onOpenNewPlan={() => setIsNewTestPlanOpen(true)}
                 onPlansChange={async () => {
                   if (selectedProject) {
-                    const plans = await TestPlansService.getAllByProject(selectedProject.id);
-                    setTestPlans(plans || []);
+                    await loadProjectData(selectedProject.id);
                   }
                 }}
               />
@@ -996,14 +1086,17 @@ export default function Home() {
                 projects={projects}
                 testCases={allCases}
                 testPlans={testPlans}
-                onSelectCase={(tc) => handleSelectCase(tc)}
-                onOpenNewCase={() => setIsNewCaseOpen(true)}
-                onOpenQuickRun={(tc) => {
+                onSelectCase={(tc: TestCase) => handleSelectCase(tc)}
+                onOpenNewCase={() => {
+                  setActiveParentSuiteId(selectedSuite?.id || null);
+                  setIsNewCaseOpen(true);
+                }}
+                onOpenQuickRun={(tc: TestCase) => {
                   setActiveQuickRunCase(tc);
                   setIsQuickRunOpen(true);
                 }}
-                onRunSingleCase={(tc) => handleRunCase(tc)}
-                onRunMultipleCases={(cases) => {
+                onRunSingleCase={(tc: TestCase) => handleRunCase(tc)}
+                onRunMultipleCases={(cases: TestCase[]) => {
                   setActiveSuiteRunCases(cases);
                   setIsManualRunOpen(true);
                 }}
@@ -1070,22 +1163,7 @@ export default function Home() {
                 onSelectCase={(tc) => handleSelectCase(tc)}
                 onSelectPlan={(plan) => handleSelectPlan(plan)}
                 onSelectRun={(run) => {
-                  setSelectedRun(run);
-                  saveSessionState({
-                    projectId: selectedProject?.id || null,
-                    tab: 'RUNS',
-                    runId: run.id,
-                    planId: null,
-                  });
-                  pushState({
-                    tab: 'RUNS',
-                    projectId: selectedProject?.id || null,
-                    suiteId: null,
-                    caseId: null,
-                    runId: run.id,
-                    planId: null,
-                    label: `Koşum: ${run.title}`,
-                  });
+                  handleSelectRun(run);
                 }}
               />
             )
@@ -1095,7 +1173,10 @@ export default function Home() {
             <DefectsView
               selectedProject={selectedProject}
               allCases={allCases}
-              onDefectsCountChange={(count) => setDefectsCount(count)}
+              initialSelectedDefect={selectedDefectForModal}
+              onClearInitialDefect={handleClearInitialDefect}
+              onDefectsLoaded={handleDefectsLoaded}
+              onDefectsCountChange={handleDefectsCountChange}
               onNavigateToCase={(caseId) => {
                 const target = allCases.find((c) => c.id === caseId);
                 if (target) {
@@ -1105,8 +1186,7 @@ export default function Home() {
               onNavigateToRun={(runId) => {
                 const targetRun = testRuns.find((r) => r.id === runId);
                 if (targetRun) {
-                  setSelectedRun(targetRun);
-                  setActiveTab('RUNS');
+                  handleSelectRun(targetRun);
                 }
               }}
             />

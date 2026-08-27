@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Project, TestCase, TestPlan, TestRun, SuiteTreeNode } from '@/services/api';
+import { Project, TestCase, TestPlan, TestRun, Defect, SuiteTreeNode } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { ThemeSelector } from './ThemeSelector';
 import { TTBLogo } from './TTBLogo';
@@ -17,6 +17,8 @@ import {
   Plus,
   FileText,
   ClipboardList,
+  PlayCircle,
+  Bug,
   BookOpen,
   LayoutDashboard,
   ChevronsUpDown,
@@ -28,6 +30,8 @@ interface HeaderProps {
   selectedProject?: Project | null;
   testCases?: TestCase[];
   testPlans?: TestPlan[];
+  testRuns?: TestRun[];
+  defects?: Defect[];
   activeTab?: SidebarTab;
   selectedSuite?: SuiteTreeNode | null;
   selectedCase?: TestCase | null;
@@ -40,6 +44,8 @@ interface HeaderProps {
   onNavigateHome?: () => void;
   onSelectCase?: (testCase: TestCase) => void;
   onSelectPlan?: (plan: TestPlan) => void;
+  onSelectRun?: (run: TestRun) => void;
+  onSelectDefect?: (defect: Defect) => void;
   onTabChange?: (tab: SidebarTab) => void;
 }
 
@@ -48,6 +54,8 @@ export const Header: React.FC<HeaderProps> = ({
   selectedProject = null,
   testCases = [],
   testPlans = [],
+  testRuns = [],
+  defects = [],
   activeTab = 'DASHBOARD',
   selectedSuite = null,
   selectedCase = null,
@@ -60,6 +68,8 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateHome,
   onSelectCase,
   onSelectPlan,
+  onSelectRun,
+  onSelectDefect,
   onTabChange,
 }) => {
   const { currentUser, role, isViewer, can, logout } = useAuth();
@@ -146,31 +156,56 @@ export const Header: React.FC<HeaderProps> = ({
     const q = globalSearchQuery.trim().toLowerCase();
     if (!q) return null;
 
-    const matchedCases = testCases.filter(
+    const matchedCases = (testCases || []).filter(
       (c) =>
-        c.title.toLowerCase().includes(q) ||
-        c.code.toLowerCase().includes(q) ||
+        c.title?.toLowerCase().includes(q) ||
+        c.code?.toLowerCase().includes(q) ||
         (c.description && c.description.toLowerCase().includes(q))
     ).slice(0, 5);
 
-    const matchedPlans = testPlans.filter(
+    const matchedPlans = (testPlans || []).filter(
       (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.version.toLowerCase().includes(q) ||
+        p.title?.toLowerCase().includes(q) ||
+        p.version?.toLowerCase().includes(q) ||
         (p.scope && p.scope.toLowerCase().includes(q))
     ).slice(0, 4);
 
-    const matchedProj = projects.filter(
-      (p) => p.name.toLowerCase().includes(q) || p.key.toLowerCase().includes(q)
+    const matchedRuns = (testRuns || []).filter(
+      (r) =>
+        r.title?.toLowerCase().includes(q) ||
+        r.version?.toLowerCase().includes(q) ||
+        r.environment?.toLowerCase().includes(q) ||
+        (r.executedBy && r.executedBy.toLowerCase().includes(q))
+    ).slice(0, 4);
+
+    const matchedDefects = (defects || []).filter(
+      (d) =>
+        d.key?.toLowerCase().includes(q) ||
+        d.title?.toLowerCase().includes(q) ||
+        (d.description && d.description.toLowerCase().includes(q)) ||
+        (d.jiraBugKey && d.jiraBugKey.toLowerCase().includes(q)) ||
+        (d.assignedTo && d.assignedTo.toLowerCase().includes(q)) ||
+        (d.environment && d.environment.toLowerCase().includes(q))
+    ).slice(0, 4);
+
+    const matchedProj = (projects || []).filter(
+      (p) => p.name?.toLowerCase().includes(q) || p.key?.toLowerCase().includes(q)
     ).slice(0, 3);
 
     return {
       cases: matchedCases,
       plans: matchedPlans,
+      runs: matchedRuns,
+      defects: matchedDefects,
       projects: matchedProj,
-      total: matchedCases.length + matchedPlans.length + matchedProj.length,
+      total:
+        matchedCases.length +
+        matchedPlans.length +
+        matchedRuns.length +
+        matchedDefects.length +
+        matchedProj.length,
     };
-  }, [globalSearchQuery, testCases, testPlans, projects]);
+  }, [globalSearchQuery, testCases, testPlans, testRuns, defects, projects]);
 
   // Current active leaf item for breadcrumbs
   const getActiveLeaf = () => {
@@ -299,7 +334,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Search Flyout */}
           {isSearchFocused && globalSearchQuery.trim().length > 0 && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 max-h-[420px] flex flex-col">
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 max-h-[440px] flex flex-col">
               <div className="p-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between text-[11px] font-semibold text-slate-500">
                 <span>Arama Sonuçları ({searchResults?.total || 0})</span>
                 <span className="font-mono text-[10px] text-slate-400">ESC</span>
@@ -318,7 +353,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1 flex items-center gap-1.5">
                       <FileText className="w-3 h-3 text-[#b83a4b]" />
-                      <span>Test Senaryoları</span>
+                      <span>Test Senaryoları ({searchResults.cases.length})</span>
                     </div>
                     <div className="space-y-0.5">
                       {searchResults.cases.map((c) => (
@@ -355,7 +390,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1 flex items-center gap-1.5">
                       <ClipboardList className="w-3 h-3 text-emerald-500" />
-                      <span>Test Planları</span>
+                      <span>Test Planları ({searchResults.plans.length})</span>
                     </div>
                     <div className="space-y-0.5">
                       {searchResults.plans.map((p) => (
@@ -386,12 +421,124 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 )}
 
+                {/* Test Runs */}
+                {searchResults && searchResults.runs.length > 0 && (
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1 flex items-center gap-1.5">
+                      <PlayCircle className="w-3 h-3 text-cyan-500" />
+                      <span>Test Koşumları ({searchResults.runs.length})</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {searchResults.runs.map((r) => {
+                        const getRunBadgeStyle = (st: string) => {
+                          switch (st) {
+                            case 'COMPLETED':
+                              return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+                            case 'IN_PROGRESS':
+                              return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20';
+                            case 'FAILED':
+                              return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+                            default:
+                              return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20';
+                          }
+                        };
+
+                        return (
+                          <div
+                            key={r.id}
+                            onClick={() => {
+                              if (onSelectRun) onSelectRun(r);
+                              setIsSearchFocused(false);
+                              setGlobalSearchQuery('');
+                            }}
+                            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition-colors group"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] truncate">
+                                {r.title}
+                              </p>
+                              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400 font-mono">
+                                <span>{r.version}</span>
+                                {r.environment && <span>• {r.environment}</span>}
+                                {r.executedBy && <span>• {r.executedBy}</span>}
+                              </div>
+                            </div>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${getRunBadgeStyle(r.status)}`}>
+                              {r.status}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Defects */}
+                {searchResults && searchResults.defects.length > 0 && (
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1 flex items-center gap-1.5">
+                      <Bug className="w-3 h-3 text-rose-500" />
+                      <span>Defectler & Hatalar ({searchResults.defects.length})</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {searchResults.defects.map((d) => {
+                        const getSeverityBadgeStyle = (sev: string) => {
+                          switch (sev) {
+                            case 'BLOCKER':
+                            case 'CRITICAL':
+                              return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+                            case 'MAJOR':
+                              return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+                            default:
+                              return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20';
+                          }
+                        };
+
+                        return (
+                          <div
+                            key={d.id}
+                            onClick={() => {
+                              if (onSelectDefect) onSelectDefect(d);
+                              setIsSearchFocused(false);
+                              setGlobalSearchQuery('');
+                            }}
+                            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition-colors group"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shrink-0">
+                                  {d.key}
+                                </span>
+                                {d.jiraBugKey && (
+                                  <span className="font-mono text-[9px] font-semibold px-1 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
+                                    {d.jiraBugKey}
+                                  </span>
+                                )}
+                                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] truncate">
+                                  {d.title}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400 font-mono">
+                                {d.environment && <span>{d.environment}</span>}
+                                {d.assignedTo && <span>• {d.assignedTo}</span>}
+                              </div>
+                            </div>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${getSeverityBadgeStyle(d.severity)}`}>
+                              {d.severity}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Projects */}
                 {searchResults && searchResults.projects.length > 0 && (
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1 flex items-center gap-1.5">
                       <FolderKanban className="w-3 h-3 text-[#b83a4b]" />
-                      <span>Projeler</span>
+                      <span>Projeler ({searchResults.projects.length})</span>
                     </div>
                     <div className="space-y-0.5">
                       {searchResults.projects.map((p) => (
