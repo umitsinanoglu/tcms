@@ -230,40 +230,41 @@ export default function Home() {
     }
   }, []);
 
-  // Handle Tab Change with Navigation Push
+  // Handle Tab Change with Navigation Push - Always navigates to root of the tab
   const handleTabChange = useCallback(
     (tab: SidebarTab, shouldPushState = true) => {
+      setSelectedCase(null);
+      setSelectedSuite(null);
+      setSelectedPlan(null);
+      setSelectedRun(null);
+
       setActiveTab(tab);
       saveSessionState({
         tab,
         projectId: selectedProject?.id || null,
-        suiteId: tab === 'EXPLORER' ? selectedSuite?.id || null : null,
-        caseId: tab === 'EXPLORER' ? selectedCase?.id || null : null,
-        runId: tab === 'RUNS' ? selectedRun?.id || null : null,
+        suiteId: null,
+        caseId: null,
+        runId: null,
       });
 
       if (shouldPushState) {
         let label = 'Ana Sayfa';
-        if (tab === 'PLANS') label = selectedPlan ? `Plan: ${selectedPlan.title}` : 'Test Planları';
-        else if (tab === 'RUNS') label = selectedRun ? `Koşum: ${selectedRun.title}` : 'Test Koşumları';
+        if (tab === 'PLANS') label = 'Test Planları';
+        else if (tab === 'RUNS') label = 'Test Koşumları';
         else if (tab === 'REPORTS') label = 'Test Raporları';
-        else if (tab === 'EXPLORER') {
-          if (selectedCase) label = `Senaryo: ${selectedCase.code}`;
-          else if (selectedSuite) label = `Suite: ${selectedSuite.name}`;
-          else label = 'Test Senaryoları';
-        }
+        else if (tab === 'EXPLORER') label = 'Test Senaryoları';
 
         pushState({
           tab,
           projectId: selectedProject?.id || null,
-          suiteId: selectedSuite?.id || null,
-          caseId: selectedCase?.id || null,
-          runId: selectedRun?.id || null,
+          suiteId: null,
+          caseId: null,
+          runId: null,
           label,
         });
       }
     },
-    [pushState, selectedProject, selectedSuite, selectedCase, selectedPlan, selectedRun]
+    [pushState, selectedProject]
   );
 
   // Handle Project Selection with Navigation Push
@@ -488,68 +489,33 @@ export default function Home() {
 
         setSelectedProject(targetProj);
         setActiveTab(targetTab);
+        setSelectedCase(null);
+        setSelectedSuite(null);
+        setSelectedPlan(null);
+        setSelectedRun(null);
 
-        const loaded = await loadProjectData(targetProj.id);
-        const currentTree = loaded.tree;
-
-        let targetCase: TestCase | null = null;
-        let targetSuite: SuiteTreeNode | null = null;
-        let targetRun: TestRun | null = null;
-
-        if (targetTab === 'EXPLORER') {
-          if (savedState?.caseId) {
-            try {
-              const tc = await TestCasesService.getOne(savedState.caseId);
-              if (tc) {
-                targetCase = tc;
-                setSelectedCase(tc);
-              }
-            } catch {
-              targetCase = null;
-            }
-          } else if (savedState?.suiteId) {
-            const suite = findSuiteInTree(currentTree, savedState.suiteId);
-            if (suite) {
-              targetSuite = suite;
-              setSelectedSuite(suite);
-            }
-          }
-        } else if (targetTab === 'RUNS' && savedState?.runId) {
-          try {
-            const r = await TestRunsService.getRunDetails(savedState.runId);
-            if (r) {
-              targetRun = r;
-              setSelectedRun(r);
-            }
-          } catch {
-            targetRun = null;
-          }
-        }
+        await loadProjectData(targetProj.id);
 
         saveSessionState({
           projectId: targetProj.id,
           tab: targetTab,
-          suiteId: targetSuite?.id || null,
-          caseId: targetCase?.id || null,
-          runId: targetRun?.id || null,
+          suiteId: null,
+          caseId: null,
+          runId: null,
         });
 
         let label = 'Ana Sayfa';
         if (targetTab === 'PLANS') label = 'Test Planları';
-        else if (targetTab === 'RUNS') label = targetRun ? `Koşum: ${targetRun.title}` : 'Test Koşumları';
+        else if (targetTab === 'RUNS') label = 'Test Koşumları';
         else if (targetTab === 'REPORTS') label = 'Test Raporları';
-        else if (targetTab === 'EXPLORER') {
-          if (targetCase) label = `Senaryo: ${targetCase.code}`;
-          else if (targetSuite) label = `Suite: ${targetSuite.name}`;
-          else label = 'Test Senaryoları';
-        }
+        else if (targetTab === 'EXPLORER') label = 'Test Senaryoları';
 
         pushState({
           tab: targetTab,
           projectId: targetProj.id,
-          suiteId: targetSuite?.id || null,
-          caseId: targetCase?.id || null,
-          runId: targetRun?.id || null,
+          suiteId: null,
+          caseId: null,
+          runId: null,
           label,
         });
       } else {
@@ -831,9 +797,20 @@ export default function Home() {
         onNavigateHome={() => handleTabChange('DASHBOARD')}
         onSelectCase={(tc) => handleSelectCase(tc)}
         onSelectPlan={(plan) => {
+          setSelectedCase(null);
+          setSelectedSuite(null);
+          setSelectedRun(null);
           setSelectedPlan(plan);
           setActiveRunTestPlan(plan);
-          handleTabChange('PLANS');
+          setActiveTab('PLANS');
+          pushState({
+            tab: 'PLANS',
+            projectId: selectedProject?.id || null,
+            suiteId: null,
+            caseId: null,
+            runId: null,
+            label: `Plan: ${plan.title}`,
+          });
         }}
         onTabChange={handleTabChange}
       />
@@ -882,18 +859,28 @@ export default function Home() {
               onSelectCase={(tc) => handleSelectCase(tc)}
               onSelectSuite={(suite) => handleSelectSuite(suite)}
               onSelectPlan={(plan) => {
+                setSelectedCase(null);
+                setSelectedSuite(null);
+                setSelectedRun(null);
                 setSelectedPlan(plan);
                 setActiveRunTestPlan(plan);
-                handleTabChange('PLANS');
+                setActiveTab('PLANS');
+                pushState({
+                  tab: 'PLANS',
+                  projectId: selectedProject?.id || null,
+                  suiteId: null,
+                  caseId: null,
+                  runId: null,
+                  label: `Plan: ${plan.title}`,
+                });
               }}
               onSelectRun={(run) => {
                 if (run) {
+                  setSelectedCase(null);
+                  setSelectedSuite(null);
+                  setSelectedPlan(null);
                   setSelectedRun(run);
-                  saveSessionState({
-                    projectId: selectedProject?.id || null,
-                    tab: 'RUNS',
-                    runId: run.id,
-                  });
+                  setActiveTab('RUNS');
                   pushState({
                     tab: 'RUNS',
                     projectId: selectedProject?.id || null,
@@ -902,8 +889,9 @@ export default function Home() {
                     runId: run.id,
                     label: `Koşum: ${run.title}`,
                   });
+                } else {
+                  handleTabChange('RUNS');
                 }
-                handleTabChange('RUNS');
               }}
               onNavigateToPlans={() => handleTabChange('PLANS')}
               onNavigateToExplorer={() => handleTabChange('EXPLORER')}
@@ -1009,8 +997,19 @@ export default function Home() {
                 }}
                 onSelectCase={(tc) => handleSelectCase(tc)}
                 onSelectPlan={(plan) => {
+                  setSelectedCase(null);
+                  setSelectedSuite(null);
+                  setSelectedRun(null);
                   setSelectedPlan(plan);
-                  handleTabChange('PLANS');
+                  setActiveTab('PLANS');
+                  pushState({
+                    tab: 'PLANS',
+                    projectId: selectedProject?.id || null,
+                    suiteId: null,
+                    caseId: null,
+                    runId: null,
+                    label: `Plan: ${plan.title}`,
+                  });
                 }}
                 onUpdateRunSuccess={(updated) => {
                   setSelectedRun(updated);
@@ -1040,8 +1039,19 @@ export default function Home() {
                 }}
                 onSelectCase={(tc) => handleSelectCase(tc)}
                 onSelectPlan={(plan) => {
+                  setSelectedCase(null);
+                  setSelectedSuite(null);
+                  setSelectedRun(null);
                   setSelectedPlan(plan);
-                  handleTabChange('PLANS');
+                  setActiveTab('PLANS');
+                  pushState({
+                    tab: 'PLANS',
+                    projectId: selectedProject?.id || null,
+                    suiteId: null,
+                    caseId: null,
+                    runId: null,
+                    label: `Plan: ${plan.title}`,
+                  });
                 }}
                 onSelectRun={(run) => {
                   setSelectedRun(run);
