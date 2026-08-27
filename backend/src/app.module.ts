@@ -6,8 +6,8 @@ import { TestCasesModule } from './test-cases/test-cases.module';
 import { TestRunsModule } from './test-runs/test-runs.module';
 import { ReportsModule } from './reports/reports.module';
 import { UsersModule } from './users/users.module';
-
 import { TestPlansModule } from './test-plans/test-plans.module';
+import { DefectsModule } from './defects/defects.module';
 
 @Module({
   imports: [
@@ -19,6 +19,8 @@ import { TestPlansModule } from './test-plans/test-plans.module';
     TestRunsModule,
     ReportsModule,
     UsersModule,
+    DefectsModule,
   ],
 })
 export class AppModule {}
+

@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Merkezi Defect & Hata Takibi (Defects Hub, Kanban Pano, İstatistikler, Koşum Senkronizasyonu) modülü eklendi
 - BANK-MOB project expanded with 5 Test Plans, 40 detailed Test Cases (8 per plan), and 10 realistic Test Runs with diverse execution accuracy
 - Database cleared and re-seeded exclusively with 100% Digital Banking SDLC test data (Mobile, Corporate, API Gateway, Cyber Security & AML)
 - Excel import/export and downloadable template system for test cases, test plans, and test runs

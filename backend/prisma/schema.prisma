@@ -21,6 +21,23 @@ enum TestType {
   OTHER
 }
 
+enum DefectSeverity {
+  BLOCKER
+  CRITICAL
+  MAJOR
+  MINOR
+  TRIVIAL
+}
+
+enum DefectStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  REOPENED
+  WONT_FIX
+}
+
 enum Priority {
   BLOCKER
   CRITICAL
@@ -81,6 +98,7 @@ model Project {
   suites         Suite[]
   testCases      TestCase[]
   testRuns       TestRun[]
+  defects        Defect[]
 
   @@map("projects")
 }
@@ -140,6 +158,7 @@ model TestCase {
 
   steps        TestStep[]
   results      TestResult[]
+  defects      Defect[]
 
   // Jira Ready
   jiraStoryKey String?
@@ -183,6 +202,7 @@ model TestRun {
   testPlan    TestPlan?  @relation(fields: [testPlanId], references: [id], onDelete: SetNull)
 
   results     TestResult[]
+  defects     Defect[]
 
   createdAt   DateTime   @default(now())
 
@@ -222,8 +242,48 @@ model TestResult {
 
   screenshotUrl String?
 
+  defects      Defect[]
+
   executedAt   DateTime     @default(now())
 
   @@map("test_results")
 }
+
+model Defect {
+  id              String         @id @default(uuid())
+  key             String         @unique // e.g. DEF-101
+  title           String
+  description     String?
+  severity        DefectSeverity @default(MAJOR)
+  status          DefectStatus   @default(OPEN)
+
+  projectId       String
+  project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  testCaseId      String?
+  testCase        TestCase?      @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
+
+  testRunId       String?
+  testRun         TestRun?       @relation(fields: [testRunId], references: [id], onDelete: SetNull)
+
+  testResultId    String?
+  testResult      TestResult?    @relation(fields: [testResultId], references: [id], onDelete: SetNull)
+
+  assignedTo      String?
+  reportedBy      String?
+  environment     String?        @default("STAGING")
+  channel         String?        @default("WEB")
+
+  jiraBugKey      String?
+  jiraBugUrl      String?
+
+  resolutionNotes String?
+  resolvedAt      DateTime?
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@map("defects")
+}
+
 

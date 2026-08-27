@@ -7,12 +7,13 @@ import {
   FileText,
   Activity,
   BarChart3,
+  Bug,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
 } from 'lucide-react';
 
-export type SidebarTab = 'DASHBOARD' | 'PLANS' | 'EXPLORER' | 'RUNS' | 'REPORTS';
+export type SidebarTab = 'DASHBOARD' | 'PLANS' | 'EXPLORER' | 'RUNS' | 'DEFECTS' | 'REPORTS';
 
 interface AppSidebarProps {
   projects?: Project[];
@@ -22,6 +23,7 @@ interface AppSidebarProps {
   testCasesCount?: number;
   testPlansCount?: number;
   testRunsCount?: number;
+  defectsCount?: number;
   onOpenUserManagement?: () => void;
 }
 
@@ -32,6 +34,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   testCasesCount = 0,
   testPlansCount = 0,
   testRunsCount = 0,
+  defectsCount = 0,
   onOpenUserManagement,
 }) => {
   const { isAdmin } = useAuth();
@@ -79,11 +82,18 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       badge: testRunsCount > 0 ? testRunsCount : undefined,
     },
     {
+      id: 'DEFECTS' as SidebarTab,
+      label: 'Defectler & Hatalar',
+      icon: Bug,
+      badge: defectsCount > 0 ? defectsCount : undefined,
+    },
+    {
       id: 'REPORTS' as SidebarTab,
       label: 'Test Raporları',
       icon: BarChart3,
     },
   ];
+
 
   // Collapsed Sidebar View
   if (isCollapsed) {
@@ -234,9 +244,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 <span>Test Senaryoları:</span>
                 <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{testCasesCount}</span>
               </div>
-              <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 text-xs py-0.5">
+              <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 text-xs py-0.5 border-b border-slate-200/50 dark:border-slate-800/60">
                 <span>Test Koşumları:</span>
                 <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{testRunsCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 text-xs py-0.5">
+                <span>Açık Defectler:</span>
+                <span className="font-mono font-bold text-rose-600 dark:text-rose-400">{defectsCount}</span>
               </div>
             </div>
           </div>
