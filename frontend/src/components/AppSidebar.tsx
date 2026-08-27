@@ -166,13 +166,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     );
   }
 
-  // Expanded Sidebar View (Spacious 300px - 340px)
+  // Expanded Sidebar View (Compact 230px - 240px)
   return (
-    <aside className="w-[300px] lg:w-[320px] xl:w-[340px] border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c121e] flex flex-col h-[calc(100vh-4rem)] select-none transition-all duration-300 z-20 shrink-0 justify-between">
+    <aside className="w-[230px] sm:w-[240px] border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c121e] flex flex-col h-[calc(100vh-4rem)] select-none transition-all duration-300 z-20 shrink-0 justify-between">
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* 1. Header: Section Title & Collapse Action */}
-        <div className="p-3.5 px-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#141821]/90 flex items-center justify-between shrink-0">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div className="p-3 px-3.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#141821]/90 flex items-center justify-between shrink-0">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Navigasyon Menüsü
           </span>
           <button
@@ -181,12 +181,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
             title="Sol Menüyü Daralt"
           >
-            <PanelLeftClose className="w-4 h-4" />
+            <PanelLeftClose className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* 2. Primary Nav List */}
-        <div className="p-3.5 space-y-1.5 border-b border-slate-200 dark:border-slate-800 shrink-0">
+        <div className="p-2.5 space-y-1 border-b border-slate-200 dark:border-slate-800 shrink-0">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -195,19 +195,19 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => onTabChange(item.id)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-[13px] font-semibold transition-all duration-150 cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white shadow-md shadow-[#821c2b]/25 translate-x-1 font-bold'
+                    ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white shadow-md shadow-[#821c2b]/25 translate-x-0.5 font-bold'
                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <div className="flex items-center space-x-3">
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />
-                  <span>{item.label}</span>
+                <div className="flex items-center space-x-2.5">
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />
+                  <span className="truncate">{item.label}</span>
                 </div>
                 {item.badge !== undefined && (
                   <span
-                    className={`text-xs font-mono px-2 py-0.5 rounded-full font-bold ${
+                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold ${
                       isActive
                         ? 'bg-white/20 text-white'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
@@ -222,21 +222,21 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         </div>
 
         {/* 3. Project Summary Card */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-4">
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-sm space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div className="flex-1 p-3 overflow-y-auto space-y-3">
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-xs space-y-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
               Proje Özeti
             </span>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 text-sm py-1 border-b border-slate-200/50 dark:border-slate-800/60">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 text-xs py-0.5 border-b border-slate-200/50 dark:border-slate-800/60">
                 <span>Test Planları:</span>
                 <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{testPlansCount}</span>
               </div>
-              <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 text-sm py-1 border-b border-slate-200/50 dark:border-slate-800/60">
+              <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 text-xs py-0.5 border-b border-slate-200/50 dark:border-slate-800/60">
                 <span>Test Senaryoları:</span>
                 <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{testCasesCount}</span>
               </div>
-              <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 text-sm py-1">
+              <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 text-xs py-0.5">
                 <span>Test Koşumları:</span>
                 <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{testRunsCount}</span>
               </div>
@@ -246,13 +246,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       </div>
 
       {/* 4. Footer: Collapse Action */}
-      <div className="p-3 border-t border-slate-100 dark:border-slate-800 shrink-0">
+      <div className="p-2.5 px-3 border-t border-slate-100 dark:border-slate-800 shrink-0">
         <button
           type="button"
           onClick={toggleCollapsed}
-          className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          className="w-full flex items-center space-x-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
         >
-          <PanelLeftClose className="w-4 h-4" />
+          <PanelLeftClose className="w-3.5 h-3.5" />
           <span>Menüyü Daralt</span>
         </button>
       </div>
