@@ -63,7 +63,7 @@ interface TestPlanDetailViewProps {
   onDeletePlanSuccess?: (deletedId: string) => void;
 }
 
-type DetailTab = 'SCENARIOS' | 'RUNS' | 'OVERVIEW';
+type DetailTab = 'SCENARIOS' | 'RUNS';
 
 export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
   plan: initialPlan,
@@ -876,22 +876,10 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                     : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
-                <span>Bağlı Test Koşumları</span>
+                <span>Test Koşumları Geçmişi</span>
                 <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                   {plan.testRuns?.length || plan._count?.testRuns || 0}
                 </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('OVERVIEW')}
-                className={`py-3 border-b-2 transition-all cursor-pointer ${
-                  activeTab === 'OVERVIEW'
-                    ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
-              >
-                Kapsam & Rapor Detayı
               </button>
             </div>
 
@@ -913,7 +901,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
           {/* Tab 1: Test Scenarios Management */}
           {activeTab === 'SCENARIOS' && (
             <div className="flex-1 flex flex-col min-h-0">
-              {/* Search & Filters */}
+              {/* Search & Filters & Add Scenario Button */}
               <div className="p-2.5 px-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -950,6 +938,18 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                     <option value="API">API</option>
                     <option value="PERFORMANCE">Performance</option>
                   </select>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCandidateCaseIdsToAdd([]);
+                      setIsAddCasesModalOpen(true);
+                    }}
+                    className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] transition-all shadow-xs cursor-pointer active:scale-98"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Test Senaryosu Ekle</span>
+                  </button>
                 </div>
               </div>
 
@@ -969,7 +969,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                       </th>
                       <th className="py-2.5 px-3 w-28">KOD</th>
                       <th className="py-2.5 px-3">SENARYO BAŞLIĞI</th>
-                      <th className="py-2.5 px-3">SÜİT</th>
+                      <th className="py-2.5 px-3">MODÜL</th>
                       <th className="py-2.5 px-3">ÖNCELİK</th>
                       <th className="py-2.5 px-3">TÜR</th>
                       <th className="py-2.5 px-3">ADIM SAYISI</th>
@@ -984,9 +984,20 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                           <p className="font-semibold text-slate-700 dark:text-slate-300">
                             Bu test planına henüz senaryo eklenmemiş.
                           </p>
-                          <p className="text-[11px] text-slate-400 mt-1">
+                          <p className="text-[11px] text-slate-400 mt-1 mb-4">
                             Bu test planı kapsamında kayıtlı test senaryosu bulunmamaktadır.
                           </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCandidateCaseIdsToAdd([]);
+                              setIsAddCasesModalOpen(true);
+                            }}
+                            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-xs cursor-pointer transition-all active:scale-98"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Test Senaryosu Ekle</span>
+                          </button>
                         </td>
                       </tr>
                     ) : (
@@ -1037,11 +1048,11 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                               </div>
                             </td>
 
-                            {/* Suite */}
+                            {/* Module */}
                             <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
                               <div className="flex items-center space-x-1.5">
                                 <Folder className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                <span className="truncate max-w-[130px] font-medium">{tc.suite?.name || 'Kök Dizin'}</span>
+                                <span className="truncate max-w-[130px] font-medium">{tc.suite?.name || 'Ana Modül'}</span>
                               </div>
                             </td>
 
@@ -1177,59 +1188,6 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
               )}
             </div>
           )}
-
-          {/* Tab 3: Overview & Scope Breakdown */}
-          {activeTab === 'OVERVIEW' && (
-            <div className="flex-1 overflow-auto p-6 space-y-6 text-xs">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Scope Coverage */}
-                <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-[#121926]/70 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-blue-500" />
-                    <span>Kapsam Bileşenleri ve Kanallar</span>
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
-                    {plan.scope || 'Web, Mobil, API kanalları ve ilgili tüm fonksiyonel modüller.'}
-                  </p>
-
-                  <div className="pt-2 flex flex-wrap gap-2">
-                    {['Web Portalı', 'Mobil iOS & Android', 'REST API', 'Ödeme & Güvenlik'].map((t) => (
-                      <span
-                        key={t}
-                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Jira / Requirements */}
-                <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-[#121926]/70 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-amber-500" />
-                    <span>Jira Gereksinim ve Issue Eşleşmeleri</span>
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
-                    {plan.requirements || 'Bu test planı Jira issue ve kullanıcı hikayeleri ile doğrudan entegre edilebilir.'}
-                  </p>
-
-                  {plan.requirements && (
-                    <div className="pt-2 flex flex-wrap gap-1.5">
-                      {plan.requirements.split(',').map((req) => (
-                        <span
-                          key={req}
-                          className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-mono font-bold"
-                        >
-                          {req.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -1271,14 +1229,14 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                 />
               </div>
 
-              {/* Suite Filter */}
+              {/* Module Filter */}
               {availableSuites.length > 0 && (
                 <select
                   value={candidateSuiteFilter}
                   onChange={(e) => setCandidateSuiteFilter(e.target.value)}
                   className="bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none font-medium"
                 >
-                  <option value="ALL">Tüm Süitler</option>
+                  <option value="ALL">Tüm Modüller</option>
                   {availableSuites.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
@@ -1398,7 +1356,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                           </p>
                           <div className="flex items-center space-x-2 text-[10px] text-slate-400 mt-0.5 truncate">
                             <span className="font-medium text-slate-600 dark:text-slate-300">
-                              {c.suite?.name || 'Kök Dizin'}
+                              {c.suite?.name || 'Ana Modül'}
                             </span>
                             <span>&bull;</span>
                             <span

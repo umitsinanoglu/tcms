@@ -194,23 +194,20 @@ export const Header: React.FC<HeaderProps> = ({
   const activeLeaf = getActiveLeaf();
 
   return (
-    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-40 sticky top-0 transition-colors duration-200 select-none">
-      {/* Left Area: Official Brand Logo & Breadcrumb Hierarchy */}
-      <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-        {/* Brand Logo Box */}
-        <div className="flex items-center shrink-0 pr-3 sm:pr-4">
-          <div
-            onClick={onNavigateHome}
-            className="flex items-center shrink-0 cursor-pointer hover:opacity-95 transition-opacity"
-            title="Ana Sayfa / Dashboard"
-          >
-            <TTBLogo variant="horizontal" height={34} showSubtitle={true} subtitleText="Test Yönetim Sistemi" />
-          </div>
+    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-between z-40 sticky top-0 transition-colors duration-200 select-none">
+      {/* Left Area: Official Brand Logo aligned with Sidebar (240px) */}
+      <div className="w-[240px] h-full px-3.5 border-r border-slate-200 dark:border-slate-800 flex items-center shrink-0">
+        <div
+          onClick={onNavigateHome}
+          className="flex items-center shrink-0 cursor-pointer hover:opacity-95 transition-opacity"
+          title="Ana Sayfa / Dashboard"
+        >
+          <TTBLogo variant="horizontal" height={38} showSubtitle={false} />
         </div>
+      </div>
 
-        {/* Vertical Divider */}
-        <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 hidden md:block shrink-0" />
-
+      {/* Main Bar: Breadcrumb Hierarchy & Global Controls */}
+      <div className="flex-1 flex items-center justify-between px-4 sm:px-6 min-w-0 h-full">
         {/* Dynamic Breadcrumb Hierarchy (Screenshot Style) */}
         <nav aria-label="Breadcrumb" className="hidden sm:flex items-center space-x-1.5 text-xs text-slate-500 dark:text-slate-400 min-w-0 overflow-hidden truncate">
           <button
@@ -254,10 +251,9 @@ export const Header: React.FC<HeaderProps> = ({
             </>
           )}
         </nav>
-      </div>
 
-      {/* Right Area: Compact Search, Project Selector (En sağa yaslı), Docs, Theme, Single Letter Avatar */}
-      <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
+        {/* Right Area: Compact Search, Project Selector (En sağa yaslı), Docs, Theme, Single Letter Avatar */}
+        <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
         {/* 1. Compact Global Search Bar */}
         <div className="relative" ref={searchContainerRef}>
           <div
@@ -672,6 +668,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
-    </header>
-  );
+    </div>
+  </header>
+);
 };

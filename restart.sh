@@ -15,5 +15,6 @@ sleep 1
 echo "🧹 Stale Next.js build ve cache temizleniyor..."
 rm -rf frontend/.next
 
-# Launch both services
-./start.sh
+# Launch both services with watch mode
+exec ./start.sh
+

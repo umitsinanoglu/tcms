@@ -379,24 +379,26 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             <span>Otomasyon API (CI/CD)</span>
           </button>
 
-          {/* Secondary Action: Hızlı Test Koşumu */}
+          {/* Yöntem 1: Hızlı Test Koşumu (Tekil Senaryo) */}
           <button
             type="button"
             onClick={() => setIsQuickPickerOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-slate-800 dark:text-slate-200 border border-[#d0d8e4] dark:border-[#2e3748] hover:border-[#b83a4b]/50 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-slate-800 dark:text-slate-200 border border-[#d0d8e4] dark:border-[#2e3748] hover:border-amber-500/50 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+            title="Tek bir test senaryosunu hızlıca koşun (N defa tekrarlanabilir)"
           >
             <Zap className="w-3.5 h-3.5 text-amber-500" />
-            <span>Hızlı Test Koşumu</span>
+            <span>⚡ Hızlı Test Koşumu</span>
           </button>
 
-          {/* Primary Action: Test Koşumu Başlat (Directs to Test Plan selection) */}
+          {/* Yöntem 2: Test Planı ile Koşum Başlat (Çoklu Senaryo) */}
           <button
             type="button"
             onClick={() => onOpenManualRun(null)}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white transition-all duration-200 rounded-[10px] bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-sm hover:shadow-[0_4px_12px_rgba(130,28,43,0.35)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+            title="Bir test planı veya çoklu senaryo seçerek kapsamlı koşum başlatın"
           >
-            <Plus className="w-4 h-4" />
-            <span>+ Test Koşumu Başlat</span>
+            <ClipboardList className="w-4 h-4" />
+            <span>📋 Test Planı ile Koşum Başlat</span>
           </button>
         </div>
       </div>

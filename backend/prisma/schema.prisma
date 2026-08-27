@@ -136,7 +136,7 @@ model TestCase {
   project      Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   suiteId      String?
-  suite        Suite?       @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  suite        Suite?       @relation(fields: [suiteId], references: [id], onDelete: SetNull)
 
   steps        TestStep[]
   results      TestResult[]

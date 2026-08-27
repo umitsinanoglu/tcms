@@ -18,10 +18,10 @@ export interface TTBLogoProps {
  */
 export const TTBLogo: React.FC<TTBLogoProps> = ({
   variant = 'horizontal',
-  height = 44,
+  height = 40,
   className = '',
-  showSubtitle = true,
-  subtitleText = 'Test Yönetim Sistemi',
+  showSubtitle = false,
+  subtitleText = '',
   colorMode = 'auto',
 }) => {
   const { theme } = useTheme();
@@ -64,44 +64,44 @@ export const TTBLogo: React.FC<TTBLogoProps> = ({
   // Full Horizontal Brand Logo (Emblem + Typography + TCMS Subtitle)
   if (variant === 'horizontal' || variant === 'full') {
     return (
-      <div className={`inline-flex items-center space-x-3 sm:space-x-3.5 select-none ${className}`}>
-        {/* Emblem */}
+      <div className={`inline-flex items-center space-x-2.5 select-none ${className}`}>
+        {/* Emblem - Slightly enlarged & prominent */}
         <div
           className="relative shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
-          style={{ height: `${height}px`, width: `${Math.round(height * 1.25)}px` }}
+          style={{ height: `${height}px`, width: `${Math.round(height * 1.2)}px` }}
         >
           <img
             src={getEmblemSrc()}
             alt="Türk Ticaret Bankası"
-            className="h-full w-auto object-contain transition-all duration-200 drop-shadow-sm"
+            className="h-full w-auto object-contain transition-all duration-200 drop-shadow-xs"
             style={{ maxHeight: `${height}px` }}
           />
         </div>
 
-        {/* Separator / Typography & Subtitle */}
+        {/* Typography & TCMS Badge */}
         <div className="flex flex-col justify-center shrink-0">
           <div
-            className="relative"
-            style={{ height: `${Math.round(height * 0.65)}px` }}
+            className="relative flex items-center"
+            style={{ height: `${Math.round(height * 0.5)}px` }}
           >
             <img
               src={getTextSrc()}
               alt="Türk Ticaret Bankası"
               className="h-full w-auto object-contain transition-all duration-200"
-              style={{ maxHeight: `${Math.round(height * 0.65)}px` }}
+              style={{ maxHeight: `${Math.round(height * 0.5)}px` }}
             />
           </div>
 
-          {showSubtitle && (
-            <div className="flex items-center space-x-2 mt-1">
-              <span className="text-xs font-bold tracking-wider uppercase px-2 py-0.5 bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] rounded-md border border-[#b83a4b]/30 font-mono leading-none">
-                TCMS
-              </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:inline leading-none">
+          <div className="flex items-center mt-1">
+            <span className="text-[10px] font-extrabold tracking-wider uppercase px-2 py-0.5 bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] rounded-md border border-[#b83a4b]/30 font-mono leading-none shadow-2xs">
+              TCMS
+            </span>
+            {showSubtitle && subtitleText && (
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium ml-1.5 leading-none">
                 {subtitleText}
               </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     );
@@ -131,9 +131,9 @@ export const TTBLogo: React.FC<TTBLogoProps> = ({
             TTB
           </span>
         </div>
-        {showSubtitle && (
+        {showSubtitle && subtitleText && (
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-1 leading-none">
-            Türk Ticaret Bankası
+            {subtitleText}
           </span>
         )}
       </div>
