@@ -10,36 +10,31 @@ import {
   TestPlan,
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import { parseScreenshots, formatScreenshots } from './QuickRunModal';
 import {
   X,
   Play,
+  Pause,
+  RotateCcw,
+  Timer,
   CheckCircle2,
   XCircle,
   SkipForward,
   Slash,
   ChevronRight,
   ChevronLeft,
-  Keyboard,
   Trophy,
-  RotateCcw,
-  Zap,
   Bug,
-  ExternalLink,
-  Image as ImageIcon,
   Upload,
   Trash2,
   Maximize2,
-  Edit3,
   AlertCircle,
   MessageSquare,
   ClipboardList,
-  Server,
-  Tag,
-  Layers,
-  FileText,
-  Plus,
   Check,
   Search,
+  SlidersHorizontal,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 interface ManualRunModalProps {
@@ -51,6 +46,24 @@ interface ManualRunModalProps {
 }
 
 type WizardStep = 'PLAN_SELECT' | 'CASE_SELECT' | 'EXECUTION' | 'SUMMARY';
+type StepStatus = 'PASSED' | 'FAILED' | 'BLOCKED' | 'NONE';
+
+interface CaseRunState {
+  status: ResultStatus;
+  environment: string;
+  platform: string;
+  appVersion: string;
+  device: string;
+  userProfile: string;
+  customerType: string;
+  flakyStatus: string;
+  executionMs: number;
+  errorMessage: string;
+  jiraBugKey: string;
+  jiraBugUrl: string;
+  screenshots: string[];
+  stepStatuses: Record<number, StepStatus>;
+}
 
 export const ManualRunModal: React.FC<ManualRunModalProps> = ({
   isOpen,
@@ -72,9 +85,9 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
   // Run Setup State
   const [title, setTitle] = useState('');
-  const [version, setVersion] = useState('v1.0.0');
-  const [environment, setEnvironment] = useState('STAGING');
-  const [executedBy, setExecutedBy] = useState('QA Tester');
+  const [version, setVersion] = useState('v1.2.0 (106)');
+  const [environment, setEnvironment] = useState('UAT');
+  const [executedBy, setExecutedBy] = useState('Ümit Sinanoğlu');
   const [testerEmail, setTesterEmail] = useState('tester@company.com');
 
   // Case Selection State
@@ -85,10 +98,13 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
   const [runCases, setRunCases] = useState<TestCase[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeRun, setActiveRun] = useState<TestRun | null>(null);
-  const [results, setResults] = useState<
-    Record<string, { status: ResultStatus; errorMessage?: string; jiraBugKey?: string; jiraBugUrl?: string; screenshotUrl?: string }>
-  >({});
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+  // Per-case detailed execution state dictionary
+  const [caseStates, setCaseStates] = useState<Record<string, CaseRunState>>({});
+
+  // Active case inputs
+  const [activeNewImageUrl, setActiveNewImageUrl] = useState('');
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [summaryData, setSummaryData] = useState<{
@@ -100,6 +116,43 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     passRate: number;
   } | null>(null);
 
+  // Stopwatch state for current scenario
+  const [currentScenarioTimerMs, setCurrentScenarioTimerMs] = useState<number>(0);
+  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
+
+  // Stopwatch interval
+  useEffect(() => {
+    let interval: any = null;
+    if (isTimerRunning && wizardStep === 'EXECUTION') {
+      interval = setInterval(() => {
+        setCurrentScenarioTimerMs((prev) => {
+          const nextVal = prev + 1000;
+          // Sync with active case state
+          const cCase = runCases[currentIndex];
+          if (cCase) {
+            setCaseStates((cPrev) => {
+              const prevItem = cPrev[cCase.id];
+              if (!prevItem) return cPrev;
+              return {
+                ...cPrev,
+                [cCase.id]: {
+                  ...prevItem,
+                  executionMs: nextVal,
+                },
+              };
+            });
+          }
+          return nextVal;
+        });
+      }, 1000);
+    } else {
+      if (interval) clearInterval(interval);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerRunning, wizardStep, currentIndex, runCases]);
+
   // Load project test plans on open
   useEffect(() => {
     if (isOpen && projectId) {
@@ -109,17 +162,17 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           if (initialTestPlan) {
             setSelectedPlanId(initialTestPlan.id);
             setTitle(`${initialTestPlan.title} - Koşum`);
-            setVersion(initialTestPlan.version || 'v1.0.0');
-            setEnvironment(initialTestPlan.environment || 'STAGING');
+            setVersion(initialTestPlan.version || 'v1.2.0 (106)');
+            setEnvironment(initialTestPlan.environment || 'UAT');
           } else if (data && data.length > 0) {
             const firstActive = data.find((p) => p.status === 'ACTIVE') || data[0];
             setSelectedPlanId(firstActive.id);
             setTitle(`${firstActive.title} - Koşum`);
-            setVersion(firstActive.version || 'v1.0.0');
-            setEnvironment(firstActive.environment || 'STAGING');
+            setVersion(firstActive.version || 'v1.2.0 (106)');
+            setEnvironment(firstActive.environment || 'UAT');
           } else {
             setIsCreatingNewPlan(true);
-            setTitle('Sprint 1 - İlk Test Koşumu');
+            setTitle('Sprint 1 - Kapsamlı Test Koşumu');
           }
         })
         .catch(() => {});
@@ -131,10 +184,12 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       // Select all provided cases by default
       setSelectedCaseIds(testCases.map((c) => c.id));
       setWizardStep('PLAN_SELECT');
-      setResults({});
+      setCaseStates({});
       setSummaryData(null);
       setActiveRun(null);
       setErrorMsg(null);
+      setCurrentScenarioTimerMs(0);
+      setIsTimerRunning(false);
     }
   }, [isOpen, projectId, initialTestPlan, currentUser, testCases]);
 
@@ -145,8 +200,8 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     const found = plans.find((p) => p.id === planId);
     if (found) {
       setTitle(`${found.title} - Koşum`);
-      setVersion(found.version || 'v1.0.0');
-      setEnvironment(found.environment || 'STAGING');
+      setVersion(found.version || 'v1.2.0 (106)');
+      setEnvironment(found.environment || 'UAT');
     }
   };
 
@@ -186,8 +241,8 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
         }
         const createdPlan = await TestPlansService.create({
           title: newPlanTitle.trim(),
-          version: version.trim() || 'v1.0.0',
-          environment: environment.trim() || 'STAGING',
+          version: version.trim() || 'v1.2.0 (106)',
+          environment: environment.trim() || 'UAT',
           scope: newPlanScope.trim() || undefined,
           requirements: newPlanRequirements.trim() || undefined,
           projectId,
@@ -198,9 +253,9 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       // Create TestRun in Backend
       const run = await TestRunsService.createRun(projectId, {
         title: title.trim() || `Test Koşumu - ${version}`,
-        version: version.trim() || 'v1.0.0',
+        version: version.trim() || 'v1.2.0 (106)',
         environment,
-        executedBy: executedBy.trim() || 'QA Tester',
+        executedBy: executedBy.trim() || 'Ümit Sinanoğlu',
         testerEmail: testerEmail.trim() || 'tester@company.com',
         testPlanId: targetPlanId || undefined,
       });
@@ -210,7 +265,41 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       // Filter and prepare selected cases
       const chosenCases = testCases.filter((c) => selectedCaseIds.includes(c.id));
       setRunCases(chosenCases);
+
+      // Initialize state for each chosen case
+      const initialMap: Record<string, CaseRunState> = {};
+      chosenCases.forEach((tc) => {
+        const stepInit: Record<number, StepStatus> = {};
+        if (tc.steps && tc.steps.length > 0) {
+          tc.steps.forEach((_, sIdx) => {
+            stepInit[sIdx] = 'NONE';
+          });
+        }
+
+        const rawScreens = tc.screenshotUrl ? parseScreenshots(tc.screenshotUrl) : [];
+
+        initialMap[tc.id] = {
+          status: 'PASSED',
+          environment: environment || 'UAT',
+          platform: tc.type === 'IOS' ? 'iOS' : tc.type === 'ANDROID' ? 'Android' : 'Web',
+          appVersion: version || 'v1.2.0 (106)',
+          device: tc.type === 'IOS' ? 'iphone 15' : tc.type === 'ANDROID' ? 's24' : 'Chrome 128 (macOS)',
+          userProfile: executedBy ? `${executedBy.toUpperCase()} (ADMIN)` : 'ÜMİT SİNANOĞLU (ADMIN)',
+          customerType: 'BIREYSEL',
+          flakyStatus: 'NONE',
+          executionMs: 0,
+          errorMessage: '',
+          jiraBugKey: '',
+          jiraBugUrl: '',
+          screenshots: rawScreens,
+          stepStatuses: stepInit,
+        };
+      });
+
+      setCaseStates(initialMap);
       setCurrentIndex(0);
+      setCurrentScenarioTimerMs(0);
+      setIsTimerRunning(true);
       setWizardStep('EXECUTION');
     } catch (err: any) {
       console.error('Error starting run:', err);
@@ -221,64 +310,25 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
   };
 
   const currentCase = runCases[currentIndex] || null;
+  const currentCaseState: CaseRunState | undefined = currentCase ? caseStates[currentCase.id] : undefined;
 
-  const handleMarkStatus = useCallback(
-    (status: ResultStatus) => {
-      if (!currentCase) return;
-
-      setResults((prev) => ({
-        ...prev,
-        [currentCase.id]: {
-          ...prev[currentCase.id],
-          status,
-          screenshotUrl: prev[currentCase.id]?.screenshotUrl ?? currentCase.screenshotUrl ?? undefined,
-        },
-      }));
-    },
-    [currentCase]
-  );
-
-  const handleErrorMessageChange = (caseId: string, msg: string) => {
-    setResults((prev) => ({
-      ...prev,
-      [caseId]: {
-        ...prev[caseId],
-        status: prev[caseId]?.status || 'PASSED',
-        errorMessage: msg,
-      },
-    }));
+  // When switching index, reset timer for scenario
+  const handleChangeIndex = (nextIndex: number) => {
+    if (nextIndex < 0 || nextIndex >= runCases.length) return;
+    setCurrentIndex(nextIndex);
+    const targetCase = runCases[nextIndex];
+    if (targetCase && caseStates[targetCase.id]) {
+      setCurrentScenarioTimerMs(caseStates[targetCase.id].executionMs || 0);
+    } else {
+      setCurrentScenarioTimerMs(0);
+    }
+    setActiveNewImageUrl('');
+    setLightboxIndex(null);
   };
 
-  const handleScreenshotChange = (caseId: string, screenshotUrl: string) => {
-    setResults((prev) => ({
-      ...prev,
-      [caseId]: {
-        ...prev[caseId],
-        status: prev[caseId]?.status || 'PASSED',
-        screenshotUrl,
-      },
-    }));
-  };
-
-  const handleCreateJiraBugMock = (caseId: string, caseCode: string) => {
-    const bugNum = Math.floor(Math.random() * 800) + 100;
-    const bugKey = `BUG-${bugNum}`;
-    const bugUrl = `https://company.atlassian.net/browse/${bugKey}`;
-
-    setResults((prev) => ({
-      ...prev,
-      [caseId]: {
-        ...prev[caseId],
-        status: prev[caseId]?.status || 'FAILED',
-        jiraBugKey: bugKey,
-        jiraBugUrl: bugUrl,
-      },
-    }));
-  };
-
-  // Keyboard Shortcuts Listener for Execution Step
+  // Keyboard Shortcuts (P, F, B, S, ArrowLeft, ArrowRight)
   useEffect(() => {
-    if (!isOpen || wizardStep !== 'EXECUTION') return;
+    if (!isOpen || wizardStep !== 'EXECUTION' || !currentCase) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return;
@@ -286,28 +336,28 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       const key = e.key.toUpperCase();
       if (key === 'P') {
         e.preventDefault();
-        handleMarkStatus('PASSED');
+        handleUpdateCurrentState({ status: 'PASSED' });
       } else if (key === 'F') {
         e.preventDefault();
-        handleMarkStatus('FAILED');
-      } else if (key === 'S') {
-        e.preventDefault();
-        handleMarkStatus('SKIPPED');
+        handleUpdateCurrentState({ status: 'FAILED' });
       } else if (key === 'B') {
         e.preventDefault();
-        handleMarkStatus('BLOCKED');
-      } else if (key === 'ArrowRight') {
+        handleUpdateCurrentState({ status: 'BLOCKED' });
+      } else if (key === 'S') {
         e.preventDefault();
-        if (currentIndex < runCases.length - 1) setCurrentIndex((prev) => prev + 1);
-      } else if (key === 'ArrowLeft') {
+        handleUpdateCurrentState({ status: 'SKIPPED' });
+      } else if (key === 'ARROWLEFT' && currentIndex > 0) {
         e.preventDefault();
-        if (currentIndex > 0) setCurrentIndex((prev) => prev - 1);
+        handleChangeIndex(currentIndex - 1);
+      } else if (key === 'ARROWRIGHT' && currentIndex < runCases.length - 1) {
+        e.preventDefault();
+        handleChangeIndex(currentIndex + 1);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, wizardStep, handleMarkStatus, currentIndex, runCases.length]);
+  }, [isOpen, wizardStep, currentCase, currentIndex, runCases.length]);
 
   // Support pasting screenshot from clipboard
   useEffect(() => {
@@ -324,7 +374,20 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           if (blob) {
             const reader = new FileReader();
             reader.onloadend = () => {
-              handleScreenshotChange(currentCase.id, reader.result as string);
+              if (typeof reader.result === 'string') {
+                const newImg = reader.result;
+                setCaseStates((prev) => {
+                  const curr = prev[currentCase.id];
+                  if (!curr) return prev;
+                  return {
+                    ...prev,
+                    [currentCase.id]: {
+                      ...curr,
+                      screenshots: [...curr.screenshots, newImg],
+                    },
+                  };
+                });
+              }
             };
             reader.readAsDataURL(blob);
           }
@@ -336,6 +399,117 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     return () => window.removeEventListener('paste', handlePaste);
   }, [isOpen, wizardStep, currentCase]);
 
+  // Update current case state helper
+  const handleUpdateCurrentState = (partial: Partial<CaseRunState>) => {
+    if (!currentCase) return;
+    setCaseStates((prev) => {
+      const existing = prev[currentCase.id];
+      if (!existing) return prev;
+      return {
+        ...prev,
+        [currentCase.id]: {
+          ...existing,
+          ...partial,
+        },
+      };
+    });
+  };
+
+  const handleToggleStepCheckbox = (stepIdx: number) => {
+    if (!currentCase || !currentCaseState) return;
+    const currentStatus = currentCaseState.stepStatuses[stepIdx] || 'NONE';
+    const nextStatus: StepStatus = currentStatus === 'PASSED' ? 'NONE' : 'PASSED';
+    const nextSteps = { ...currentCaseState.stepStatuses, [stepIdx]: nextStatus };
+
+    let recommendedStatus = currentCaseState.status;
+    const values = Object.values(nextSteps);
+    if (values.some((v) => v === 'FAILED')) recommendedStatus = 'FAILED';
+    else if (values.some((v) => v === 'BLOCKED')) recommendedStatus = 'BLOCKED';
+    else if (values.length > 0 && values.every((v) => v === 'PASSED')) recommendedStatus = 'PASSED';
+
+    handleUpdateCurrentState({
+      stepStatuses: nextSteps,
+      status: recommendedStatus,
+    });
+  };
+
+  const handleSetStepFlag = (stepIdx: number, flag: StepStatus) => {
+    if (!currentCase || !currentCaseState) return;
+    const currentStatus = currentCaseState.stepStatuses[stepIdx] || 'NONE';
+    const nextStatus: StepStatus = currentStatus === flag ? 'NONE' : flag;
+    const nextSteps = { ...currentCaseState.stepStatuses, [stepIdx]: nextStatus };
+
+    let recommendedStatus = currentCaseState.status;
+    const values = Object.values(nextSteps);
+    if (values.some((v) => v === 'FAILED')) recommendedStatus = 'FAILED';
+    else if (values.some((v) => v === 'BLOCKED')) recommendedStatus = 'BLOCKED';
+    else if (values.length > 0 && values.every((v) => v === 'PASSED')) recommendedStatus = 'PASSED';
+
+    handleUpdateCurrentState({
+      stepStatuses: nextSteps,
+      status: recommendedStatus,
+    });
+  };
+
+  const handleFilesSelected = (files: FileList | null) => {
+    if (!files || files.length === 0 || !currentCase) return;
+    const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (fileArray.length === 0) return;
+
+    fileArray.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          const res = reader.result;
+          setCaseStates((prev) => {
+            const curr = prev[currentCase.id];
+            if (!curr) return prev;
+            return {
+              ...prev,
+              [currentCase.id]: {
+                ...curr,
+                screenshots: [...curr.screenshots, res],
+              },
+            };
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleAddImageUrl = () => {
+    if (!currentCase || !activeNewImageUrl.trim()) return;
+    const trimmed = activeNewImageUrl.trim();
+    setCaseStates((prev) => {
+      const curr = prev[currentCase.id];
+      if (!curr) return prev;
+      return {
+        ...prev,
+        [currentCase.id]: {
+          ...curr,
+          screenshots: [...curr.screenshots, trimmed],
+        },
+      };
+    });
+    setActiveNewImageUrl('');
+  };
+
+  const handleRemoveScreenshot = (sIdx: number) => {
+    if (!currentCase) return;
+    setCaseStates((prev) => {
+      const curr = prev[currentCase.id];
+      if (!curr) return prev;
+      return {
+        ...prev,
+        [currentCase.id]: {
+          ...curr,
+          screenshots: curr.screenshots.filter((_, idx) => idx !== sIdx),
+        },
+      };
+    });
+  };
+
   // Submit and Complete Run Results
   const handleSubmitRun = async () => {
     if (!activeRun) return;
@@ -343,15 +517,30 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     setErrorMsg(null);
     try {
       const resultsPayload = runCases.map((tc) => {
-        const res = results[tc.id];
+        const cState = caseStates[tc.id];
+        const formattedScreens = cState?.screenshots ? formatScreenshots(cState.screenshots) : tc.screenshotUrl;
+
+        // Step summary formatting
+        let finalErrorMsg = cState?.errorMessage?.trim() || undefined;
+        if (tc.steps && tc.steps.length > 0 && cState?.stepStatuses) {
+          const totalSt = tc.steps.length;
+          const verifiedSt = Object.values(cState.stepStatuses).filter((s) => s !== 'NONE').length;
+          if (verifiedSt > 0 && !finalErrorMsg) {
+            const stText = tc.steps
+              .map((st, idx) => `Adım ${st.stepNumber} [${cState.stepStatuses[idx] || 'NONE'}]: ${st.action}`)
+              .join(' | ');
+            finalErrorMsg = `[Adım Doğrulaması: ${verifiedSt}/${totalSt}] ${stText}`;
+          }
+        }
+
         return {
           testCaseId: tc.id,
-          status: res ? res.status : ('SKIPPED' as ResultStatus),
-          executionMs: Math.floor(Math.random() * 800) + 200,
-          errorMessage: res?.errorMessage || undefined,
-          jiraBugKey: res?.jiraBugKey,
-          jiraBugUrl: res?.jiraBugUrl,
-          screenshotUrl: res?.screenshotUrl ?? tc.screenshotUrl,
+          status: cState ? cState.status : ('SKIPPED' as ResultStatus),
+          executionMs: cState?.executionMs || Math.floor(Math.random() * 800) + 200,
+          errorMessage: finalErrorMsg,
+          jiraBugKey: cState?.jiraBugKey || undefined,
+          jiraBugUrl: cState?.jiraBugUrl || undefined,
+          screenshotUrl: formattedScreens || undefined,
         };
       });
 
@@ -377,58 +566,102 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentResult = currentCase ? results[currentCase.id] : null;
+  const totalSteps = currentCase?.steps?.length || 0;
+  const verifiedStepsCount = currentCaseState?.stepStatuses
+    ? Object.values(currentCaseState.stepStatuses).filter((s) => s !== 'NONE').length
+    : 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in duration-150 text-slate-800 dark:text-slate-100">
-        {/* Modal Top Header */}
-        <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-[#141821]/80 shrink-0">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#821c2b] to-[#b83a4b] text-white flex items-center justify-center shadow-md shadow-[#821c2b]/20">
-              <Zap className="w-4 h-4" />
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+      <div className="bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-4xl xl:max-w-5xl shadow-2xl my-auto max-h-[92vh] flex flex-col overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
+        
+        {/* Modal Header */}
+        <div className="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#151b28] shrink-0">
+          <div className="flex items-center space-x-3 min-w-0">
+            {/* Red Clipboard Badge */}
+            <div className="w-10 h-10 rounded-xl bg-[#b83a4b]/10 text-[#b83a4b] border border-[#b83a4b]/20 flex items-center justify-center shrink-0 shadow-xs">
+              <ClipboardList className="w-5 h-5" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
-                <span>Test Koşum Merkezi</span>
-                {wizardStep === 'EXECUTION' && (
-                  <span className="text-[10px] bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] px-2 py-0.5 rounded-full font-mono font-bold">
-                    {currentIndex + 1} / {runCases.length}
+            <div className="min-w-0">
+              <div className="flex items-center space-x-2 flex-wrap">
+                {wizardStep === 'EXECUTION' && currentCase && (
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
+                    {currentCase.code}
                   </span>
                 )}
-              </h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                {wizardStep === 'PLAN_SELECT'
-                  ? 'Adım 1: Test Planı, Hedef Ortam ve Kapsam Belirleme'
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
+                  {wizardStep === 'EXECUTION' && currentCase
+                    ? currentCase.title
+                    : wizardStep === 'SUMMARY'
+                    ? 'Test Koşumu Tamamlandı'
+                    : 'Test Planı ile Koşum Başlat'}
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {wizardStep === 'EXECUTION'
+                  ? 'Detaylı test koşum kaydı, canlı süre sayacı ve etiket bilgileri'
+                  : wizardStep === 'PLAN_SELECT'
+                  ? 'Test Planı, hedef ortam ve koşum kapsamını belirleyin'
                   : wizardStep === 'CASE_SELECT'
-                  ? 'Adım 2: Koşulacak Test Senaryolarını Seçme'
-                  : wizardStep === 'EXECUTION'
-                  ? 'Adım 3: İnteraktif Manuel Test Koşumu Yürütme'
-                  : 'Koşum Tamamlandı — Özet Raporu'}
+                  ? 'Koşuma dahil edilecek test senaryolarını seçin ve sıralayın'
+                  : 'Koşum sonuçları ve yürütme özeti'}
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center space-x-3 shrink-0 ml-3">
+            {/* Live Stopwatch Widget during Execution */}
+            {wizardStep === 'EXECUTION' && (
+              <div className="flex items-center space-x-2 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                <Timer className={`w-4 h-4 ${isTimerRunning ? 'text-[#b83a4b] animate-pulse' : 'text-slate-400'}`} />
+                <span className="font-mono font-extrabold text-sm text-slate-800 dark:text-slate-200 min-w-[50px]">
+                  {Math.floor(currentScenarioTimerMs / 1000)} sn
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsTimerRunning(!isTimerRunning)}
+                  className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-amber-600 dark:text-amber-400 transition-colors"
+                  title={isTimerRunning ? 'Sayacı Duraklat' : 'Sayacı Başlat'}
+                >
+                  {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTimerRunning(false);
+                    setCurrentScenarioTimerMs(0);
+                    handleUpdateCurrentState({ executionMs: 0 });
+                  }}
+                  className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  title="Sayacı Sıfırla"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="Kapat"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Global Error Banner */}
         {errorMsg && (
-          <div className="p-3 mx-5 mt-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+          <div className="p-3 mx-6 mt-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        {/* STEP 1: TEST PLAN & SCOPE SELECTION (Requirement 8) */}
+        {/* STEP 1: TEST PLAN & SCOPE SELECTION */}
         {wizardStep === 'PLAN_SELECT' && (
-          <div className="p-5 overflow-y-auto space-y-5 flex-1">
+          <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
             <div className="space-y-3">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                 Test Planı Belirleyin <span className="text-rose-500">*</span>
@@ -441,108 +674,75 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   onClick={() => setIsCreatingNewPlan(false)}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     !isCreatingNewPlan
-                      ? 'bg-white dark:bg-[#1d232f] text-[#b83a4b] dark:text-[#d66b7a] shadow-xs'
+                      ? 'bg-white dark:bg-[#151b28] text-[#b83a4b] dark:text-[#d66b7a] shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
                   <ClipboardList className="w-3.5 h-3.5" />
                   <span>Mevcut Test Planını Seç ({plans.length})</span>
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsCreatingNewPlan(true);
-                    setSelectedPlanId('');
-                  }}
+                  onClick={() => setIsCreatingNewPlan(true)}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     isCreatingNewPlan
-                      ? 'bg-white dark:bg-[#1d232f] text-[#b83a4b] dark:text-[#d66b7a] shadow-xs'
+                      ? 'bg-white dark:bg-[#151b28] text-[#b83a4b] dark:text-[#d66b7a] shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Yeni Test Planı Tanımla</span>
+                  <span>+ Yeni Test Planı Tanımla</span>
                 </button>
               </div>
 
               {!isCreatingNewPlan ? (
-                /* Existing Plans Dropdown/Cards */
-                <div className="space-y-2">
-                  {plans.length === 0 ? (
-                    <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-xs text-slate-400">
-                      Bu projede henüz kayıtlı bir test planı yok. Lütfen "Yeni Test Planı Tanımla" seçeneğini kullanın.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto p-1">
-                      {plans.map((p) => {
-                        const isSelected = selectedPlanId === p.id;
-                        return (
-                          <div
-                            key={p.id}
-                            onClick={() => handleSelectPlan(p.id)}
-                            className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                              isSelected
-                                ? 'bg-[#b83a4b]/10 dark:bg-[#b83a4b]/15 border-[#b83a4b]/50 ring-2 ring-[#b83a4b]/20 shadow-xs'
-                                : 'bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                                {p.title}
-                              </span>
-                              {isSelected && <Check className="w-3.5 h-3.5 text-[#b83a4b] shrink-0" />}
-                            </div>
-                            <div className="flex items-center gap-2 mt-1 text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                              <span>{p.version}</span>
-                              <span>•</span>
-                              <span>{p.environment}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                plans.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold text-slate-500">
+                      Aktif Test Planı Listesi
+                    </label>
+                    <select
+                      value={selectedPlanId}
+                      onChange={(e) => handleSelectPlan(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#b83a4b]/30"
+                    >
+                      {plans.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.title} ({p.version || 'v1.0.0'} • {p.environment || 'STAGING'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300">
+                    Henüz kayıtlı bir test planı bulunamadı. Yeni bir plan oluşturularak devam edilecektir.
+                  </div>
+                )
               ) : (
-                /* Inline New Plan Inputs */
-                <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="space-y-3 p-4 rounded-xl border border-dashed border-[#b83a4b]/40 bg-[#b83a4b]/5">
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                      Yeni Plan Başlığı <span className="text-rose-500">*</span>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Yeni Test Planı Başlığı <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Örn: Sprint 24 Uçtan Uca Test Planı"
                       value={newPlanTitle}
                       onChange={(e) => setNewPlanTitle(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100"
+                      placeholder="Örn: Sprint 24 Regression Planı"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                        Kapsam / Yapı Taşları
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Örn: Ödemeler, Güvenlik, API"
-                        value={newPlanScope}
-                        onChange={(e) => setNewPlanScope(e.target.value)}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                        Gereksinimler / Jira Key
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Örn: MOB-201, PROJ-44"
-                        value={newPlanRequirements}
-                        onChange={(e) => setNewPlanRequirements(e.target.value)}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-slate-100"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Kapsam / Açıklama
+                    </label>
+                    <input
+                      type="text"
+                      value={newPlanScope}
+                      onChange={(e) => setNewPlanScope(e.target.value)}
+                      placeholder="Örn: Ödeme ve Sepet modülleri regresyon doğrulaması"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs"
+                    />
                   </div>
                 </div>
               )}
@@ -573,11 +773,11 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                     onChange={(e) => setEnvironment(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-slate-100"
                   >
-                    <option value="STAGING">STAGING</option>
                     <option value="UAT">UAT</option>
-                    <option value="PROD">PROD</option>
                     <option value="DEV">DEV</option>
                     <option value="TEST">TEST</option>
+                    <option value="STAGING">STAGING</option>
+                    <option value="PROD">PROD</option>
                   </select>
                 </div>
                 <div>
@@ -606,7 +806,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               <button
                 type="button"
                 onClick={() => setWizardStep('CASE_SELECT')}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-md shadow-[#821c2b]/25 cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-md shadow-[#821c2b]/25 cursor-pointer"
               >
                 <span>Senaryo Seçimine İlerle ({selectedCaseIds.length} Senaryo)</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -617,7 +817,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
         {/* STEP 2: TEST CASES SELECTION */}
         {wizardStep === 'CASE_SELECT' && (
-          <div className="p-5 overflow-y-auto space-y-4 flex-1 flex flex-col min-h-0">
+          <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between gap-3">
               <div className="relative flex-1 max-w-sm">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -709,7 +909,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                 type="button"
                 disabled={isSubmitting || selectedCaseIds.length === 0}
                 onClick={handleStartExecution}
-                className="inline-flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-600/25 active:scale-98 disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-600/25 active:scale-98 disabled:opacity-50 cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 fill-white" />
                 <span>{isSubmitting ? 'Başlatılıyor...' : `Koşumu Başlat (${selectedCaseIds.length} Case)`}</span>
@@ -718,243 +918,544 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           </div>
         )}
 
-        {/* STEP 3: STEP-BY-STEP EXECUTION RUNNER */}
-        {wizardStep === 'EXECUTION' && currentCase && (
+        {/* STEP 3: MODERN TEST EXECUTION RUNNER (Exact Match with QuickRunModal & Navigation) */}
+        {wizardStep === 'EXECUTION' && currentCase && currentCaseState && (
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            {/* Runner Navigation Bar */}
-            <div className="px-5 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+            
+            {/* Case Navigation Bar */}
+            <div className="px-5 sm:px-6 py-2 bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
                   disabled={currentIndex === 0}
-                  onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30"
-                  title="Önceki Test (Sol Ok)"
+                  onClick={() => handleChangeIndex(currentIndex - 1)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-30 cursor-pointer"
+                  title="Önceki Senaryo (Sol Ok)"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Önceki</span>
                 </button>
+
+                <div className="flex items-center space-x-1.5 px-3 py-1 bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
+                  <span>Senaryo {currentIndex + 1} / {runCases.length}</span>
+                </div>
+
                 <button
                   type="button"
                   disabled={currentIndex === runCases.length - 1}
-                  onClick={() => setCurrentIndex((prev) => Math.min(runCases.length - 1, prev + 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30"
-                  title="Sonraki Test (Sağ Ok)"
+                  onClick={() => handleChangeIndex(currentIndex + 1)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-30 cursor-pointer"
+                  title="Sonraki Senaryo (Sağ Ok)"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <span>Sonraki</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400">
-                  {currentIndex + 1} / {runCases.length}
-                </span>
               </div>
 
-              {/* Fast Status Action Buttons */}
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={() => handleMarkStatus('PASSED')}
-                  className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all ${
-                    currentResult?.status === 'PASSED'
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-500'
-                      : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30'
-                  }`}
-                  title="Kısayol: P"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>PASS [P]</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleMarkStatus('FAILED')}
-                  className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all ${
-                    currentResult?.status === 'FAILED'
-                      ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 ring-2 ring-rose-500'
-                      : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 hover:bg-rose-500/25 border border-rose-500/30'
-                  }`}
-                  title="Kısayol: F"
-                >
-                  <XCircle className="w-3.5 h-3.5" />
-                  <span>FAIL [F]</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleMarkStatus('BLOCKED')}
-                  className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all ${
-                    currentResult?.status === 'BLOCKED'
-                      ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 ring-2 ring-amber-500'
-                      : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 border border-amber-500/30'
-                  }`}
-                  title="Kısayol: B"
-                >
-                  <Slash className="w-3.5 h-3.5" />
-                  <span>BLOCK [B]</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleMarkStatus('SKIPPED')}
-                  className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all ${
-                    currentResult?.status === 'SKIPPED'
-                      ? 'bg-slate-600 text-white ring-2 ring-slate-400'
-                      : 'bg-slate-500/15 text-slate-600 dark:text-slate-400 hover:bg-slate-500/25 border border-slate-500/30'
-                  }`}
-                  title="Kısayol: S"
-                >
-                  <SkipForward className="w-3.5 h-3.5" />
-                  <span>SKIP [S]</span>
-                </button>
+              {/* Fast Scenario Case Selector Chips */}
+              <div className="flex items-center space-x-1 overflow-x-auto max-w-[50%] py-0.5">
+                {runCases.map((tc, idx) => {
+                  const cSt = caseStates[tc.id]?.status || 'PASSED';
+                  const isCurrent = idx === currentIndex;
+                  return (
+                    <button
+                      key={tc.id}
+                      type="button"
+                      onClick={() => handleChangeIndex(idx)}
+                      className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-bold transition-all cursor-pointer ${
+                        isCurrent
+                          ? 'bg-[#b83a4b] text-white shadow-xs'
+                          : cSt === 'PASSED'
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                          : cSt === 'FAILED'
+                          ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                          : cSt === 'BLOCKED'
+                          ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}
+                      title={`${tc.code}: ${tc.title} [${cSt}]`}
+                    >
+                      {tc.code}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Test Case Detail Content */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {/* Header Title & Tags */}
-              <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 space-y-2">
-                <div className="flex items-center space-x-2">
-                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/30">
-                    {currentCase.code}
-                  </span>
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                    {currentCase.type} • {currentCase.priority}
-                  </span>
+            {/* Scrollable Form Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5">
+              
+              {/* 1. Test Koşum Sonucu (4 Large Segment Buttons) */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Test Koşum Sonucu <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {/* PASSED */}
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateCurrentState({ status: 'PASSED' })}
+                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
+                      currentCaseState.status === 'PASSED'
+                        ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-600/20'
+                        : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>PASSED</span>
+                  </button>
+
+                  {/* FAILED */}
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateCurrentState({ status: 'FAILED' })}
+                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
+                      currentCaseState.status === 'FAILED'
+                        ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-600/20'
+                        : 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 hover:bg-red-500/20'
+                    }`}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>FAILED</span>
+                  </button>
+
+                  {/* BLOCKED */}
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateCurrentState({ status: 'BLOCKED' })}
+                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
+                      currentCaseState.status === 'BLOCKED'
+                        ? 'bg-amber-600 text-white border-amber-500 shadow-md shadow-amber-600/20'
+                        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Slash className="w-4 h-4" />
+                    <span>BLOCKED</span>
+                  </button>
+
+                  {/* SKIPPED */}
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateCurrentState({ status: 'SKIPPED' })}
+                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
+                      currentCaseState.status === 'SKIPPED'
+                        ? 'bg-slate-700 text-white border-slate-600 shadow-md shadow-slate-700/20'
+                        : 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30 hover:bg-slate-500/20'
+                    }`}
+                  >
+                    <SkipForward className="w-4 h-4" />
+                    <span>SKIPPED</span>
+                  </button>
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{currentCase.title}</h3>
-                {currentCase.description && (
-                  <p className="text-xs text-slate-600 dark:text-slate-300">{currentCase.description}</p>
-                )}
-                {currentCase.precondition && (
-                  <div className="text-xs bg-slate-100 dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                    <span className="font-bold text-slate-800 dark:text-slate-200">Ön Koşul: </span>
-                    {currentCase.precondition}
-                  </div>
-                )}
               </div>
 
-              {/* Steps Table */}
-              {currentCase.steps && currentCase.steps.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Test Adımları
+              {/* 2. Koşum Etiketleri & Cihaz / Kullanıcı Parametreleri Card */}
+              <div className="p-4 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
+                <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300">
+                  <SlidersHorizontal className="w-4 h-4 text-[#b83a4b]" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider">
+                    Koşum Etiketleri & Cihaz / Kullanıcı Parametreleri
                   </h4>
-                  <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-100/70 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                          <th className="p-2.5 w-12 text-center font-mono">#</th>
-                          <th className="p-2.5 font-semibold">İşlem / Eylem</th>
-                          <th className="p-2.5 font-semibold">Beklenen Sonuç</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                        {currentCase.steps.map((step) => (
-                          <tr key={step.id || step.stepNumber} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                            <td className="p-2.5 text-center font-mono font-bold text-slate-400">{step.stepNumber}</td>
-                            <td className="p-2.5 text-slate-800 dark:text-slate-200 font-medium">{step.action}</td>
-                            <td className="p-2.5 text-slate-600 dark:text-slate-400">{step.expectedResult}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                </div>
+
+                {/* Grid 4 columns */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {/* 1. Ortam */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                      <span>🌐 Ortam</span>
+                    </label>
+                    <select
+                      value={currentCaseState.environment}
+                      onChange={(e) => handleUpdateCurrentState({ environment: e.target.value })}
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    >
+                      <option value="UAT">UAT</option>
+                      <option value="DEV">DEV</option>
+                      <option value="TEST">TEST</option>
+                      <option value="STAGING">STAGING</option>
+                      <option value="PROD">PROD</option>
+                    </select>
+                  </div>
+
+                  {/* 2. Platform */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                      <span>🍎 / 🐳 Platform</span>
+                    </label>
+                    <select
+                      value={currentCaseState.platform}
+                      onChange={(e) => handleUpdateCurrentState({ platform: e.target.value })}
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    >
+                      <option value="Web">🌐 Web</option>
+                      <option value="iOS">🍎 iOS</option>
+                      <option value="Android">🤖 Android</option>
+                      <option value="API">⚡ API</option>
+                    </select>
+                  </div>
+
+                  {/* 3. Uygulama Versiyonu */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                      <span>📦 Uygulama Versiyonu</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={currentCaseState.appVersion}
+                      onChange={(e) => handleUpdateCurrentState({ appVersion: e.target.value })}
+                      placeholder="v2.4.1"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    />
+                  </div>
+
+                  {/* 4. Cihaz Aliası */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                      <span>📱 Cihaz Aliası</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={currentCaseState.device}
+                      onChange={(e) => handleUpdateCurrentState({ device: e.target.value })}
+                      placeholder="Chrome 128 (macOS)"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    />
+                  </div>
+
+                  {/* 5. USER Profili */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                      <span>👤 USER Profili</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={currentCaseState.userProfile}
+                      onChange={(e) => handleUpdateCurrentState({ userProfile: e.target.value })}
+                      placeholder="BLACK FRIDAY İNDİRİM KULLANICISI"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    />
+                  </div>
+
+                  {/* 6. Müşteri Tipi */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                      <span>👥 Müşteri Tipi</span>
+                    </label>
+                    <select
+                      value={currentCaseState.customerType}
+                      onChange={(e) => handleUpdateCurrentState({ customerType: e.target.value })}
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    >
+                      <option value="BIREYSEL">👥 BİREYSEL</option>
+                      <option value="KURUMSAL">🏢 KURUMSAL</option>
+                      <option value="VIP">💎 VIP</option>
+                    </select>
+                  </div>
+
+                  {/* 7. Flaky / Retry Durumu */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                      <span>⚠️ Flaky / Retry Durumu</span>
+                    </label>
+                    <select
+                      value={currentCaseState.flakyStatus}
+                      onChange={(e) => handleUpdateCurrentState({ flakyStatus: e.target.value })}
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    >
+                      <option value="NONE">Stabil (Retry Yok)</option>
+                      <option value="+1 retry">+1 retry</option>
+                      <option value="+2 retry">+2 retry</option>
+                      <option value="FLAKY">FLAKY</option>
+                    </select>
+                  </div>
+
+                  {/* 8. Süre (ms) */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                      <span>⏱️ Süre (ms)</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={currentCaseState.executionMs}
+                      onChange={(e) => handleUpdateCurrentState({ executionMs: Number(e.target.value) })}
+                      placeholder="240"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Test Adımları Kontrol Listesi Card */}
+              {currentCase.steps && currentCase.steps.length > 0 && (
+                <div className="p-4 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300">
+                      <ClipboardList className="w-4 h-4 text-[#b83a4b]" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider">
+                        Test Adımları Kontrol Listesi
+                      </h4>
+                    </div>
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">
+                      {verifiedStepsCount} / {totalSteps} adım doğrulandı
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {currentCase.steps.map((step, idx) => {
+                      const stStatus = currentCaseState.stepStatuses[idx] || 'NONE';
+                      const isVerified = stStatus !== 'NONE';
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`p-3 rounded-xl border transition-all flex items-start gap-3 ${
+                            stStatus === 'PASSED'
+                              ? 'bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/30'
+                              : stStatus === 'FAILED'
+                              ? 'bg-red-500/5 dark:bg-red-500/10 border-red-500/30'
+                              : stStatus === 'BLOCKED'
+                              ? 'bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/30'
+                              : 'bg-white dark:bg-[#151b28] border-slate-200 dark:border-slate-800'
+                          }`}
+                        >
+                          {/* Checkbox on Left */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStepCheckbox(idx)}
+                            className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+                              isVerified
+                                ? 'bg-blue-600 border-blue-600 text-white'
+                                : 'border-slate-300 dark:border-slate-600 hover:border-slate-400'
+                            }`}
+                          >
+                            {isVerified && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                          </button>
+
+                          {/* Step Description & Expected */}
+                          <div className="flex-1 min-w-0 text-xs">
+                            <p className="font-bold text-slate-800 dark:text-slate-200">
+                              Adım {step.stepNumber}: {step.action}
+                            </p>
+                            {step.expectedResult && (
+                              <p className="mt-1 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                                <span className="font-semibold text-slate-600 dark:text-slate-300">Beklenen:</span>{' '}
+                                {step.expectedResult}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Right Side: Pass / Fail / Blocked Action Flags */}
+                          <div className="flex items-center space-x-1.5 shrink-0">
+                            {/* Pass Flag */}
+                            <button
+                              type="button"
+                              onClick={() => handleSetStepFlag(idx, 'PASSED')}
+                              className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                                stStatus === 'PASSED'
+                                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                                  : 'bg-white dark:bg-slate-800 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-slate-200 dark:border-slate-700'
+                              }`}
+                              title="Adımı Başarılı (Passed) olarak işaretle"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </button>
+
+                            {/* Fail Flag */}
+                            <button
+                              type="button"
+                              onClick={() => handleSetStepFlag(idx, 'FAILED')}
+                              className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                                stStatus === 'FAILED'
+                                  ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                                  : 'bg-white dark:bg-slate-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 border-slate-200 dark:border-slate-700'
+                              }`}
+                              title="Adımı Başarısız (Failed) olarak işaretle"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+
+                            {/* Blocked Flag */}
+                            <button
+                              type="button"
+                              onClick={() => handleSetStepFlag(idx, 'BLOCKED')}
+                              className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                                stStatus === 'BLOCKED'
+                                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                                  : 'bg-white dark:bg-slate-800 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-slate-200 dark:border-slate-700'
+                              }`}
+                              title="Adımı Engellenmiş (Blocked) olarak işaretle"
+                            >
+                              <Slash className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Error Message & Jira Bug Section (When FAILED or for notes) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                    Hata / Yürütme Notu
+              {/* 4. Yorum / Not & Doğrulama Açıklaması Section */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+                    <MessageSquare className="w-4 h-4 text-[#b83a4b]" />
+                    <span>Yorum / Not & Doğrulama Açıklaması</span>
                   </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Hata mesajı veya açıklama notları..."
-                    value={currentResult?.errorMessage || ''}
-                    onChange={(e) => handleErrorMessageChange(currentCase.id, e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#b83a4b]/30"
-                  />
+                  <span className="text-[11px] text-slate-400">(Her durum için eklenebilir)</span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={currentCaseState.errorMessage}
+                  onChange={(e) => handleUpdateCurrentState({ errorMessage: e.target.value })}
+                  placeholder="Kampanya kupon motoru üretim ortamında 240ms içinde yanıt verdi."
+                  className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] resize-none shadow-xs"
+                />
+              </div>
+
+              {/* 5. Jira Bug Key Section */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+                  <Bug className="w-4 h-4 text-rose-500" />
+                  <span>Jira Bug Key (Opsiyonel)</span>
+                </label>
+                <input
+                  type="text"
+                  value={currentCaseState.jiraBugKey}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    handleUpdateCurrentState({
+                      jiraBugKey: val,
+                      jiraBugUrl: val.trim() ? `https://company.atlassian.net/browse/${val.trim()}` : '',
+                    });
+                  }}
+                  placeholder="Örn: MOB-542 veya QA-102"
+                  className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] shadow-xs"
+                />
+              </div>
+
+              {/* 6. Ekran Görüntüleri & Kanıtlar Section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+                    <ImageIcon className="w-4 h-4 text-[#b83a4b]" />
+                    <span>Ekran Görüntüleri & Kanıtlar ({currentCaseState.screenshots.length})</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    (Ctrl+V ile panodan yapıştırabilir veya dosya seçebilirsiniz)
+                  </span>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                    Jira Bug Kaydı
+                {/* Upload and URL input row */}
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer transition-colors shadow-xs">
+                    <Upload className="w-4 h-4 text-[#b83a4b]" />
+                    <span>Dosya Seç</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => handleFilesSelected(e.target.files)}
+                    />
                   </label>
-                  {currentResult?.jiraBugKey ? (
-                    <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Bug className="w-4 h-4 text-rose-500" />
-                        <span className="font-mono text-xs font-bold text-rose-600 dark:text-rose-400">
-                          {currentResult.jiraBugKey}
-                        </span>
-                      </div>
-                      <a
-                        href={currentResult.jiraBugUrl || '#'}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-indigo-500 hover:underline flex items-center gap-1 font-semibold"
-                      >
-                        <span>Jira'da Aç</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  ) : (
+
+                  <div className="flex-1 flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={activeNewImageUrl}
+                      onChange={(e) => setActiveNewImageUrl(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddImageUrl();
+                        }
+                      }}
+                      placeholder="veya Görsel URL'si yapıştırın..."
+                      className="flex-1 bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] shadow-xs"
+                    />
                     <button
                       type="button"
-                      onClick={() => handleCreateJiraBugMock(currentCase.id, currentCase.code)}
-                      className="w-full py-2 px-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-rose-500/50 hover:bg-rose-500/10 text-slate-600 dark:text-slate-300 hover:text-rose-600 text-xs font-semibold transition-colors flex items-center justify-center gap-2"
+                      onClick={handleAddImageUrl}
+                      disabled={!activeNewImageUrl.trim()}
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[#b83a4b] hover:bg-[#c54859] disabled:opacity-40 transition-colors shadow-xs cursor-pointer"
                     >
-                      <Bug className="w-3.5 h-3.5" />
-                      <span>Jira Bug Oluştur / Bağla</span>
+                      Ekle
                     </button>
-                  )}
-
-                  {/* Screenshot indicator */}
-                  {currentResult?.screenshotUrl && (
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs">
-                      <div className="flex items-center space-x-2">
-                        <ImageIcon className="w-4 h-4 text-[#b83a4b]" />
-                        <span className="text-slate-700 dark:text-slate-300 truncate max-w-[200px]">
-                          Ekran Görüntüsü Eklendi
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setLightboxImage(currentResult.screenshotUrl || null)}
-                        className="text-indigo-500 text-xs font-semibold hover:underline"
-                      >
-                        Önizle
-                      </button>
-                    </div>
-                  )}
+                  </div>
                 </div>
+
+                {/* Thumbnails Gallery */}
+                {currentCaseState.screenshots.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+                    {currentCaseState.screenshots.map((url, sIdx) => (
+                      <div
+                        key={sIdx}
+                        className="group relative rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-900 aspect-video shadow-xs"
+                      >
+                        <img
+                          src={url}
+                          alt={`Kanıt ${sIdx + 1}`}
+                          className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-200"
+                          onClick={() => setLightboxIndex(sIdx)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveScreenshot(sIdx)}
+                          className="absolute top-1.5 right-1.5 p-1 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-md"
+                          title="Görseli Sil"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLightboxIndex(sIdx)}
+                          className="absolute bottom-1.5 right-1.5 p-1 bg-black/60 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                          title="Büyüt"
+                        >
+                          <Maximize2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
             </div>
 
-            {/* Execution Footer */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-[#141821]/80 flex items-center justify-between">
-              <div className="flex items-center space-x-3 text-xs">
-                <span className="text-slate-500 dark:text-slate-400 font-medium">İlerleme:</span>
-                <div className="w-32 bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="bg-[#b83a4b] h-full transition-all duration-300"
-                    style={{
-                      width: `${Math.round(((currentIndex + 1) / runCases.length) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
-                  %{Math.round(((currentIndex + 1) / runCases.length) * 100)}
-                </span>
+            {/* Execution Footer Actions */}
+            <div className="px-5 sm:px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#151b28] shrink-0">
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  Vazgeç
+                </button>
+
+                {currentIndex > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleChangeIndex(currentIndex - 1)}
+                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Önceki Senaryo</span>
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center space-x-2.5">
                 {currentIndex < runCases.length - 1 ? (
                   <button
                     type="button"
-                    onClick={() => setCurrentIndex((prev) => prev + 1)}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-300"
+                    onClick={() => handleChangeIndex(currentIndex + 1)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-xs"
                   >
-                    Sonraki Senaryo →
+                    <span>Sonraki Senaryoya Geç</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 ) : null}
 
@@ -962,13 +1463,20 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   type="button"
                   disabled={isSubmitting}
                   onClick={handleSubmitRun}
-                  className="inline-flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-md shadow-[#821c2b]/30 active:scale-98 disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] disabled:opacity-50 transition-all shadow-md shadow-[#821c2b]/20 active:scale-98 cursor-pointer"
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Kaydediliyor...' : 'Koşumu Tamamla ve Kaydet'}</span>
+                  <Check className="w-4 h-4" />
+                  <span>
+                    {isSubmitting
+                      ? 'Kaydediliyor...'
+                      : currentIndex === runCases.length - 1
+                      ? 'Koşumu Tamamla ve Sonuçları Kaydet'
+                      : 'Tüm Koşumu Şimdi Tamamla ve Kaydet'}
+                  </span>
                 </button>
               </div>
             </div>
+
           </div>
         )}
 
@@ -981,10 +1489,10 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
             <div className="space-y-1">
               <h2 className="text-xl font-extrabold text-slate-900 dark:text-slate-100">
-                Test Koşumu Başarıyla Tamamlandı!
+                Test Planı Koşumu Başarıyla Tamamlandı!
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Tüm senaryo sonuçları ve yürütme metrikleri veritabanına işlendi.
+                Tüm senaryoların sonuçları, yürütme süreleri ve kanıtları veritabanına işlendi.
               </p>
             </div>
 
@@ -1023,18 +1531,27 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
             </div>
           </div>
         )}
+
       </div>
 
-      {/* Lightbox Image Preview Modal */}
-      {lightboxImage && (
+      {/* Lightbox Modal */}
+      {lightboxIndex !== null && currentCaseState && currentCaseState.screenshots[lightboxIndex] && (
         <div
-          onClick={() => setLightboxImage(null)}
-          className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+          className="fixed inset-0 z-60 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxIndex(null)}
         >
+          <button
+            type="button"
+            onClick={() => setLightboxIndex(null)}
+            className="absolute top-4 right-4 p-2 text-white/80 hover:text-white bg-white/10 rounded-full"
+          >
+            <X className="w-6 h-6" />
+          </button>
           <img
-            src={lightboxImage}
-            alt="Ekran Görüntüsü"
-            className="max-w-full max-h-full object-contain rounded-xl"
+            src={currentCaseState.screenshots[lightboxIndex]}
+            alt="Büyük Kanıt Görseli"
+            className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}

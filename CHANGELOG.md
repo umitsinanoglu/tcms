@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- Modül silindiğinde test senaryolarının korunması (SetNull) ve silinme engeli
 - Header dikey ayraç konumu sidebar'ın sağ kenar çizgisi (x = 280px) ile tam hizalandı
 - Test Planları tablosunda sabit kolonlar (Tür, Senaryo, Başarı Oranı, Durum, Son Çalıştırma, İşlemler) kilitlendi; Test Planı ve Kapsam kolonları esnek oranlandı
 - Test Planları tablosu aşırı sıkışmayı önleyecek akıllı minimum genişlik eşiği (980px) ve yatay kaydırma ile güncellendi
@@ -24,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Yeni Test Senaryosu Oluştur modalına modül oluşturma ve yönetimi entegrasyonu, DB boş/dummy modül temizliği
+- Test Planı ile Koşum Başlat modalı (ManualRunModal), Hızlı Koşum modalındaki modern kart yapısı, senaryo geçiş çubuğu, adım bazlı pass/fail bayrakları ve canlı süre sayacı ile güncellendi
+- Test koşumlarında iki farklı yöntem (Test Planı ile Kapsamlı Koşum vs Hızlı Test Koşumu), adım bazlı pass/fail bayrakları, canlı süre sayacı ve etiket parametreleri arayüzü eklendi
 - Kurumsal Platin & Gri açık tema (corporate-light) eklendi; sade, göz yormayan kurumsal kırmızı ve antrasit-gri tonları uygulandı
 - Test koşumu canlı süre sayacı (stopwatch), tüm görsel etiketler (Ortam, Platform, Sürüm, Cihaz, User Profili, Müşteri Tipi, Zaman, Süre, Flaky) ve kart görünümü eklendi
 - Test Koşumu Detay Sayfası (TestRunDetailView), anlık durum kaydı, her durum için yorum & ekran görüntüsü ekleme ve hata bulguları (defects) takip sekmesi eklendi
@@ -38,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Test Planı detayında Test Senaryosu Ekle butonu, Modül öz niteliği, Test Koşumları Geçmişi başlığı ve sekme sadeleştirmeleri
+- Remove executionType, test type, and priority attributes from Test Scenario creation and editor for single-definition reusable template model
+- Refactor Test Case Editor: remove run controls, status badges, and step attachments, align metadata attributes, and enhance plan-to-case back/forward navigation history
+- Logo alanı güncellendi: SVG/Amblem boyutu büyütüldü, 'Test Yönetim Sistemi' kaldırıldı, altına TCMS yerleştirildi ve sidebar ile tam hizalandı
 - Sidebar gezinmelerinde ve sekme geçişlerinde her zaman kök dizine yönlendirme sağlandı
 - Top navigasyon hiyerarşik breadcrumb yapısı, tek harfli kullanıcı avatarı, kompakt arama ve sağa yaslı proje seçici güncellendi
 - Top navigasyon ve sol menü yapısı güncellendi: RBAC ikonu sol alt köşeye taşındı, bildirimler kaldırıldı, arama esnetildi ve site ağacı sol menüye entegre edildi

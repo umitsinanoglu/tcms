@@ -3,39 +3,20 @@ import {
   Project,
   TestCase,
   TestPlan,
-  Priority,
-  TestType,
-  ExecutionType,
-  ResultStatus,
-  TestCasesService,
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import {
   FileText,
   Plus,
   Search,
-  Play,
   Pencil,
   Trash2,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Clock,
-  Layers,
   ChevronLeft,
   ChevronRight,
-  ChevronsRight,
-  Filter,
-  Check,
-  X,
-  ExternalLink,
-  ClipboardList,
   Sparkles,
-  SlidersHorizontal,
-  Bot,
-  User,
-  ShieldAlert,
   Zap,
+  ListOrdered,
+  Folder,
 } from 'lucide-react';
 
 interface TestScenariosViewProps {
@@ -45,8 +26,9 @@ interface TestScenariosViewProps {
   testPlans?: TestPlan[];
   onSelectCase: (testCase: TestCase) => void;
   onOpenNewCase: () => void;
-  onRunSingleCase: (testCase: TestCase) => void;
-  onRunMultipleCases: (testCases: TestCase[]) => void;
+  onOpenQuickRun?: (testCase: TestCase) => void;
+  onRunSingleCase?: (testCase: TestCase) => void;
+  onRunMultipleCases?: (testCases: TestCase[]) => void;
   onDeleteCase: (caseId: string) => void;
 }
 
@@ -57,15 +39,12 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
   testPlans = [],
   onSelectCase,
   onOpenNewCase,
+  onOpenQuickRun,
   onRunSingleCase,
-  onRunMultipleCases,
   onDeleteCase,
 }) => {
   const { can } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
-  const [typeFilter, setTypeFilter] = useState<string>('ALL');
-  const [executionTypeFilter, setExecutionTypeFilter] = useState<string>('ALL');
 
   // Pagination
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
@@ -74,39 +53,21 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
   // Overall Metrics Calculation
   const metrics = useMemo(() => {
     const total = testCases.length;
-    let manualCount = 0;
-    let autoCount = 0;
-    let blockerCount = 0;
-    let criticalCount = 0;
-    let passedCount = 0;
-    let failedCount = 0;
+    let jiraLinkedCount = 0;
+    let totalStepsCount = 0;
 
     testCases.forEach((tc) => {
-      if (tc.executionType === 'AUTOMATION') autoCount++;
-      else manualCount++;
-
-      if (tc.priority === 'BLOCKER') blockerCount++;
-      else if (tc.priority === 'CRITICAL') criticalCount++;
-
-      // Check latest result if available
-      if (tc.results && tc.results.length > 0) {
-        const latest = tc.results[0].status;
-        if (latest === 'PASSED') passedCount++;
-        else if (latest === 'FAILED') failedCount++;
-      }
+      if (tc.jiraStoryKey) jiraLinkedCount++;
+      if (tc.steps) totalStepsCount += tc.steps.length;
     });
 
-    const autoPercentage = total > 0 ? Math.round((autoCount / total) * 100) : 0;
+    const jiraPercentage = total > 0 ? Math.round((jiraLinkedCount / total) * 100) : 0;
 
     return {
       total,
-      manualCount,
-      autoCount,
-      autoPercentage,
-      blockerCount,
-      criticalCount,
-      passedCount,
-      failedCount,
+      jiraLinkedCount,
+      jiraPercentage,
+      totalStepsCount,
     };
   }, [testCases]);
 
@@ -114,22 +75,16 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
   const filteredCases = useMemo(() => {
     return testCases.filter((tc) => {
       const q = searchQuery.toLowerCase().trim();
-      const matchesSearch = q
-        ? tc.title.toLowerCase().includes(q) ||
-          tc.code.toLowerCase().includes(q) ||
-          (tc.description && tc.description.toLowerCase().includes(q)) ||
-          (tc.precondition && tc.precondition.toLowerCase().includes(q)) ||
-          (tc.jiraStoryKey && tc.jiraStoryKey.toLowerCase().includes(q))
-        : true;
-
-      const matchesPriority = priorityFilter === 'ALL' || tc.priority === priorityFilter;
-      const matchesType = typeFilter === 'ALL' || tc.type === typeFilter;
-      const matchesExecutionType =
-        executionTypeFilter === 'ALL' || tc.executionType === executionTypeFilter;
-
-      return matchesSearch && matchesPriority && matchesType && matchesExecutionType;
+      if (!q) return true;
+      return (
+        tc.title.toLowerCase().includes(q) ||
+        tc.code.toLowerCase().includes(q) ||
+        (tc.description && tc.description.toLowerCase().includes(q)) ||
+        (tc.precondition && tc.precondition.toLowerCase().includes(q)) ||
+        (tc.jiraStoryKey && tc.jiraStoryKey.toLowerCase().includes(q))
+      );
     });
-  }, [testCases, searchQuery, priorityFilter, typeFilter, executionTypeFilter]);
+  }, [testCases, searchQuery]);
 
   // Pagination Slice
   const paginatedCases = useMemo(() => {
@@ -138,58 +93,6 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
   }, [filteredCases, currentPage, rowsPerPage]);
 
   const totalPages = Math.ceil(filteredCases.length / rowsPerPage) || 1;
-
-  // Priority Badge Helper - High Contrast Corporate Badges
-  const getPriorityBadge = (p: Priority) => {
-    switch (p) {
-      case 'BLOCKER':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700/60 shadow-xs">
-            <ShieldAlert className="w-3 h-3" />
-            BLOCKER
-          </span>
-        );
-      case 'CRITICAL':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs">
-            <AlertTriangle className="w-3 h-3" />
-            CRITICAL
-          </span>
-        );
-      case 'NORMAL':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 shadow-xs">
-            NORMAL
-          </span>
-        );
-      case 'LOW':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 shadow-xs">
-            LOW
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
-
-  // Execution Type Badge Helper
-  const getExecutionBadge = (t?: ExecutionType) => {
-    if (t === 'AUTOMATION') {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-xs">
-          <Bot className="w-3 h-3" />
-          Otomasyon
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-xs">
-        <User className="w-3 h-3" />
-        Manuel
-      </span>
-    );
-  };
 
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden bg-[#f8fafc] dark:bg-[#0b111e] select-none font-sans min-h-0">
@@ -242,39 +145,40 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
           </div>
         </div>
 
-        {/* Card 2: Otomasyon Oranı */}
+        {/* Card 2: Jira Bağlantılı Senaryolar */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-            <Bot className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <Sparkles className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-              Otomasyon Oranı
+              Jira İzlenebilirlik
             </span>
             <div className="flex items-baseline space-x-1.5">
               <span className="text-lg font-black text-slate-900 dark:text-slate-100 leading-none">
-                %{metrics.autoPercentage}
+                %{metrics.jiraPercentage}
               </span>
               <span className="text-[10px] text-slate-400 font-medium">
-                {metrics.autoCount} Oto &bull; {metrics.manualCount} Man
+                {metrics.jiraLinkedCount} Bağlantılı
               </span>
             </div>
           </div>
         </div>
 
-        {/* Card 3: Kritik & Blocker Senaryolar */}
+        {/* Card 3: Toplam Tanımlı Adımlar */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-            <ShieldAlert className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <ListOrdered className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-              Yüksek Öncelikli
+              Tanımlı Test Adımları
             </span>
-            <div className="flex items-center space-x-1.5 text-sm font-black leading-none">
-              <span className="text-rose-700 dark:text-rose-300 font-bold">{metrics.blockerCount} Blocker</span>
-              <span className="text-slate-300 dark:text-slate-600 font-normal">&bull;</span>
-              <span className="text-amber-700 dark:text-amber-300 font-bold">{metrics.criticalCount} Critical</span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-lg font-black text-slate-900 dark:text-slate-100 leading-none">
+                {metrics.totalStepsCount}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Adım</span>
             </div>
           </div>
         </div>
@@ -301,8 +205,8 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
       {/* 3. Main Data Grid Container */}
       <div className="min-w-0 px-6 pb-6">
         <div className="bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs overflow-hidden">
-          {/* Filters & Search Row */}
-          <div className="p-2.5 px-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex flex-col md:flex-row md:items-center justify-between gap-2.5 text-xs">
+          {/* Search Row */}
+          <div className="p-2.5 px-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex items-center justify-between gap-2.5 text-xs">
             <div className="relative flex-1 max-w-md">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -316,78 +220,31 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                 className="w-full bg-white dark:bg-[#161f30] border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
               />
             </div>
-
-            <div className="flex items-center space-x-2 overflow-x-auto pb-1 md:pb-0">
-              <select
-                value={priorityFilter}
-                onChange={(e) => {
-                  setPriorityFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="bg-white dark:bg-[#161f30] border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none font-medium shadow-xs"
-              >
-                <option value="ALL">Tüm Öncelikler</option>
-                <option value="BLOCKER">Blocker</option>
-                <option value="CRITICAL">Critical</option>
-                <option value="NORMAL">Normal</option>
-                <option value="LOW">Low</option>
-              </select>
-
-              <select
-                value={typeFilter}
-                onChange={(e) => {
-                  setTypeFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="bg-white dark:bg-[#161f30] border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none font-medium shadow-xs"
-              >
-                <option value="ALL">Tüm Türler</option>
-                <option value="WEB">Web</option>
-                <option value="MOBILE">Mobile</option>
-                <option value="API">API</option>
-                <option value="PERFORMANCE">Performance</option>
-              </select>
-
-              <select
-                value={executionTypeFilter}
-                onChange={(e) => {
-                  setExecutionTypeFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="bg-white dark:bg-[#161f30] border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none font-medium shadow-xs"
-              >
-                <option value="ALL">Tüm İcra Tipleri</option>
-                <option value="MANUAL">Manuel</option>
-                <option value="AUTOMATION">Otomasyon</option>
-              </select>
-            </div>
           </div>
 
-          {/* Table with Distinct Corporate Headers */}
+          {/* Table with Clean Columns */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
                 <tr className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                  <th className="py-2.5 px-4 w-28">KOD</th>
+                  <th className="py-2.5 px-4 w-32">KOD</th>
                   <th className="py-2.5 px-3">TEST SENARYOSU</th>
-                  <th className="py-2.5 px-3">TÜR</th>
-                  <th className="py-2.5 px-3">ÖNCELİK</th>
-                  <th className="py-2.5 px-3">İCRA TİPİ</th>
-                  <th className="py-2.5 px-3">JIRA BAĞLANTISI</th>
-                  <th className="py-2.5 px-3">ADIM SAYISI</th>
-                  <th className="py-2.5 px-4 text-right">İŞLEMLER</th>
+                  <th className="py-2.5 px-3 w-40">MODÜL</th>
+                  <th className="py-2.5 px-3 w-36">JIRA BAĞLANTISI</th>
+                  <th className="py-2.5 px-3 w-28">ADIM SAYISI</th>
+                  <th className="py-2.5 px-4 text-right w-24">İŞLEMLER</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {paginatedCases.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center text-slate-400">
+                    <td colSpan={6} className="py-16 text-center text-slate-400">
                       <FileText className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
                       <p className="font-semibold text-slate-700 dark:text-slate-300">
                         Test senaryosu bulunamadı.
                       </p>
                       <p className="text-[11px] text-slate-400 mt-1 mb-4">
-                        {searchQuery || priorityFilter !== 'ALL'
+                        {searchQuery
                           ? 'Arama kriterlerinize uygun senaryo bulunamadı.'
                           : 'Projeniz için ilk test senaryosunu oluşturarak başlayın.'}
                       </p>
@@ -411,14 +268,14 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                       >
                         {/* Code Badge */}
                         <td className="py-2.5 px-4">
-                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                          <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                             {tc.code}
                           </span>
                         </td>
 
                         {/* Title & Description */}
                         <td className="py-2.5 px-3">
-                          <div className="min-w-0 max-w-lg">
+                          <div className="min-w-0 max-w-xl">
                             <p
                               className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate"
                               title={tc.description ? `${tc.title}\n\nAçıklama: ${tc.description}` : tc.title}
@@ -436,23 +293,18 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                           </div>
                         </td>
 
-                        {/* Type */}
-                        <td className="py-2.5 px-3">
-                          <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300 font-semibold">
-                            {tc.type}
-                          </span>
+                        {/* Module */}
+                        <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 font-medium">
+                          <div className="flex items-center space-x-1.5 truncate max-w-[140px]">
+                            <Folder className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                            <span className="truncate">{tc.suite?.name || 'Ana Modül'}</span>
+                          </div>
                         </td>
-
-                        {/* Priority */}
-                        <td className="py-2.5 px-3">{getPriorityBadge(tc.priority)}</td>
-
-                        {/* Execution Type */}
-                        <td className="py-2.5 px-3">{getExecutionBadge(tc.executionType)}</td>
 
                         {/* Jira Link */}
                         <td className="py-2.5 px-3">
                           {tc.jiraStoryKey ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-mono text-[10px] font-bold">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-mono text-[10px] font-bold">
                               {tc.jiraStoryKey}
                             </span>
                           ) : (
@@ -467,19 +319,25 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                           {tc.steps?.length || 0} Adım
                         </td>
 
-                        {/* Actions (Play, Edit, Delete) */}
+                        {/* Actions (Quick Run, Edit, Delete) */}
                         <td className="py-2.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end space-x-1">
-                            {/* Run Single Scenario */}
-                            <button
-                              type="button"
-                              onClick={() => onRunSingleCase(tc)}
-                              className="p-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
-                              title="Bu Senaryoyu Koştur"
-                              aria-label="Senaryoyu Koştur"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-current text-emerald-600 dark:text-emerald-400" />
-                            </button>
+                            {/* Quick Run Scenario */}
+                            {(onOpenQuickRun || onRunSingleCase) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (onOpenQuickRun) onOpenQuickRun(tc);
+                                  else if (onRunSingleCase) onRunSingleCase(tc);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 transition-all cursor-pointer shadow-2xs"
+                                title="Bu Senaryoyu Hızlı Koş"
+                                aria-label="Hızlı Koş"
+                              >
+                                <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                <span>Hızlı Koş</span>
+                              </button>
+                            )}
 
                             {/* Edit Scenario */}
                             <button
@@ -548,37 +406,18 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#161f30] hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
-                {Array.from({ length: totalPages }).map((_, i) => (
-                  <button
-                    key={i + 1}
-                    type="button"
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`w-6 h-6 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
-                      currentPage === i + 1
-                        ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white'
-                        : 'bg-white dark:bg-[#161f30] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
+                <span className="px-2 font-medium">
+                  {currentPage} / {totalPages}
+                </span>
                 <button
                   type="button"
-                  disabled={currentPage === totalPages}
+                  disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#161f30] hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
                 >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(totalPages)}
-                  className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#161f30] hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
-                >
-                  <ChevronsRight className="w-3.5 h-3.5" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
