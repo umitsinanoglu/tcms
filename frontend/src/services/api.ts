@@ -234,6 +234,34 @@ export interface SaveResultsDto {
   }[];
 }
 
+export interface BulkTestCaseItemInput {
+  code?: string;
+  title: string;
+  description?: string;
+  suiteName?: string;
+  suiteId?: string;
+  executionType?: ExecutionType;
+  type?: TestType;
+  priority?: Priority;
+  precondition?: string;
+  jiraStoryKey?: string;
+  steps?: {
+    stepNumber?: number;
+    action: string;
+    expectedResult?: string;
+  }[];
+}
+
+export interface BulkTestPlanItemInput {
+  title: string;
+  description?: string;
+  version?: string;
+  environment?: string;
+  status?: PlanStatus;
+  scope?: string;
+  requirements?: string;
+}
+
 // API Services
 export const ProjectsService = {
   getAll: () => api.get<Project[]>('/projects').then((res) => res.data),
@@ -253,6 +281,8 @@ export const TestPlansService = {
   getOne: (id: string) => api.get<TestPlan>(`/test-plans/${id}`).then((res) => res.data),
   create: (data: CreateTestPlanDto) =>
     api.post<TestPlan>('/test-plans', data).then((res) => res.data),
+  createBulk: (projectId: string, items: BulkTestPlanItemInput[]) =>
+    api.post<{ success: boolean; count: number; data: TestPlan[] }>('/test-plans/bulk', { projectId, items }).then((res) => res.data),
   update: (id: string, data: UpdateTestPlanDto) =>
     api.patch<TestPlan>(`/test-plans/${id}`, data).then((res) => res.data),
   delete: (id: string) => api.delete(`/test-plans/${id}`).then((res) => res.data),
@@ -271,6 +301,8 @@ export const SuitesService = {
 export const TestCasesService = {
   getOne: (id: string) => api.get<TestCase>(`/test-cases/${id}`).then((res) => res.data),
   create: (data: Partial<TestCase>) => api.post<TestCase>('/test-cases', data).then((res) => res.data),
+  createBulk: (projectId: string, items: BulkTestCaseItemInput[]) =>
+    api.post<{ success: boolean; count: number; data: TestCase[] }>('/test-cases/bulk', { projectId, items }).then((res) => res.data),
   update: (id: string, data: Partial<TestCase>) =>
     api.patch<TestCase>(`/test-cases/${id}`, data).then((res) => res.data),
   linkJiraStory: (id: string, jiraStoryKey?: string, jiraIssueUrl?: string) =>

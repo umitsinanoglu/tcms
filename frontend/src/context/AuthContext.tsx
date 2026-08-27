@@ -14,6 +14,9 @@ export type PermissionAction =
   | 'CREATE_CASE'
   | 'EDIT_CASE'
   | 'DELETE_CASE'
+  | 'CREATE_PLAN'
+  | 'EDIT_PLAN'
+  | 'DELETE_PLAN'
   | 'EXECUTE_RUN'
   | 'VIEW_REPORTS';
 
@@ -216,8 +219,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         case 'CREATE_CASE':
         case 'EDIT_CASE':
         case 'DELETE_CASE':
+        case 'CREATE_PLAN':
+        case 'EDIT_PLAN':
         case 'EXECUTE_RUN':
           return effectiveRole === 'ADMIN' || effectiveRole === 'TEST_LEAD' || effectiveRole === 'TESTER';
+
+        case 'DELETE_PLAN':
+          return effectiveRole === 'ADMIN' || effectiveRole === 'TEST_LEAD';
 
         case 'VIEW_REPORTS':
           return true; // All authenticated roles can view reports

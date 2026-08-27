@@ -1036,6 +1036,11 @@ export default function Home() {
                   setIsManualRunOpen(true);
                 }}
                 onDeleteCase={handleDeleteCase}
+                onCasesChange={async () => {
+                  if (selectedProject) {
+                    await loadProjectData(selectedProject.id);
+                  }
+                }}
               />
             )
           )}

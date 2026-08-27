@@ -4,6 +4,7 @@ import { TestCasesService } from './test-cases.service';
 import { CreateTestCaseDto } from './dto/create-test-case.dto';
 import { UpdateTestCaseDto } from './dto/update-test-case.dto';
 import { LinkJiraStoryDto } from './dto/jira-link.dto';
+import { BulkCreateTestCasesDto } from './dto/bulk-create-test-case.dto';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '@prisma/client';
@@ -13,6 +14,14 @@ import { Role } from '@prisma/client';
 @UseGuards(RolesGuard)
 export class TestCasesController {
   constructor(private readonly testCasesService: TestCasesService) {}
+
+  @Post('bulk')
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @ApiOperation({ summary: 'Excel / CSV ile toplu test senaryoları ve adımlarını içeri aktar' })
+  @ApiResponse({ status: 201, description: 'Test senaryoları toplu olarak oluşturuldu' })
+  createBulk(@Body() bulkDto: BulkCreateTestCasesDto) {
+    return this.testCasesService.createBulk(bulkDto);
+  }
 
   @Post()
   @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)

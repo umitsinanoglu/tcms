@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { TestPlansService } from './test-plans.service';
 import { CreateTestPlanDto } from './dto/create-test-plan.dto';
 import { UpdateTestPlanDto } from './dto/update-test-plan.dto';
+import { BulkCreateTestPlansDto } from './dto/bulk-create-test-plan.dto';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '@prisma/client';
@@ -12,6 +13,14 @@ import { Role } from '@prisma/client';
 @UseGuards(RolesGuard)
 export class TestPlansController {
   constructor(private readonly testPlansService: TestPlansService) {}
+
+  @Post('test-plans/bulk')
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @ApiOperation({ summary: 'Excel / CSV ile toplu test planlarını içeri aktar' })
+  @ApiResponse({ status: 201, description: 'Test planları toplu olarak oluşturuldu' })
+  createBulk(@Body() bulkDto: BulkCreateTestPlansDto) {
+    return this.testPlansService.createBulk(bulkDto);
+  }
 
   @Post('test-plans')
   @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
