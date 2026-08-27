@@ -693,3 +693,185 @@ export function createFraudAMLAlertScreenshot(params: {
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
+
+/**
+ * 8. Corporate Maker-Checker Approval Screen
+ */
+export function createMakerCheckerApprovalScreenshot(params: {
+  batchId: string;
+  companyName: string;
+  creatorName: string;
+  approverName: string;
+  totalAmount: string;
+  recipientCount: number;
+  status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+}): string {
+  const isApproved = params.status === 'APPROVED';
+  const statusBg = isApproved ? '#064e3b' : '#78350f';
+  const statusColor = isApproved ? '#10b981' : '#f59e0b';
+  const statusText = isApproved ? '2. Seviye İmza Onayı Tamamlandı' : '1. Onay Verildi, 2. Yönetici İmzası Bekleniyor';
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="760" height="520" viewBox="0 0 760 520">
+    <rect width="100%" height="100%" fill="#090d16" rx="16"/>
+    <rect x="0" y="0" width="760" height="46" fill="#1e293b" rx="16"/>
+    <circle cx="28" cy="23" r="6.5" fill="#ef4444"/>
+    <circle cx="48" cy="23" r="6.5" fill="#f59e0b"/>
+    <circle cx="68" cy="23" r="6.5" fill="#10b981"/>
+    <text x="96" y="28" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600">🏢 NeoBank Kurumsal İnternet Şubesi • Çift Onaylı Toplu Ödeme İşlemi</text>
+
+    <g transform="translate(30, 64)">
+      <rect width="700" height="84" rx="12" fill="${statusBg}" stroke="${statusColor}" stroke-width="1.5"/>
+      <circle cx="48" cy="42" r="22" fill="${statusColor}"/>
+      <text x="48" y="50" fill="#ffffff" font-family="sans-serif" font-size="20" font-weight="bold" text-anchor="middle">${isApproved ? '✓' : '⌛'}</text>
+      <text x="86" y="34" fill="#ffffff" font-family="sans-serif" font-size="16" font-weight="bold">${escapeXml(statusText)}</text>
+      <text x="86" y="56" fill="#cbd5e1" font-family="sans-serif" font-size="12">Toplu Transfer Paketi: <tspan font-family="monospace" font-weight="bold" fill="#38bdf8">${escapeXml(params.batchId)}</tspan> • Firma: <tspan font-weight="bold">${escapeXml(params.companyName)}</tspan></text>
+
+      <g transform="translate(0, 98)">
+        <rect width="700" height="190" rx="12" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+        <text x="24" y="32" fill="#94a3b8" font-family="sans-serif" font-size="12" font-weight="bold">TOPLU TRANSFER BİLGİLERİ (MAKER-CHECKER MATRİSİ):</text>
+
+        <rect x="24" y="48" width="310" height="60" rx="8" fill="#1e293b"/>
+        <text x="38" y="70" fill="#94a3b8" font-family="sans-serif" font-size="11">1. Hazırlayan (Maker / Muhasebe Uzmanı):</text>
+        <text x="38" y="92" fill="#e2e8f0" font-family="sans-serif" font-size="12" font-weight="bold">👤 ${escapeXml(params.creatorName)}</text>
+
+        <rect x="366" y="48" width="310" height="60" rx="8" fill="#1e293b" stroke="${statusColor}" stroke-width="1"/>
+        <text x="380" y="70" fill="#94a3b8" font-family="sans-serif" font-size="11">2. Onaylayan (Checker / CFO / İmza Yetkilisi):</text>
+        <text x="380" y="92" fill="#38bdf8" font-family="sans-serif" font-size="12" font-weight="bold">🔑 ${escapeXml(params.approverName)}</text>
+
+        <line x1="24" y1="124" x2="676" y2="124" stroke="#1e293b" stroke-width="1"/>
+
+        <text x="24" y="152" fill="#64748b" font-family="sans-serif" font-size="12">Toplam Bordro Tutarı:</text>
+        <text x="170" y="152" fill="#10b981" font-family="sans-serif" font-size="16" font-weight="bold">${escapeXml(params.totalAmount)} TL</text>
+
+        <text x="420" y="152" fill="#64748b" font-family="sans-serif" font-size="12">Kişi / Çalışan Sayısı:</text>
+        <text x="560" y="152" fill="#f8fafc" font-family="sans-serif" font-size="14" font-weight="bold">${params.recipientCount} Alıcı (ISO 20022)</text>
+      </g>
+
+      <g transform="translate(0, 304)">
+        <rect width="700" height="100" rx="12" fill="#020617" stroke="#1e293b" stroke-width="1"/>
+        <text x="24" y="28" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="bold">&gt; ELEKTRONİK İMZA &amp; MUTABAKAT PROTOKOLÜ:</text>
+        <text x="24" y="52" fill="#cbd5e1" font-family="monospace" font-size="12">[E-IMZA] 5070 Sayılı Kanun Kapsamında Mobil İmza Doğrulaması Başarılı (SHA-256 HSM Token)</text>
+        <text x="24" y="74" fill="#94a3b8" font-family="monospace" font-size="11">[CORE BANKING] Toplu FAST/EFT Kuyruğuna İletildi • Toplam 42 İşlem 1.2sn içinde Takasa Yollandı.</text>
+      </g>
+    </g>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * 9. BKM GEÇİT Open Banking API Response Screen
+ */
+export function createOpenBankingAPIScreenshot(params: {
+  endpoint: string;
+  tppName: string;
+  consentId: string;
+  statusCode: number;
+  latencyMs: number;
+}): string {
+  const isSuccess = params.statusCode === 200;
+  const statusBg = isSuccess ? '#064e3b' : '#7f1d1d';
+  const statusColor = isSuccess ? '#10b981' : '#ef4444';
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="760" height="520" viewBox="0 0 760 520">
+    <rect width="100%" height="100%" fill="#090d16" rx="16"/>
+    <rect x="0" y="0" width="760" height="46" fill="#1e293b" rx="16"/>
+    <circle cx="28" cy="23" r="6.5" fill="#ef4444"/>
+    <circle cx="48" cy="23" r="6.5" fill="#f59e0b"/>
+    <circle cx="68" cy="23" r="6.5" fill="#10b981"/>
+    <text x="96" y="28" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600">🌐 BKM GEÇİT • Açık Bankacılık API Gateway (AISP / PISP v2.1)</text>
+
+    <g transform="translate(30, 64)">
+      <rect width="700" height="76" rx="12" fill="${statusBg}" stroke="${statusColor}" stroke-width="1.5"/>
+      <text x="24" y="32" fill="#ffffff" font-family="sans-serif" font-size="15" font-weight="bold">BKM GEÇİT Açık Bankacılık İstek Yanıtı: HTTP ${params.statusCode} OK</text>
+      <text x="24" y="54" fill="#cbd5e1" font-family="sans-serif" font-size="12">Yetkili Üçüncü Taraf (TPP): <tspan font-weight="bold" fill="#38bdf8">${escapeXml(params.tppName)}</tspan> • Yanıt Süresi: <tspan font-weight="bold">${params.latencyMs}ms</tspan></text>
+
+      <g transform="translate(0, 90)">
+        <rect width="700" height="310" rx="12" fill="#020617" stroke="#1e293b" stroke-width="1"/>
+        <text x="24" y="30" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="bold">API REQUEST &amp; RESPONSE PAYLOAD (JSON/mTLS):</text>
+
+        <text x="24" y="58" fill="#94a3b8" font-family="monospace" font-size="11">GET ${escapeXml(params.endpoint)}</text>
+        <text x="24" y="78" fill="#94a3b8" font-family="monospace" font-size="11">X-Consent-Id: ${escapeXml(params.consentId)}</text>
+        <text x="24" y="98" fill="#94a3b8" font-family="monospace" font-size="11">Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...</text>
+
+        <line x1="24" y1="112" x2="676" y2="112" stroke="#1e293b" stroke-width="1"/>
+
+        <text x="24" y="136" fill="#10b981" font-family="monospace" font-size="12">{</text>
+        <text x="44" y="156" fill="#cbd5e1" font-family="monospace" font-size="12">  "consentStatus": "VALID",</text>
+        <text x="44" y="176" fill="#cbd5e1" font-family="monospace" font-size="12">  "accounts": [</text>
+        <text x="64" y="196" fill="#cbd5e1" font-family="monospace" font-size="12">    { "iban": "TR330006200000012345678901", "currency": "TRY", "balance": 184520.50 },</text>
+        <text x="64" y="216" fill="#cbd5e1" font-family="monospace" font-size="12">    { "iban": "TR770006200000019876543210", "currency": "USD", "balance": 12400.00 }</text>
+        <text x="44" y="236" fill="#cbd5e1" font-family="monospace" font-size="12">  ],</text>
+        <text x="44" y="256" fill="#cbd5e1" font-family="monospace" font-size="12">  "bkmGeçitTraceId": "BKM-2026-TR-88194",</text>
+        <text x="44" y="276" fill="#cbd5e1" font-family="monospace" font-size="12">  "serverTime": "2026-08-27T14:30:00Z"</text>
+        <text x="24" y="296" fill="#10b981" font-family="monospace" font-size="12">}</text>
+      </g>
+    </g>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * 10. KYC Remote Onboarding / OCR & NFC Liveness Verification
+ */
+export function createKYCOnboardingScreenshot(params: {
+  customerName: string;
+  tcknMasked: string;
+  ocrStatus: string;
+  nfcChipStatus: string;
+  livenessConfidence: number;
+}): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="760" height="520" viewBox="0 0 760 520">
+    <rect width="100%" height="100%" fill="#090d16" rx="16"/>
+    <rect x="0" y="0" width="760" height="46" fill="#1e293b" rx="16"/>
+    <circle cx="28" cy="23" r="6.5" fill="#ef4444"/>
+    <circle cx="48" cy="23" r="6.5" fill="#f59e0b"/>
+    <circle cx="68" cy="23" r="6.5" fill="#10b981"/>
+    <text x="96" y="28" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="600">📱 NeoBank Mobil • Uzaktan Müşteri Edinimi &amp; Biyometrik Kimlik Doğrulama (KYC)</text>
+
+    <g transform="translate(30, 64)">
+      <rect width="700" height="76" rx="12" fill="#064e3b" stroke="#10b981" stroke-width="1.5"/>
+      <text x="24" y="32" fill="#ffffff" font-family="sans-serif" font-size="15" font-weight="bold">Uzaktan Müşteri Kabulü Başarılı (BDDK 2021/4 Uyumlu)</text>
+      <text x="24" y="54" fill="#cbd5e1" font-family="sans-serif" font-size="12">Müşteri: <tspan font-weight="bold" fill="#38bdf8">${escapeXml(params.customerName)}</tspan> • TCKN: <tspan font-family="monospace" font-weight="bold">${escapeXml(params.tcknMasked)}</tspan></text>
+
+      <g transform="translate(0, 90)">
+        <rect width="700" height="210" rx="12" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+        <text x="24" y="30" fill="#94a3b8" font-family="sans-serif" font-size="12" font-weight="bold">BİYOMETRİK VE ÇİP DOĞRULAMA DETAYLARI:</text>
+
+        <rect x="24" y="46" width="200" height="80" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1"/>
+        <text x="36" y="68" fill="#94a3b8" font-family="sans-serif" font-size="11">1. T.C. Kimlik OCR:</text>
+        <text x="36" y="90" fill="#10b981" font-family="sans-serif" font-size="13" font-weight="bold">✓ ${escapeXml(params.ocrStatus)}</text>
+        <text x="36" y="110" fill="#64748b" font-family="sans-serif" font-size="10">MRZ &amp; Holo Doğrulandı</text>
+
+        <rect x="250" y="46" width="200" height="80" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1"/>
+        <text x="262" y="68" fill="#94a3b8" font-family="sans-serif" font-size="11">2. Temassız NFC Çip:</text>
+        <text x="262" y="90" fill="#10b981" font-family="sans-serif" font-size="13" font-weight="bold">✓ ${escapeXml(params.nfcChipStatus)}</text>
+        <text x="262" y="110" fill="#64748b" font-family="sans-serif" font-size="10">ICAO 9303 Sertifikalı</text>
+
+        <rect x="476" y="46" width="200" height="80" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1"/>
+        <text x="488" y="68" fill="#94a3b8" font-family="sans-serif" font-size="11">3. Canlılık (Liveness):</text>
+        <text x="488" y="90" fill="#38bdf8" font-family="sans-serif" font-size="13" font-weight="bold">✓ %${params.livenessConfidence} Güven</text>
+        <text x="488" y="110" fill="#64748b" font-family="sans-serif" font-size="10">3D Yüz Haritalama</text>
+
+        <line x1="24" y1="144" x2="676" y2="144" stroke="#1e293b" stroke-width="1"/>
+
+        <text x="24" y="172" fill="#64748b" font-family="sans-serif" font-size="12">Görüntülü Müşteri Temsilcisi:</text>
+        <text x="220" y="172" fill="#f8fafc" font-family="sans-serif" font-size="12" font-weight="bold">Ayşe Demir (Müşteri Kabul Temsilcisi #841)</text>
+
+        <text x="24" y="194" fill="#64748b" font-family="sans-serif" font-size="12">Açılan Temel Hesap:</text>
+        <text x="220" y="194" fill="#10b981" font-family="monospace" font-size="12" font-weight="bold">TR33 0006 2000 0001 9988 7766 55 (TL Vadesiz)</text>
+      </g>
+
+      <g transform="translate(0, 316)">
+        <rect width="700" height="86" rx="12" fill="#020617" stroke="#1e293b" stroke-width="1"/>
+        <text x="24" y="28" fill="#10b981" font-family="monospace" font-size="11" font-weight="bold">&gt; SÖZLEŞME VE HESAP AKTİVASYON LOGU:</text>
+        <text x="24" y="52" fill="#cbd5e1" font-family="monospace" font-size="12">[ONAY] Dijital Bankacılık Temel Bankacılık Sözleşmesi ve KVKK İzni SMS OTP ile İmzalandı.</text>
+        <text x="24" y="72" fill="#94a3b8" font-family="monospace" font-size="11">[CORE] Müşteri No: 84920194 oluşturuldu • Vadesiz hesap anında kullanıma açıldı.</text>
+      </g>
+    </g>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
