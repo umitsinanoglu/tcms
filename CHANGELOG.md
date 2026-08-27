@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Test koşumu detay sayfası modernleştirildi ve yeni UI tasarımına uyarlandı
 - Test Planı detayında Test Senaryosu Ekle butonu, Modül öz niteliği, Test Koşumları Geçmişi başlığı ve sekme sadeleştirmeleri
 - Remove executionType, test type, and priority attributes from Test Scenario creation and editor for single-definition reusable template model
 - Refactor Test Case Editor: remove run controls, status badges, and step attachments, align metadata attributes, and enhance plan-to-case back/forward navigation history
