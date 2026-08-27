@@ -583,32 +583,32 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
 
           {/* Table Container */}
           <div className="overflow-x-auto flex-1">
-            <table className="w-full text-left text-xs border-collapse min-w-[1150px]">
+            <table className="w-full text-left text-xs border-collapse min-w-full">
               <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
                 <tr className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                  {/* Flexible Column 1: Test Planı */}
-                  <th className="py-3.5 px-4 min-w-[280px] w-[34%]">TEST PLANI</th>
+                  {/* Flexible Column 1: Test Planı (Daraltılmış & Esnek) */}
+                  <th className="py-3 px-4 min-w-[180px] w-[26%] whitespace-nowrap">TEST PLANI</th>
                   
                   {/* Fixed Column 1: Tür */}
-                  <th className="py-3.5 px-3 w-[88px] min-w-[88px] max-w-[88px] whitespace-nowrap">TÜR</th>
+                  <th className="py-3 px-3 w-[84px] min-w-[84px] whitespace-nowrap">TÜR</th>
                   
-                  {/* Flexible Column 2: Kapsam */}
-                  <th className="py-3.5 px-3 min-w-[220px] w-[26%]">KAPSAM</th>
+                  {/* Flexible Column 2: Kapsam (Daraltılmış & Esnek) */}
+                  <th className="py-3 px-3 min-w-[130px] w-[18%] whitespace-nowrap">KAPSAM</th>
                   
                   {/* Fixed Column 2: Senaryo */}
-                  <th className="py-3.5 px-3 w-[80px] min-w-[80px] max-w-[80px] text-center whitespace-nowrap">SENARYO</th>
+                  <th className="py-3 px-3 w-[76px] min-w-[76px] text-center whitespace-nowrap">SENARYO</th>
                   
                   {/* Fixed Column 3: Başarı Oranı */}
-                  <th className="py-3.5 px-3 w-[130px] min-w-[130px] max-w-[130px] whitespace-nowrap">BAŞARI ORANI</th>
+                  <th className="py-3 px-3 w-[120px] min-w-[120px] whitespace-nowrap">BAŞARI ORANI</th>
                   
                   {/* Fixed Column 4: Durum */}
-                  <th className="py-3.5 px-3 w-[110px] min-w-[110px] max-w-[110px] whitespace-nowrap">DURUM</th>
+                  <th className="py-3 px-3 w-[100px] min-w-[100px] whitespace-nowrap">DURUM</th>
                   
                   {/* Fixed Column 5: Son Çalıştırma */}
-                  <th className="py-3.5 px-3 w-[140px] min-w-[140px] max-w-[140px] whitespace-nowrap">SON ÇALIŞTIRMA</th>
+                  <th className="py-3 px-3 w-[130px] min-w-[130px] whitespace-nowrap">SON ÇALIŞTIRMA</th>
                   
                   {/* Fixed Column 6: İşlemler */}
-                  <th className="py-3.5 px-4 w-[100px] min-w-[100px] max-w-[100px] text-right whitespace-nowrap">İŞLEMLER</th>
+                  <th className="py-3 px-4 w-[90px] min-w-[90px] text-right whitespace-nowrap">İŞLEMLER</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
@@ -644,17 +644,17 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                         className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
                       >
                         {/* 1. Flexible Column: Test Planı Adı ve Açıklaması */}
-                        <td className="py-3 px-4 min-w-[280px]">
-                          <div className="flex items-center space-x-3 min-w-0">
-                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                              <Calendar className="w-4 h-4" />
+                        <td className="py-2.5 px-4 min-w-0 max-w-[260px] whitespace-nowrap">
+                          <div className="flex items-center space-x-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                              <Calendar className="w-3.5 h-3.5" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-[#b83a4b] dark:group-hover:text-[#d66b7a] transition-colors">
+                              <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-[#b83a4b] dark:group-hover:text-[#d66b7a] transition-colors text-xs" title={p.title}>
                                 {p.title}
                               </p>
                               {p.description && (
-                                <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5" title={p.description}>
+                                <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5" title={p.description}>
                                   {p.description}
                                 </p>
                               )}
@@ -663,7 +663,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                         </td>
 
                         {/* 2. Fixed Column: Tür Rozeti */}
-                        <td className="py-3 px-3 w-[88px] min-w-[88px] max-w-[88px] whitespace-nowrap">
+                        <td className="py-2.5 px-3 w-[84px] min-w-[84px] whitespace-nowrap">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-xs ${
                               stats?.typeColor.bg || 'bg-slate-100 dark:bg-slate-800'
@@ -676,19 +676,19 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                         </td>
 
                         {/* 3. Flexible Column: Kapsam */}
-                        <td className="py-3 px-3 min-w-[220px]" title={stats?.scope || 'Web, Mobil'}>
+                        <td className="py-2.5 px-3 min-w-0 max-w-[180px] whitespace-nowrap" title={stats?.scope || 'Web, Mobil'}>
                           <p className="truncate text-xs text-slate-600 dark:text-slate-400 font-medium">
                             {stats?.scope || 'Web, Mobil'}
                           </p>
                         </td>
 
                         {/* 4. Fixed Column: Senaryo Sayısı */}
-                        <td className="py-3 px-3 w-[80px] min-w-[80px] max-w-[80px] text-center font-bold text-slate-800 dark:text-slate-200 font-mono whitespace-nowrap">
+                        <td className="py-2.5 px-3 w-[76px] min-w-[76px] text-center font-bold text-slate-800 dark:text-slate-200 font-mono whitespace-nowrap">
                           {stats ? stats.totalScenarios : 0}
                         </td>
 
                         {/* 5. Fixed Column: Başarı Oranı & Progress Bar */}
-                        <td className="py-3 px-3 w-[130px] min-w-[130px] max-w-[130px] whitespace-nowrap">
+                        <td className="py-2.5 px-3 w-[120px] min-w-[120px] whitespace-nowrap">
                           {stats && stats.executedScenarios > 0 ? (
                             <div className="flex items-center space-x-2 w-full">
                               <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-[11px] shrink-0 w-8">
@@ -713,43 +713,43 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                         </td>
 
                         {/* 6. Fixed Column: Durum Rozeti */}
-                        <td className="py-3 px-3 w-[110px] min-w-[110px] max-w-[110px] whitespace-nowrap">
+                        <td className="py-2.5 px-3 w-[100px] min-w-[100px] whitespace-nowrap">
                           {stats?.statusKey === 'ACTIVE' ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
                               Aktif
                             </span>
                           ) : stats?.statusKey === 'IN_PROGRESS' ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs">
                               Devam Eden
                             </span>
                           ) : stats?.statusKey === 'COMPLETED' ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 shadow-xs">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 shadow-xs">
                               Tamamlandı
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs">
                               Pasif
                             </span>
                           )}
                         </td>
 
                         {/* 7. Fixed Column: Son Çalıştırma Tarihi */}
-                        <td className="py-3 px-3 w-[140px] min-w-[140px] max-w-[140px] text-slate-500 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap">
+                        <td className="py-2.5 px-3 w-[130px] min-w-[130px] text-slate-500 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap">
                           {stats?.lastRunDate || '—'}
                         </td>
 
                         {/* 8. Fixed Column: İşlemler Aksiyon Butonları */}
-                        <td className="py-3 px-4 w-[100px] min-w-[100px] max-w-[100px] text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end space-x-1.5">
+                        <td className="py-2.5 px-4 w-[90px] min-w-[90px] text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end space-x-1">
                             {/* Koşum Başlat */}
                             <button
                               type="button"
                               onClick={() => onStartRunWithPlan(p)}
-                              className="p-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
+                              className="p-1 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
                               title="Koşum Başlat"
                               aria-label="Koşum Başlat"
                             >
-                              <Play className="w-4 h-4 fill-current text-emerald-600 dark:text-emerald-400" />
+                              <Play className="w-3.5 h-3.5 fill-current text-emerald-600 dark:text-emerald-400" />
                             </button>
 
                             {/* Düzenle */}
@@ -763,22 +763,22 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                                   setIsEditPlanOpen(true);
                                 }
                               }}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                              className="p-1 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                               title="Planı Düzenle"
                               aria-label="Planı Düzenle"
                             >
-                              <Pencil className="w-4 h-4" />
+                              <Pencil className="w-3.5 h-3.5" />
                             </button>
 
                             {/* Sil */}
                             <button
                               type="button"
                               onClick={() => handleDeletePlan(p.id)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors cursor-pointer"
+                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors cursor-pointer"
                               title="Planı Sil"
                               aria-label="Planı Sil"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
