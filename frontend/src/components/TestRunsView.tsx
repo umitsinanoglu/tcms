@@ -433,26 +433,26 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           onClick={() => setStatusFilter(statusFilter === 'IN_PROGRESS' ? 'ALL' : 'IN_PROGRESS')}
           className={`p-3.5 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs cursor-pointer ${
             statusFilter === 'IN_PROGRESS'
-              ? 'border-sky-500 ring-1 ring-sky-500/30'
-              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-sky-500/40'
+              ? 'border-slate-800 dark:border-slate-400 ring-1 ring-slate-800/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-[#64748b] dark:text-[#8e9bb0] uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
               Çalışıyor
             </span>
-            <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-500">
+            <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-600"></span>
               </span>
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-xl font-extrabold font-mono text-sky-600 dark:text-sky-400">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
               {inProgressRuns}
             </span>
-            <span className="text-[10px] text-sky-600/70 dark:text-sky-400/70">aktif</span>
+            <span className="text-[10px] text-slate-500">aktif</span>
           </div>
         </div>
 
@@ -461,23 +461,23 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           onClick={() => setStatusFilter(statusFilter === 'COMPLETED' ? 'ALL' : 'COMPLETED')}
           className={`p-3.5 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs cursor-pointer ${
             statusFilter === 'COMPLETED'
-              ? 'border-emerald-500 ring-1 ring-emerald-500/30'
-              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-emerald-500/40'
+              ? 'border-emerald-600 ring-1 ring-emerald-600/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-[#64748b] dark:text-[#8e9bb0] uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
               Tamamlandı
             </span>
-            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
               {completedRuns}
             </span>
-            <span className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">başarılı</span>
+            <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80">başarılı</span>
           </div>
         </div>
 
@@ -486,23 +486,23 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           onClick={() => setStatusFilter(statusFilter === 'FAILED' ? 'ALL' : 'FAILED')}
           className={`p-3.5 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs cursor-pointer ${
             statusFilter === 'FAILED'
-              ? 'border-rose-500 ring-1 ring-rose-500/30'
-              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-rose-500/40'
+              ? 'border-rose-600 ring-1 ring-rose-600/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-[#64748b] dark:text-[#8e9bb0] uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider">
               Başarısız
             </span>
-            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500">
+            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
               <XCircle className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-xl font-extrabold font-mono text-rose-600 dark:text-rose-400">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
               {failedRuns}
             </span>
-            <span className="text-[10px] text-rose-600/70 dark:text-rose-400/70">hata / iptal</span>
+            <span className="text-[10px] text-rose-600/80 dark:text-rose-400/80">hata / iptal</span>
           </div>
         </div>
 
@@ -511,23 +511,23 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           onClick={() => setStatusFilter(statusFilter === 'PENDING' ? 'ALL' : 'PENDING')}
           className={`p-3.5 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs cursor-pointer col-span-2 sm:col-span-1 ${
             statusFilter === 'PENDING'
-              ? 'border-amber-500 ring-1 ring-amber-500/30'
-              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-amber-500/40'
+              ? 'border-slate-700 ring-1 ring-slate-700/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-[#64748b] dark:text-[#8e9bb0] uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
               Bekliyor
             </span>
-            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
+            <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500">
               <Clock className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-xl font-extrabold font-mono text-amber-600 dark:text-amber-400">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
               {pendingRuns}
             </span>
-            <span className="text-[10px] text-amber-600/70 dark:text-amber-400/70">başlatılmamış</span>
+            <span className="text-[10px] text-slate-500">başlamadı</span>
           </div>
         </div>
       </div>

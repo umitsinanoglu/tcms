@@ -11,18 +11,18 @@ This skill provides an enterprise-ready, data-dense UI/UX Design System tailored
 
 ## 🎨 1. Theme Identity & Palette
 
-### Muted Corporate Crimson & Deep Slate
-| Property | Dark Theme | Light Theme | Usage |
-| :--- | :--- | :--- | :--- |
-| **Canvas Background** | `#141821` | `#f2f5f8` | Root application background |
-| **Card & Panel Surface** | `#1d232f` | `#ffffff` | Primary cards, grids, sidebars |
-| **Secondary Surface** | `#262e3d` | `#e6ebf2` | Hover rows, secondary containers |
-| **Structural Border** | `#2e3748` | `#d0d8e4` | 1px high-contrast dividers |
-| **Text Primary** | `#f1f5f9` | `#0f172a` | Headers, main content |
-| **Text Muted** | `#8e9bb0` | `#64748b` | Subtitles, labels, timestamps |
-| **Brand Accent** | `#b83a4b` | `#b83a4b` | Muted Corporate Crimson primary action |
-| **Accent Dark** | `#821c2b` | `#821c2b` | Gradient end, pressed state |
-| **Accent Glow** | `rgba(184, 58, 75, 0.22)` | `rgba(184, 58, 75, 0.15)` | Focus ring & CTA hover glow |
+### Muted Corporate Crimson & Deep Slate Palette
+| Property | Dark Theme | Crimson Light | Corporate Light (Minimal) | Usage |
+| :--- | :--- | :--- | :--- | :--- |
+| **Canvas Background** | `#141821` | `#f4f6f8` | `#eef2f6` | Root application background |
+| **Card & Panel Surface** | `#1d232f` | `#ffffff` | `#ffffff` | Primary cards, grids, sidebars |
+| **Secondary Surface** | `#262e3d` | `#e6ebf2` | `#e2e8f0` | Hover rows, secondary containers |
+| **Structural Border** | `#2e3748` | `#d0d8e4` | `#cbd5e1` | 1px high-contrast dividers |
+| **Text Primary** | `#f1f5f9` | `#0f172a` | `#090d16` | Headers, main content |
+| **Text Muted** | `#8e9bb0` | `#64748b` | `#475569` | Subtitles, labels, timestamps |
+| **Brand Accent** | `#b83a4b` | `#b83a4b` | `#991b1b` | Muted Corporate Crimson / Bordeaux |
+| **Accent Dark** | `#821c2b` | `#821c2b` | `#7f1d1d` | Gradient end, pressed state |
+| **Accent Glow** | `rgba(184, 58, 75, 0.22)` | `rgba(184, 58, 75, 0.15)` | `rgba(153, 27, 27, 0.14)` | Focus ring & CTA hover glow |
 
 ---
 

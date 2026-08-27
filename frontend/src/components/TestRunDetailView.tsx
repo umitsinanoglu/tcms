@@ -859,7 +859,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
               <button
                 type="button"
                 onClick={() => handleUpdateRunStatus('IN_PROGRESS')}
-                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-[10px] text-xs font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 transition-all cursor-pointer"
+                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-[10px] text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 transition-all cursor-pointer shadow-xs"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Koşuyu Yeniden Başlat (Çalışıyor Yap)</span>
@@ -879,28 +879,28 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
         </div>
 
         {/* Çok Renkli İlerleme Çubuğu */}
-        <div className="space-y-1.5 pt-2 border-t border-[#d0d8e4] dark:border-[#2e3748]">
+        <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-[#2e3748]">
           <div className="flex items-center justify-between text-xs font-mono">
             <span className="font-semibold text-slate-700 dark:text-slate-300">
               İlerleme: <strong>{stats.executed} / {stats.total}</strong> Test Tamamlandı ({stats.pending} bekliyor)
             </span>
-            <span className="font-extrabold text-[#b83a4b] text-sm">
+            <span className="font-bold text-[#b83a4b] text-sm">
               Başarı: %{stats.passRate} (Çalıştırılanlarda %{stats.executedPassRate})
             </span>
           </div>
 
-          <div className="w-full h-3 rounded-full bg-slate-200 dark:bg-[#141821] overflow-hidden flex shadow-inner">
+          <div className="w-full h-2.5 rounded-full bg-slate-200 dark:bg-[#141821] overflow-hidden flex shadow-inner">
             {stats.total > 0 && stats.passed > 0 && (
               <div
                 style={{ width: `${(stats.passed / stats.total) * 100}%` }}
-                className="bg-emerald-500 h-full transition-all duration-300"
+                className="bg-emerald-600 h-full transition-all duration-300"
                 title={`Passed: ${stats.passed} (%${Math.round((stats.passed / stats.total) * 100)})`}
               />
             )}
             {stats.total > 0 && stats.failed > 0 && (
               <div
                 style={{ width: `${(stats.failed / stats.total) * 100}%` }}
-                className="bg-rose-500 h-full transition-all duration-300"
+                className="bg-rose-600 h-full transition-all duration-300"
                 title={`Failed: ${stats.failed} (%${Math.round((stats.failed / stats.total) * 100)})`}
               />
             )}
@@ -930,20 +930,20 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
           className={`p-3 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all shadow-xs cursor-pointer ${
             statusFilter === 'ALL'
               ? 'border-[#b83a4b] ring-1 ring-[#b83a4b]/30'
-              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-[#b83a4b]/40'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-[#64748b] dark:text-[#8e9bb0] uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
               Toplam Test
             </span>
-            <div className="p-1 rounded-md bg-[#b83a4b]/10 text-[#b83a4b]">
+            <div className="p-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
               <ClipboardList className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-1.5 flex items-baseline gap-1">
             <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">{stats.total}</span>
-            <span className="text-[10px] text-[#64748b] dark:text-[#8e9bb0]">senaryo</span>
+            <span className="text-[10px] text-slate-500">senaryo</span>
           </div>
         </div>
 
@@ -952,23 +952,23 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
           onClick={() => setStatusFilter(statusFilter === 'PASSED' ? 'ALL' : 'PASSED')}
           className={`p-3 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all shadow-xs cursor-pointer ${
             statusFilter === 'PASSED'
-              ? 'border-emerald-500 ring-1 ring-emerald-500/30'
-              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-emerald-500/40'
+              ? 'border-emerald-600 ring-1 ring-emerald-600/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
               PASSED
             </span>
-            <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-500">
+            <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-1.5 flex items-baseline gap-1">
-            <span className="text-xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
               {stats.passed}
             </span>
-            <span className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">başarılı</span>
+            <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80">başarılı</span>
           </div>
         </div>
 
@@ -980,21 +980,21 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
           }}
           className={`p-3 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all shadow-xs cursor-pointer ${
             statusFilter === 'FAILED'
-              ? 'border-rose-500 ring-1 ring-rose-500/30'
-              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-rose-500/40'
+              ? 'border-rose-600 ring-1 ring-rose-600/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider">
               FAILED
             </span>
-            <div className="p-1 rounded-md bg-rose-500/10 text-rose-500">
+            <div className="p-1 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400">
               <XCircle className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-1.5 flex items-baseline gap-1">
-            <span className="text-xl font-extrabold font-mono text-rose-600 dark:text-rose-400">{stats.failed}</span>
-            <span className="text-[10px] text-rose-600/70 dark:text-rose-400/70">kusur</span>
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">{stats.failed}</span>
+            <span className="text-[10px] text-rose-600/80 dark:text-rose-400/80">kusur</span>
           </div>
         </div>
 
@@ -1003,23 +1003,23 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
           onClick={() => setStatusFilter(statusFilter === 'BLOCKED' ? 'ALL' : 'BLOCKED')}
           className={`p-3 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all shadow-xs cursor-pointer ${
             statusFilter === 'BLOCKED'
-              ? 'border-amber-500 ring-1 ring-amber-500/30'
-              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-amber-500/40'
+              ? 'border-amber-600 ring-1 ring-amber-600/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
               BLOCKED
             </span>
-            <div className="p-1 rounded-md bg-amber-500/10 text-amber-500">
+            <div className="p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <Slash className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-1.5 flex items-baseline gap-1">
-            <span className="text-xl font-extrabold font-mono text-amber-600 dark:text-amber-400">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
               {stats.blocked}
             </span>
-            <span className="text-[10px] text-amber-600/70 dark:text-amber-400/70">engel</span>
+            <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80">engel</span>
           </div>
         </div>
 
@@ -1028,20 +1028,20 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
           onClick={() => setStatusFilter(statusFilter === 'SKIPPED' ? 'ALL' : 'SKIPPED')}
           className={`p-3 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all shadow-xs cursor-pointer ${
             statusFilter === 'SKIPPED'
-              ? 'border-slate-500 ring-1 ring-slate-500/30'
-              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-slate-500/40'
+              ? 'border-slate-600 ring-1 ring-slate-600/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
               SKIPPED
             </span>
-            <div className="p-1 rounded-md bg-slate-500/10 text-slate-400">
+            <div className="p-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500">
               <Tag className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-1.5 flex items-baseline gap-1">
-            <span className="text-xl font-extrabold font-mono text-slate-600 dark:text-slate-400">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
               {stats.skipped}
             </span>
             <span className="text-[10px] text-slate-500">atlandı</span>
@@ -1053,27 +1053,27 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
           onClick={() => setStatusFilter(statusFilter === 'PENDING' ? 'ALL' : 'PENDING')}
           className={`p-3 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all shadow-xs cursor-pointer ${
             statusFilter === 'PENDING'
-              ? 'border-sky-500 ring-1 ring-sky-500/30'
-              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-sky-500/40'
+              ? 'border-slate-700 ring-1 ring-slate-700/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
               BEKLİYOR
             </span>
-            <div className="p-1 rounded-md bg-sky-500/10 text-sky-500">
+            <div className="p-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500">
               <Clock className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-1.5 flex items-baseline gap-1">
-            <span className="text-xl font-extrabold font-mono text-sky-600 dark:text-sky-400">{stats.pending}</span>
-            <span className="text-[10px] text-sky-600/70 dark:text-sky-400/70">koşulmamış</span>
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">{stats.pending}</span>
+            <span className="text-[10px] text-slate-500">koşulmamış</span>
           </div>
         </div>
       </div>
 
       {/* 4. Tab Navigation Header */}
-      <div className="flex flex-wrap items-center justify-between border-b border-[#d0d8e4] dark:border-[#2e3748] pb-1 gap-2">
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-200 dark:border-[#2e3748] pb-1 gap-2">
         <div className="flex items-center space-x-1">
           <button
             type="button"
@@ -1081,7 +1081,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
             className={`px-4 py-2 text-xs font-bold rounded-t-[10px] transition-all cursor-pointer flex items-center space-x-2 border-b-2 ${
               activeTab === 'SCENARIOS'
                 ? 'border-[#b83a4b] text-[#b83a4b] bg-white dark:bg-[#1d232f]'
-                : 'border-transparent text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9]'
+                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -1093,11 +1093,11 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
             onClick={() => setActiveTab('DEFECTS')}
             className={`px-4 py-2 text-xs font-bold rounded-t-[10px] transition-all cursor-pointer flex items-center space-x-2 border-b-2 ${
               activeTab === 'DEFECTS'
-                ? 'border-rose-500 text-rose-600 dark:text-rose-400 bg-white dark:bg-[#1d232f]'
-                : 'border-transparent text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9]'
+                ? 'border-[#b83a4b] text-[#b83a4b] bg-white dark:bg-[#1d232f]'
+                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
-            <Bug className="w-3.5 h-3.5 text-rose-500" />
+            <Bug className="w-3.5 h-3.5 text-[#b83a4b]" />
             <span>Hata Bulguları & Kusurlar ({defectCases.length})</span>
           </button>
 
@@ -1107,7 +1107,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
             className={`px-4 py-2 text-xs font-bold rounded-t-[10px] transition-all cursor-pointer flex items-center space-x-2 border-b-2 ${
               activeTab === 'OVERVIEW'
                 ? 'border-[#b83a4b] text-[#b83a4b] bg-white dark:bg-[#1d232f]'
-                : 'border-transparent text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9]'
+                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
@@ -1157,14 +1157,14 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
           )}
 
           {activeTab === 'SCENARIOS' && (
-            <div className="flex items-center rounded-[8px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] p-0.5 shadow-xs">
+            <div className="flex items-center rounded-[8px] bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] p-0.5 shadow-xs">
               <button
                 type="button"
                 onClick={() => setViewMode('CARDS')}
                 className={`p-1.5 rounded-[6px] transition-colors ${
                   viewMode === 'CARDS'
-                    ? 'bg-[#b83a4b] text-white shadow-xs'
-                    : 'text-[#64748b] hover:text-[#0f172a] dark:hover:text-[#f1f5f9]'
+                    ? 'bg-slate-800 dark:bg-slate-700 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
                 title="Görsel Kart Görünümü"
               >
@@ -1175,8 +1175,8 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                 onClick={() => setViewMode('TABLE')}
                 className={`p-1.5 rounded-[6px] transition-colors ${
                   viewMode === 'TABLE'
-                    ? 'bg-[#b83a4b] text-white shadow-xs'
-                    : 'text-[#64748b] hover:text-[#0f172a] dark:hover:text-[#f1f5f9]'
+                    ? 'bg-slate-800 dark:bg-slate-700 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
                 title="Tablo / Liste Görünümü"
               >
@@ -1191,24 +1191,24 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
       {activeTab === 'SCENARIOS' && (
         <div className="space-y-3 flex-1 flex flex-col min-h-0">
           {/* Filtering Bar */}
-          <div className="p-3 bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[12px] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="p-3 bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] rounded-[12px] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex flex-1 items-center flex-wrap gap-2.5">
               {/* Search Box */}
               <div className="relative flex-1 min-w-[200px] max-w-sm">
-                <Search className="w-3.5 h-3.5 text-[#64748b] dark:text-[#8e9bb0] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Senaryo kodu, başlık, cihaz, user ara..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] pl-9 pr-3 py-1.5 text-xs text-[#0f172a] dark:text-[#f1f5f9] placeholder-[#64748b] dark:placeholder-[#8e9bb0] focus:outline-none focus:border-[#b83a4b] focus:ring-1 focus:ring-[#b83a4b]/30"
+                  className="w-full bg-slate-50 dark:bg-[#141821] border border-slate-200 dark:border-[#2e3748] rounded-[8px] pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#b83a4b] focus:ring-1 focus:ring-[#b83a4b]/30"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
@@ -1217,7 +1217,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer"
+                className="bg-slate-50 dark:bg-[#141821] border border-slate-200 dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer"
               >
                 <option value="ALL">Durum: Tümü</option>
                 <option value="PASSED">Durum: PASSED (Geçti)</option>
@@ -1231,7 +1231,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
               <select
                 value={platformFilter}
                 onChange={(e) => setPlatformFilter(e.target.value)}
-                className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer"
+                className="bg-slate-50 dark:bg-[#141821] border border-slate-200 dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer"
               >
                 <option value="ALL">Platform: Tümü</option>
                 <option value="iOS">🍎 iOS</option>
@@ -1244,7 +1244,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
               <select
                 value={envFilter}
                 onChange={(e) => setEnvFilter(e.target.value)}
-                className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer"
+                className="bg-slate-50 dark:bg-[#141821] border border-slate-200 dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer"
               >
                 <option value="ALL">Ortam: Tümü</option>
                 <option value="UAT">🌐 UAT</option>
@@ -1263,7 +1263,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     setPlatformFilter('ALL');
                     setEnvFilter('ALL');
                   }}
-                  className="inline-flex items-center space-x-1 text-xs font-semibold text-rose-500 hover:text-rose-600 bg-rose-500/10 px-2 py-1 rounded-[6px]"
+                  className="inline-flex items-center space-x-1 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-[6px]"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>Sıfırla</span>
@@ -1271,16 +1271,16 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
               )}
             </div>
 
-            <div className="text-xs text-[#64748b] dark:text-[#8e9bb0] font-mono shrink-0">
+            <div className="text-xs text-slate-500 font-mono shrink-0">
               Gösterilen: <strong className="text-slate-900 dark:text-slate-100">{filteredCases.length}</strong> / {runTestCases.length}
             </div>
           </div>
 
-          {/* VIEW MODE 1: VISUAL CARDS (Exactly Matching User Screenshot) */}
+          {/* VIEW MODE 1: VISUAL CARDS */}
           {viewMode === 'CARDS' && (
             <div className="space-y-3 overflow-y-auto flex-1 pr-1">
               {filteredCases.length === 0 ? (
-                <div className="py-16 text-center rounded-[12px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] p-6 text-slate-400">
+                <div className="py-16 text-center rounded-[12px] bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] p-6 text-slate-400">
                   <Filter className="w-8 h-8 mx-auto opacity-30 mb-2" />
                   <p className="font-semibold">Kriterlere uygun test senaryosu bulunamadı.</p>
                 </div>
@@ -1333,19 +1333,19 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                       onClick={() => handleOpenResultDrawer(testCase, result)}
                       className={`p-4 rounded-[14px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group ${
                         isFailed
-                          ? 'border-rose-500/30 hover:border-rose-500/60'
+                          ? 'border-rose-500/40 hover:border-rose-500/70'
                           : isPassed
-                          ? 'border-emerald-500/30 hover:border-emerald-500/60'
+                          ? 'border-emerald-500/40 hover:border-emerald-500/70'
                           : isBlocked
-                          ? 'border-amber-500/30 hover:border-amber-500/60'
-                          : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-[#b83a4b]/40'
+                          ? 'border-amber-500/40 hover:border-amber-500/70'
+                          : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
                       }`}
                     >
                       {/* Left: Title & All Visual Badges */}
                       <div className="space-y-2 min-w-0 flex-1">
                         {/* Title */}
                         <div className="flex items-center space-x-2">
-                          <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 bg-slate-100 dark:bg-[#141821] px-1.5 py-0.5 rounded border border-[#d0d8e4] dark:border-[#2e3748] shrink-0">
+                          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-[#141821] px-2 py-0.5 rounded border border-slate-200 dark:border-[#2e3748] shrink-0">
                             {testCase.code}
                           </span>
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] transition-colors truncate">
@@ -1353,67 +1353,59 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                           </h3>
                         </div>
 
-                        {/* Visual Badge Ribbon (Exact match to specification) */}
+                        {/* Visual Badge Ribbon (Clean 80% Neutral Slate/Gray Badges) */}
                         <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
-                          {/* 1. 🌐 Ortam: UAT / TEST / PROD (Mavi etiket) */}
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30">
+                          {/* 1. 🌐 Ortam: UAT / TEST / PROD */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                             <span>🌐</span>
                             <span className="font-bold">{envTag}</span>
                           </span>
 
-                          {/* 2. 🍎 / 🤖 Platform: iOS / Android (Platform rengi ve ikonu) */}
-                          <span
-                            className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full ${
-                              isIos
-                                ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
-                                : isAndroid
-                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                                : 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30'
-                            }`}
-                          >
+                          {/* 2. 🍎 / 🤖 Platform: iOS / Android */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                             <span>{isIos ? '🍎' : isAndroid ? '🤖' : '🌐'}</span>
                             <span className="font-bold">{platformTag}</span>
                           </span>
 
-                          {/* 3. 📦 Uygulama Versiyonu: v1.2.0 (106) (Mor etiket) */}
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                          {/* 3. 📦 Uygulama Versiyonu: v1.2.0 (106) */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                             <span>📦</span>
                             <span className="font-mono">{appVersionTag}</span>
                           </span>
 
-                          {/* 4. 📱 Cihaz Aliası: iphone14 (Yeşil etiket) */}
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                          {/* 4. 📱 Cihaz Aliası: iphone14 */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                             <span>📱</span>
                             <span className="font-mono font-bold">{deviceTag}</span>
                           </span>
 
-                          {/* 5. 👤 USER Profili: 👤 UMIT (Turuncu / Amber etiket) */}
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                          {/* 5. 👤 USER Profili: 👤 UMIT */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                             <span>👤</span>
                             <span className="font-bold uppercase">{userProfileTag}</span>
                           </span>
 
-                          {/* 6. 👥 Müşteri Tipi: 👥 BIREYSEL (Turkuaz / Teal etiket) */}
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
+                          {/* 6. 👥 Müşteri Tipi: 👥 BIREYSEL */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                             <span>👥</span>
                             <span className="font-bold">{customerTypeTag}</span>
                           </span>
 
-                          {/* 7. 📅 Koşum Zamanı: 26.08.2026 15:51 (Tarih rozeti) */}
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748]">
+                          {/* 7. 📅 Koşum Zamanı */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                             <span>📅</span>
                             <span className="font-mono">{executedDateTag}</span>
                           </span>
 
-                          {/* 8. ⏱️ Koşum Süresi: 48 sn (Süre rozeti) */}
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-[#141821] text-slate-800 dark:text-slate-200 border border-[#d0d8e4] dark:border-[#2e3748]">
+                          {/* 8. ⏱️ Koşum Süresi */}
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                             <span>⏱️</span>
                             <span className="font-mono font-bold">{durationTag}</span>
                           </span>
 
-                          {/* 9. ⚠️ Flaky Durumu: +1 retry (Flaky testlerde sarı rozet) */}
+                          {/* 9. ⚠️ Flaky Durumu */}
                           {flakyTag && flakyTag !== 'NONE' && (
-                            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40 animate-pulse">
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-semibold">
                               <span>⚠️</span>
                               <span className="font-bold">{flakyTag}</span>
                             </span>
@@ -1625,10 +1617,10 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
 
                             <td className="py-3 px-3">
                               <div className="space-y-0.5 text-[11px]">
-                                <div className="font-bold text-amber-600 dark:text-amber-400">
+                                <div className="font-semibold text-slate-800 dark:text-slate-200">
                                   👤 {result?.userProfile || 'UMIT'}
                                 </div>
-                                <div className="text-teal-600 dark:text-teal-400">
+                                <div className="text-slate-600 dark:text-slate-400">
                                   👥 {result?.customerType || 'BIREYSEL'}
                                 </div>
                               </div>

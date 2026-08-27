@@ -177,14 +177,14 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
   const getExecutionBadge = (t?: ExecutionType) => {
     if (t === 'AUTOMATION') {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700/60 shadow-xs">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-xs">
           <Bot className="w-3 h-3" />
           Otomasyon
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-xs">
         <User className="w-3 h-3" />
         Manuel
       </span>
@@ -200,7 +200,7 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
             <h1 className="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               Test Senaryoları
             </h1>
-            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60">
+            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
               {testCases.length} Senaryo
             </span>
           </div>
@@ -226,7 +226,7 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
       <div className="px-6 py-3 shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Toplam Senaryo */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
             <FileText className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1">
@@ -244,7 +244,7 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
 
         {/* Card 2: Otomasyon Oranı */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
             <Bot className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1">

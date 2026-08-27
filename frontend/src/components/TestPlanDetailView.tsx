@@ -781,7 +781,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
 
         {/* Executed Scenarios */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
             <PlayCircle className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1">
@@ -792,7 +792,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
               <span className="text-lg font-black text-slate-900 dark:text-slate-100 leading-none">
                 {stats.executed}
               </span>
-              <span className="text-[10px] font-mono font-semibold text-purple-600 dark:text-purple-400">
+              <span className="text-[10px] font-mono font-semibold text-slate-700 dark:text-slate-300">
                 %{Math.round((stats.executed / (stats.total || 1)) * 100)}
               </span>
             </div>
@@ -801,7 +801,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
 
         {/* Pass / Fail Breakdown */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1">
@@ -818,7 +818,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
 
         {/* Pass Rate Progress Bar */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
@@ -877,7 +877,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                 }`}
               >
                 <span>Bağlı Test Koşumları</span>
-                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold">
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                   {plan.testRuns?.length || plan._count?.testRuns || 0}
                 </span>
               </button>

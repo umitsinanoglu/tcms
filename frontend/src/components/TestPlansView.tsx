@@ -184,19 +184,8 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         inferredType = 'Regression';
       }
 
-      // Color mapping for type badge
-      let typeColor = { bg: 'bg-blue-500/10 dark:bg-blue-500/15', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/25' };
-      if (inferredType === 'Smoke') {
-        typeColor = { bg: 'bg-purple-500/10 dark:bg-purple-500/15', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/25' };
-      } else if (inferredType === 'Functional') {
-        typeColor = { bg: 'bg-emerald-500/10 dark:bg-emerald-500/15', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/25' };
-      } else if (inferredType === 'API') {
-        typeColor = { bg: 'bg-amber-500/10 dark:bg-amber-500/15', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/25' };
-      } else if (inferredType === 'Security') {
-        typeColor = { bg: 'bg-rose-500/10 dark:bg-rose-500/15', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/25' };
-      } else if (inferredType === 'Performance') {
-        typeColor = { bg: 'bg-teal-500/10 dark:bg-teal-500/15', text: 'text-teal-600 dark:text-teal-400', border: 'border-teal-500/25' };
-      }
+      // Clean neutral slate type badge
+      const typeColor = { bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-700 dark:text-slate-300', border: 'border-slate-200 dark:border-slate-700' };
 
       // 2. Scope
       let scopeText = plan.scope || 'Web, Mobil';

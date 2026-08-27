@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Kurumsal Platin & Gri açık tema (corporate-light) eklendi; sade, göz yormayan kurumsal kırmızı ve antrasit-gri tonları uygulandı
 - Test koşumu canlı süre sayacı (stopwatch), tüm görsel etiketler (Ortam, Platform, Sürüm, Cihaz, User Profili, Müşteri Tipi, Zaman, Süre, Flaky) ve kart görünümü eklendi
 - Test Koşumu Detay Sayfası (TestRunDetailView), anlık durum kaydı, her durum için yorum & ekran görüntüsü ekleme ve hata bulguları (defects) takip sekmesi eklendi
 - **Test Planı Oluşturma & Düzenleme Modallarında Senaryo Seçim Paneli**: `NewTestPlanModal` ve `EditTestPlanModal` bileşenlerine arama filtreli, süit isimli, Tümünü Seç / Seçimi Temizle aksiyonlu test senaryosu seçim alanı eklendi; plan oluştururken veya düzenlerken istenen senaryoların plana dahil edilmesi / çıkarılması sağlandı.
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Kurumsal Platin & Gri temada %80 gri tonları uygulandı; etiketler, statü kartları ve butonlar sade kurumsal standartlara getirildi
 - Test Planı detayında yeni senaryo oluşturma kaldırıldı, çoklu mevcut senaryo seçimi ve ekleme özelliği güçlendirildi
 - Enhanced UI information density, collapsible test plan summary, compact metric cards, prominent table headers, and high-contrast badges across views
 - Test Suite ve Test Case kavramları tamamen kaldırılarak 'Test Senaryosu' (Test Scenario) modeli altında birleştirildi; 1 kez yazıp N kez koşma yeteneği, modern TestScenariosView çalışma alanı, sadeleştirilmiş AppSidebar ve tekil/toplu koşum desteği entegre edildi

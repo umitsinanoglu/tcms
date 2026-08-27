@@ -23,9 +23,13 @@ export const ThemeSelector: React.FC = () => {
 
   const getThemeIcon = (id: ThemeId) => {
     switch (id) {
+      case 'corporate-light':
+        return (
+          <Sun className="w-4 h-4 text-slate-700 dark:text-slate-200 transition-transform duration-200 group-hover:scale-110" />
+        );
       case 'crimson-light':
         return (
-          <Sun className="w-4 h-4 text-amber-500 transition-transform duration-200 group-hover:rotate-45" />
+          <Sun className="w-4 h-4 text-[#b83a4b] transition-transform duration-200 group-hover:rotate-45" />
         );
       case 'crimson-dark':
       default:

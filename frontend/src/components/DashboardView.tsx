@@ -287,31 +287,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
     if (title.includes('playwright') || code.includes('pw') || tc.type === 'WEB') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-600 dark:bg-slate-400 shrink-0"></span>
           <span>Playwright</span>
         </span>
       );
     }
     if (title.includes('appium') || title.includes('webdriver') || tc.type === 'MOBILE' || tc.type === 'IOS' || tc.type === 'ANDROID') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/25">
-          <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-600 dark:bg-slate-400 shrink-0"></span>
           <span>WebdriverIO</span>
         </span>
       );
     }
     if (tc.type === 'API') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">
-          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-600 dark:bg-slate-400 shrink-0"></span>
           <span>Postman / REST</span>
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/25">
-        <span className="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-600 dark:bg-slate-400 shrink-0"></span>
         <span>Otomasyon</span>
       </span>
     );
@@ -411,9 +411,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* 2. Top 4 Compact Metric Cards (Large Icons on the Far Left) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Card 1: Projeler */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] shadow-xs hover:border-blue-500/40 transition-all flex items-center space-x-3.5">
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] shadow-xs hover:border-slate-400 dark:hover:border-slate-600 transition-all flex items-center space-x-3.5">
           {/* Large Left Icon */}
-          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-600 dark:text-blue-400">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
             <Layers className="w-7 h-7" />
           </div>
           <div className="flex-1 min-w-0">
@@ -424,7 +424,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {totalProjectsCount}
             </div>
             <div className="text-xs font-medium text-slate-500 dark:text-[#8e9bb0] mt-0.5 flex items-center gap-1.5 truncate">
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">Aktif {activeProjectsCount}</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Aktif {activeProjectsCount}</span>
               <span>•</span>
               <span>Arşiv {archivedProjectsCount}</span>
             </div>
@@ -434,21 +434,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card 2: Test Planları */}
         <div
           onClick={onNavigateToPlans}
-          className="p-4 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] shadow-xs hover:border-emerald-500/40 transition-all flex items-center space-x-3.5 cursor-pointer group"
+          className="p-4 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] shadow-xs hover:border-slate-400 dark:hover:border-slate-600 transition-all flex items-center space-x-3.5 cursor-pointer group"
         >
           {/* Large Left Icon */}
-          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 group-hover:scale-105 transition-transform">
             <Calendar className="w-7 h-7" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#8e9bb0] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#8e9bb0] group-hover:text-[#b83a4b] transition-colors">
               Test Planları
             </span>
             <div className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-slate-50 tracking-tight mt-0.5">
               {totalPlansCount}
             </div>
             <div className="text-xs font-medium text-slate-500 dark:text-[#8e9bb0] mt-0.5 flex items-center gap-1.5 truncate">
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">Aktif {activePlansCount}</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Aktif {activePlansCount}</span>
               <span>•</span>
               <span>Tamamlanan {completedPlansCount}</span>
             </div>
@@ -458,14 +458,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card 3: Test Senaryoları */}
         <div
           onClick={onNavigateToExplorer}
-          className="p-4 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] shadow-xs hover:border-amber-500/40 transition-all flex items-center space-x-3.5 cursor-pointer group"
+          className="p-4 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] shadow-xs hover:border-slate-400 dark:hover:border-slate-600 transition-all flex items-center space-x-3.5 cursor-pointer group"
         >
           {/* Large Left Icon */}
-          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 group-hover:scale-105 transition-transform">
             <FileText className="w-7 h-7" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#8e9bb0] group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#8e9bb0] group-hover:text-[#b83a4b] transition-colors">
               Test Senaryoları
             </span>
             <div className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-slate-50 tracking-tight mt-0.5">
@@ -474,7 +474,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="text-xs font-medium text-slate-500 dark:text-[#8e9bb0] mt-0.5 flex items-center gap-1.5 truncate">
               <span>Toplam</span>
               <span>•</span>
-              <span className="text-blue-600 dark:text-blue-400 font-semibold">%{automatedRatio} Otomasyon</span>
+              <span className="text-slate-700 dark:text-slate-300 font-semibold">%{automatedRatio} Otomasyon</span>
             </div>
           </div>
         </div>
@@ -485,7 +485,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="p-4 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] shadow-xs hover:border-[#b83a4b]/40 transition-all flex items-center space-x-3.5 cursor-pointer group"
         >
           {/* Large Left Icon */}
-          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:scale-105 transition-transform">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-[#b83a4b]/10 text-[#b83a4b] group-hover:scale-105 transition-transform">
             <CheckCircle2 className="w-7 h-7" />
           </div>
           <div className="flex-1 min-w-0">
