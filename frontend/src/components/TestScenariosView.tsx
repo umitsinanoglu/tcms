@@ -269,15 +269,15 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
 
           {/* Table with Clean Columns */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-xs border-collapse min-w-full">
               <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
                 <tr className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                  <th className="py-2.5 px-4 w-32">KOD</th>
-                  <th className="py-2.5 px-3">TEST SENARYOSU</th>
-                  <th className="py-2.5 px-3 w-40">MODÜL</th>
-                  <th className="py-2.5 px-3 w-36">JIRA BAĞLANTISI</th>
-                  <th className="py-2.5 px-3 w-28">ADIM SAYISI</th>
-                  <th className="py-2.5 px-4 text-right w-24">İŞLEMLER</th>
+                  <th className="py-2.5 px-4 w-28 whitespace-nowrap">KOD</th>
+                  <th className="py-2.5 px-3 min-w-[220px] whitespace-nowrap">TEST SENARYOSU</th>
+                  <th className="py-2.5 px-3 w-36 whitespace-nowrap">MODÜL</th>
+                  <th className="py-2.5 px-3 w-32 whitespace-nowrap">JIRA BAĞLANTISI</th>
+                  <th className="py-2.5 px-3 w-28 whitespace-nowrap">ADIM SAYISI</th>
+                  <th className="py-2.5 px-4 text-right w-24 whitespace-nowrap">İŞLEMLER</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
@@ -312,17 +312,17 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                         className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
                       >
                         {/* Code Badge */}
-                        <td className="py-2.5 px-4">
+                        <td className="py-2.5 px-4 whitespace-nowrap">
                           <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                             {tc.code}
                           </span>
                         </td>
 
                         {/* Title & Description */}
-                        <td className="py-2.5 px-3">
-                          <div className="min-w-0 max-w-xl">
+                        <td className="py-2.5 px-3 min-w-0 max-w-xl whitespace-nowrap">
+                          <div className="min-w-0">
                             <p
-                              className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate"
+                              className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate text-xs"
                               title={tc.description ? `${tc.title}\n\nAçıklama: ${tc.description}` : tc.title}
                             >
                               {tc.title}
@@ -339,15 +339,15 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                         </td>
 
                         {/* Module */}
-                        <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 font-medium">
-                          <div className="flex items-center space-x-1.5 truncate max-w-[140px]">
+                        <td className="py-2.5 px-3 whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">
+                          <div className="flex items-center space-x-1.5 truncate max-w-[140px]" title={tc.suite?.name || 'Ana Modül'}>
                             <Folder className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                             <span className="truncate">{tc.suite?.name || 'Ana Modül'}</span>
                           </div>
                         </td>
 
                         {/* Jira Link */}
-                        <td className="py-2.5 px-3">
+                        <td className="py-2.5 px-3 whitespace-nowrap">
                           {tc.jiraStoryKey ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-mono text-[10px] font-bold">
                               {tc.jiraStoryKey}
@@ -360,12 +360,12 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                         </td>
 
                         {/* Steps Count */}
-                        <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+                        <td className="py-2.5 px-3 whitespace-nowrap text-slate-600 dark:text-slate-400 font-mono text-[11px]">
                           {tc.steps?.length || 0} Adım
                         </td>
 
                         {/* Actions (Quick Run, Edit, Delete) */}
-                        <td className="py-2.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-2.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end space-x-1">
                             {/* Quick Run Scenario */}
                             {(onOpenQuickRun || onRunSingleCase) && (
@@ -375,7 +375,7 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                                   if (onOpenQuickRun) onOpenQuickRun(tc);
                                   else if (onRunSingleCase) onRunSingleCase(tc);
                                 }}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 transition-all cursor-pointer shadow-2xs"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 transition-all cursor-pointer shadow-2xs"
                                 title="Bu Senaryoyu Hızlı Koş"
                                 aria-label="Hızlı Koş"
                               >
