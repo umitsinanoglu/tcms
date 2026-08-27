@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Sidebar gezinmelerinde ve sekme geçişlerinde her zaman kök dizine yönlendirme sağlandı
 - Top navigasyon hiyerarşik breadcrumb yapısı, tek harfli kullanıcı avatarı, kompakt arama ve sağa yaslı proje seçici güncellendi
 - Top navigasyon ve sol menü yapısı güncellendi: RBAC ikonu sol alt köşeye taşındı, bildirimler kaldırıldı, arama esnetildi ve site ağacı sol menüye entegre edildi
 - Sidebar genişliği ve Header logo/ayraç hizalaması 280px olarak eşitlendi
