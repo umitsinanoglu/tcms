@@ -430,7 +430,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
               ADMIN: Tam Yetki + Kullanıcı Yönetimi
             </span>
             <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-mono font-bold text-[10px]">
-              TEST_LEAD: Plan/Suite/Case/Koşu Yönetimi
+              TEST_LEAD: Plan/Modül/Case/Koşu Yönetimi
             </span>
             <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px]">
               TESTER: Case Ekleme & Koşma
