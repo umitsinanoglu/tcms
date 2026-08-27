@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- DefectsView re-render ve sonsuz döngü sorunu giderildi (useRef ve callback stabilizasyonu)
+- Global arama kutusuna Defect detayına ve Test Koşumlarına doğrudan gitme desteği eklendi
 - Modül silindiğinde test senaryolarının korunması (SetNull) ve silinme engeli
 - Header dikey ayraç konumu sidebar'ın sağ kenar çizgisi (x = 280px) ile tam hizalandı
 - Test Planları tablosunda sabit kolonlar (Tür, Senaryo, Başarı Oranı, Durum, Son Çalıştırma, İşlemler) kilitlendi; Test Planı ve Kapsam kolonları esnek oranlandı

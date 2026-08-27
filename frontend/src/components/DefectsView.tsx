@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Project,
   TestCase,
@@ -44,6 +44,9 @@ interface DefectsViewProps {
   onNavigateToCase?: (caseId: string) => void;
   onNavigateToRun?: (runId: string) => void;
   onDefectsCountChange?: (count: number) => void;
+  initialSelectedDefect?: Defect | null;
+  onClearInitialDefect?: () => void;
+  onDefectsLoaded?: (defects: Defect[]) => void;
 }
 
 type ViewMode = 'LIST' | 'BOARD' | 'ANALYTICS';
@@ -54,6 +57,9 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
   onNavigateToCase,
   onNavigateToRun,
   onDefectsCountChange,
+  initialSelectedDefect = null,
+  onClearInitialDefect,
+  onDefectsLoaded,
 }) => {
   const [defects, setDefects] = useState<Defect[]>([]);
   const [stats, setStats] = useState<DefectStats | null>(null);
@@ -74,9 +80,24 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
   const [selectedDefect, setSelectedDefect] = useState<Defect | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
+  // Keep callback refs stable to prevent re-render loops
+  const onDefectsCountChangeRef = useRef(onDefectsCountChange);
+  onDefectsCountChangeRef.current = onDefectsCountChange;
+
+  const onDefectsLoadedRef = useRef(onDefectsLoaded);
+  onDefectsLoadedRef.current = onDefectsLoaded;
+
+  // Auto-open initialSelectedDefect when passed
+  useEffect(() => {
+    if (initialSelectedDefect) {
+      setSelectedDefect(initialSelectedDefect);
+      setIsDetailModalOpen(true);
+    }
+  }, [initialSelectedDefect?.id]);
+
   // Load defects and stats
   const fetchDefects = useCallback(async () => {
-    if (!selectedProject) return;
+    if (!selectedProject?.id) return;
     try {
       setIsLoading(true);
       const [defectsData, statsData] = await Promise.all([
@@ -85,20 +106,21 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
       ]);
       setDefects(defectsData);
       setStats(statsData);
+      onDefectsLoadedRef.current?.(defectsData);
 
       // Notify parent about active defect count (Open + In Progress + Reopened)
-      if (onDefectsCountChange) {
+      if (onDefectsCountChangeRef.current) {
         const activeCount = defectsData.filter(
           (d) => d.status === 'OPEN' || d.status === 'IN_PROGRESS' || d.status === 'REOPENED'
         ).length;
-        onDefectsCountChange(activeCount);
+        onDefectsCountChangeRef.current(activeCount);
       }
     } catch (err) {
       console.error('Failed to fetch defects:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedProject, onDefectsCountChange]);
+  }, [selectedProject?.id]);
 
   useEffect(() => {
     fetchDefects();
@@ -969,6 +991,7 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
         onClose={() => {
           setIsDetailModalOpen(false);
           setSelectedDefect(null);
+          onClearInitialDefect?.();
         }}
         defect={selectedDefect}
         onUpdateStatus={handleUpdateStatus}
