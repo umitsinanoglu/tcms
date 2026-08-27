@@ -810,12 +810,17 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      {/* Top Header: Clean Brand, Project Selector, Doc Link, Theme Toggle, User Initial Avatar */}
+      {/* Top Header: Clean Brand, Breadcrumbs Hierarchy, Compact Search, Project Selector, Theme Toggle, Single Letter Avatar */}
       <Header
         projects={projects}
         selectedProject={selectedProject}
         testCases={allCases}
         testPlans={testPlans}
+        activeTab={activeTab}
+        selectedSuite={selectedSuite}
+        selectedCase={selectedCase}
+        selectedPlan={selectedPlan}
+        selectedRun={selectedRun}
         onSelectProject={(p) => handleSelectProject(p)}
         onOpenNewProject={() => setIsNewProjectOpen(true)}
         onEditProject={(p) => {
@@ -824,64 +829,27 @@ export default function Home() {
         }}
         onDeleteProject={handleDeleteProject}
         onNavigateHome={() => handleTabChange('DASHBOARD')}
-        onOpenUserManagement={() => setIsUserManagementOpen(true)}
         onSelectCase={(tc) => handleSelectCase(tc)}
         onSelectPlan={(plan) => {
           setSelectedPlan(plan);
           setActiveRunTestPlan(plan);
           handleTabChange('PLANS');
         }}
+        onTabChange={handleTabChange}
       />
 
       {/* Main Workspace Layout with Persistent AppSidebar */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Persistent & Collapsible Sidebar */}
+        {/* Left Persistent & Collapsible Sidebar with Admin Settings */}
         <AppSidebar
           projects={projects}
           selectedProject={selectedProject}
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          tree={tree}
-          rootTestCases={rootCases}
           testCasesCount={allCases.length}
           testPlansCount={testPlans.length}
           testRunsCount={testRunsCount}
-          selectedCaseId={selectedCase?.id || null}
-          selectedSuiteId={selectedSuite?.id || null}
-          onSelectProject={(p) => handleSelectProject(p)}
-          onOpenNewProject={() => setIsNewProjectOpen(true)}
-          onEditProject={(p) => {
-            setActiveEditProject(p);
-            setIsEditProjectOpen(true);
-          }}
-          onDeleteProject={handleDeleteProject}
-          onSelectCase={(tc) => handleSelectCase(tc)}
-          onSelectSuite={(suite) => handleSelectSuite(suite)}
-          onAddSubSuite={(parentSuiteId) => {
-            setActiveParentSuiteId(parentSuiteId);
-            setIsNewSuiteOpen(true);
-          }}
-          onEditSuite={(suiteNode) => {
-            setActiveEditSuite(suiteNode);
-            setIsEditSuiteOpen(true);
-          }}
-          onDeleteSuite={handleDeleteSuite}
-          onAddCaseInSuite={(suiteId) => {
-            setActiveParentSuiteId(suiteId);
-            setIsNewCaseOpen(true);
-          }}
-          onOpenNewSuite={() => {
-            setActiveParentSuiteId(null);
-            setIsNewSuiteOpen(true);
-          }}
-          onOpenNewCase={() => {
-            setActiveParentSuiteId(selectedSuite?.id || null);
-            setIsNewCaseOpen(true);
-          }}
-          onRunCase={handleRunCase}
-          onRunSuite={handleRunSuite}
-          onReorderSuite={handleReorderSuite}
-          isLoadingTree={isLoadingTree}
+          onOpenUserManagement={() => setIsUserManagementOpen(true)}
         />
 
         {/* Right Main Content Display Area */}

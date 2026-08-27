@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Project, TestCase, TestPlan } from '@/services/api';
+import { Project, TestCase, TestPlan, TestRun, SuiteTreeNode } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { ThemeSelector } from './ThemeSelector';
 import { TTBLogo } from './TTBLogo';
 import {
-  Users,
   Eye,
   LogOut,
   ChevronDown,
+  ChevronRight,
   FolderKanban,
   Search,
   X,
@@ -15,26 +15,32 @@ import {
   Pencil,
   Trash2,
   Plus,
-  HelpCircle,
-  Bell,
   FileText,
   ClipboardList,
   BookOpen,
+  LayoutDashboard,
+  ChevronsUpDown,
 } from 'lucide-react';
+import { SidebarTab } from './AppSidebar';
 
 interface HeaderProps {
   projects?: Project[];
   selectedProject?: Project | null;
   testCases?: TestCase[];
   testPlans?: TestPlan[];
+  activeTab?: SidebarTab;
+  selectedSuite?: SuiteTreeNode | null;
+  selectedCase?: TestCase | null;
+  selectedPlan?: TestPlan | null;
+  selectedRun?: TestRun | null;
   onSelectProject?: (project: Project) => void;
   onOpenNewProject?: () => void;
   onEditProject?: (project: Project) => void;
   onDeleteProject?: (projectId: string) => void;
   onNavigateHome?: () => void;
-  onOpenUserManagement?: () => void;
   onSelectCase?: (testCase: TestCase) => void;
   onSelectPlan?: (plan: TestPlan) => void;
+  onTabChange?: (tab: SidebarTab) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,16 +48,21 @@ export const Header: React.FC<HeaderProps> = ({
   selectedProject = null,
   testCases = [],
   testPlans = [],
+  activeTab = 'DASHBOARD',
+  selectedSuite = null,
+  selectedCase = null,
+  selectedPlan = null,
+  selectedRun = null,
   onSelectProject,
   onOpenNewProject,
   onEditProject,
   onDeleteProject,
   onNavigateHome,
-  onOpenUserManagement,
   onSelectCase,
   onSelectPlan,
+  onTabChange,
 }) => {
-  const { currentUser, role, isAdmin, isViewer, can, logout } = useAuth();
+  const { currentUser, role, isViewer, can, logout } = useAuth();
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const [projectSearchQuery, setProjectSearchQuery] = useState('');
@@ -59,14 +70,12 @@ export const Header: React.FC<HeaderProps> = ({
   // Global Top Navigation Search State
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const projectDropdownRef = useRef<HTMLDivElement>(null);
   const projectSearchInputRef = useRef<HTMLInputElement>(null);
   const globalSearchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  const notificationRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on click outside or Escape key
   useEffect(() => {
@@ -80,9 +89,6 @@ export const Header: React.FC<HeaderProps> = ({
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setIsSearchFocused(false);
       }
-      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setShowNotifications(false);
-      }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -95,7 +101,6 @@ export const Header: React.FC<HeaderProps> = ({
         setIsUserDropdownOpen(false);
         setIsProjectDropdownOpen(false);
         setIsSearchFocused(false);
-        setShowNotifications(false);
       }
     };
 
@@ -107,7 +112,10 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, []);
 
-  const userInitial = currentUser?.name?.trim() ? currentUser.name.trim().charAt(0).toUpperCase() : 'U';
+  // Compute single-letter uppercase avatar initial (proper Turkish character support, e.g. Ümit -> Ü)
+  const userInitial = currentUser?.name?.trim()
+    ? currentUser.name.trim().charAt(0).toLocaleUpperCase('tr-TR')
+    : 'U';
 
   const getRoleBadge = (r: string) => {
     switch (r) {
@@ -164,209 +172,113 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, [globalSearchQuery, testCases, testPlans, projects]);
 
+  // Current active leaf item for breadcrumbs
+  const getActiveLeaf = () => {
+    if (activeTab === 'PLANS') {
+      return selectedPlan ? selectedPlan.title : 'Test Planları';
+    }
+    if (activeTab === 'EXPLORER') {
+      if (selectedCase) return `${selectedCase.code} - ${selectedCase.title}`;
+      if (selectedSuite) return selectedSuite.name;
+      return 'Test Senaryoları';
+    }
+    if (activeTab === 'RUNS') {
+      return selectedRun ? selectedRun.title : 'Test Koşumları';
+    }
+    if (activeTab === 'REPORTS') {
+      return 'Test Raporları';
+    }
+    return null;
+  };
+
+  const activeLeaf = getActiveLeaf();
+
   return (
     <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-40 sticky top-0 transition-colors duration-200 select-none">
-      {/* Left Area: Official Brand Logo + Top Project Selector */}
-      <div className="flex items-center space-x-4 sm:space-x-6 shrink-0 min-w-0">
-        {/* Brand Logo */}
-        <div
-          onClick={onNavigateHome}
-          className="flex items-center shrink-0 cursor-pointer hover:opacity-95 transition-opacity"
-          title="Ana Sayfa / Dashboard"
-        >
-          <TTBLogo variant="horizontal" height={44} showSubtitle={true} subtitleText="Test Yönetim Sistemi" />
+      {/* Left Area: Official Brand Logo & Breadcrumb Hierarchy */}
+      <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+        {/* Brand Logo Box */}
+        <div className="flex items-center shrink-0 pr-3 sm:pr-4">
+          <div
+            onClick={onNavigateHome}
+            className="flex items-center shrink-0 cursor-pointer hover:opacity-95 transition-opacity"
+            title="Ana Sayfa / Dashboard"
+          >
+            <TTBLogo variant="horizontal" height={34} showSubtitle={true} subtitleText="Test Yönetim Sistemi" />
+          </div>
         </div>
 
         {/* Vertical Divider */}
-        <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 hidden md:block shrink-0" />
+        <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 hidden md:block shrink-0" />
 
-        {/* Top Active Project Selector Combobox */}
-        {onSelectProject && (
-          <div className="relative hidden md:block" ref={projectDropdownRef}>
-            <button
-              type="button"
-              onClick={() => {
-                setIsProjectDropdownOpen((prev) => !prev);
-                if (!isProjectDropdownOpen) {
-                  setTimeout(() => projectSearchInputRef.current?.focus(), 50);
-                }
-              }}
-              className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl border text-left transition-all duration-150 cursor-pointer max-w-[260px] lg:max-w-[320px] ${
-                isProjectDropdownOpen
-                  ? 'bg-slate-50 dark:bg-[#1d232f] border-[#b83a4b]/50 ring-2 ring-[#b83a4b]/20 shadow-sm'
-                  : 'bg-slate-100/80 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-[#1d232f] border-slate-200/80 dark:border-slate-700/70 hover:border-[#b83a4b]/30'
-              }`}
-              title="Aktif Test Projesini Değiştir"
-            >
-              <FolderKanban className="w-4.5 h-4.5 text-[#b83a4b] shrink-0" />
-              {selectedProject ? (
-                <div className="flex items-center space-x-2 min-w-0 flex-1 truncate">
-                  <span className="font-mono text-xs font-bold text-[#b83a4b] dark:text-[#d66b7a] bg-[#b83a4b]/10 px-1.5 py-0.5 rounded border border-[#b83a4b]/20 shrink-0">
-                    [{selectedProject.key}]
-                  </span>
-                  <span className="text-sm font-bold truncate text-slate-900 dark:text-slate-100">
-                    {selectedProject.name}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-xs text-slate-400 font-medium truncate">Proje Seçin...</span>
-              )}
-              <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                  isProjectDropdownOpen ? 'rotate-180 text-[#b83a4b]' : ''
-                }`}
-              />
-            </button>
+        {/* Dynamic Breadcrumb Hierarchy (Screenshot Style) */}
+        <nav aria-label="Breadcrumb" className="hidden sm:flex items-center space-x-1.5 text-xs text-slate-500 dark:text-slate-400 min-w-0 overflow-hidden truncate">
+          <button
+            type="button"
+            onClick={onNavigateHome}
+            className="flex items-center space-x-1 text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] transition-colors font-medium cursor-pointer shrink-0"
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Dashboard</span>
+          </button>
 
-            {/* Project Switcher Popover Menu */}
-            {isProjectDropdownOpen && (
-              <div className="absolute left-0 mt-2 w-80 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col">
-                {/* Search Box */}
-                <div className="p-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60">
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      ref={projectSearchInputRef}
-                      type="text"
-                      placeholder="Proje ara..."
-                      value={projectSearchQuery}
-                      onChange={(e) => setProjectSearchQuery(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 pl-8 pr-7 py-2 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]/50"
-                    />
-                    {projectSearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setProjectSearchQuery('')}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
+          <ChevronRight className="w-3 h-3 text-slate-400 dark:text-slate-600 shrink-0" />
 
-                {/* Projects List */}
-                <div className="max-h-64 overflow-y-auto p-1.5 space-y-1">
-                  {filteredProjects.length === 0 ? (
-                    <div className="text-center py-4 px-3 text-slate-400 text-xs">
-                      <FolderKanban className="w-6 h-6 mx-auto mb-1 opacity-30 text-slate-400" />
-                      <p>Proje bulunamadı</p>
-                    </div>
-                  ) : (
-                    filteredProjects.map((p) => {
-                      const isSelected = selectedProject?.id === p.id;
-                      return (
-                        <div
-                          key={p.id}
-                          onClick={() => {
-                            if (onSelectProject) onSelectProject(p);
-                            setIsProjectDropdownOpen(false);
-                            setProjectSearchQuery('');
-                          }}
-                          className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition-all group ${
-                            isSelected
-                              ? 'bg-[#b83a4b]/10 dark:bg-[#b83a4b]/15 border border-[#b83a4b]/30 text-[#b83a4b] dark:text-[#d66b7a] font-semibold'
-                              : 'hover:bg-slate-100 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300 border border-transparent'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-2.5 min-w-0 pr-2 flex-1">
-                            <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/20 shrink-0">
-                              [{p.key}]
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-bold truncate text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] transition-colors">
-                                {p.name}
-                              </p>
-                              {p.description && (
-                                <p className="text-[11px] text-slate-400 truncate mt-0.5">{p.description}</p>
-                              )}
-                            </div>
-                          </div>
+          <button
+            type="button"
+            onClick={onNavigateHome}
+            className="hover:text-[#b83a4b] dark:hover:text-[#d66b7a] transition-colors font-medium cursor-pointer shrink-0"
+          >
+            Projeler
+          </button>
 
-                          <div className="flex items-center space-x-1 shrink-0">
-                            {isSelected && <Check className="w-4 h-4 text-[#b83a4b] shrink-0" />}
-                            {onEditProject && can('EDIT_PROJECT') && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setIsProjectDropdownOpen(false);
-                                  onEditProject(p);
-                                }}
-                                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Projeyi Düzenle"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            {onDeleteProject && can('DELETE_PROJECT') && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setIsProjectDropdownOpen(false);
-                                  if (confirm(`'${p.name}' adlı Test Projesini silmek istediğinize emin misiniz?`)) {
-                                    onDeleteProject(p.id);
-                                  }
-                                }}
-                                className="p-1.5 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Projeyi Sil"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
+          {selectedProject && (
+            <>
+              <ChevronRight className="w-3 h-3 text-slate-400 dark:text-slate-600 shrink-0" />
+              <span
+                onClick={() => onTabChange?.('DASHBOARD')}
+                className="font-semibold text-slate-700 dark:text-slate-200 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] transition-colors cursor-pointer truncate max-w-[140px] md:max-w-[200px]"
+                title={selectedProject.name}
+              >
+                {selectedProject.name}
+              </span>
+            </>
+          )}
 
-                {/* New Project Action */}
-                {can('CREATE_PROJECT') && onOpenNewProject && (
-                  <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsProjectDropdownOpen(false);
-                        onOpenNewProject();
-                      }}
-                      className="w-full flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl text-xs font-semibold text-[#b83a4b] dark:text-[#d66b7a] hover:bg-[#b83a4b]/10 transition-colors cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Yeni Test Projesi Oluştur</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+          {activeLeaf && (
+            <>
+              <ChevronRight className="w-3 h-3 text-slate-400 dark:text-slate-600 shrink-0" />
+              <span className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-[150px] md:max-w-[240px]">
+                {activeLeaf}
+              </span>
+            </>
+          )}
+        </nav>
       </div>
 
-      {/* Right Area: Top Search Bar + Quick Actions */}
-      <div className="flex items-center space-x-2.5 sm:space-x-3.5 shrink-0">
-        {/* 1. Top Navigation Search Bar with ⌘K */}
+      {/* Right Area: Compact Search, Project Selector (En sağa yaslı), Docs, Theme, Single Letter Avatar */}
+      <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
+        {/* 1. Compact Global Search Bar */}
         <div className="relative" ref={searchContainerRef}>
           <div
-            className={`flex items-center space-x-2 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-[#1d232f] border transition-all duration-150 rounded-xl px-3 py-2 ${
+            className={`flex items-center space-x-2 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-[#1d232f] border transition-all duration-150 rounded-xl px-2.5 py-1.5 w-40 sm:w-52 md:w-60 ${
               isSearchFocused
                 ? 'bg-white dark:bg-[#1d232f] border-[#b83a4b]/50 ring-2 ring-[#b83a4b]/20 shadow-sm'
                 : 'border-slate-200/80 dark:border-slate-700/70 hover:border-[#b83a4b]/30'
             }`}
           >
-            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+            <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <input
               ref={globalSearchInputRef}
               type="text"
-              placeholder="Senaryo, plan veya proje ara..."
+              placeholder="Ara..."
               value={globalSearchQuery}
               onChange={(e) => {
                 setGlobalSearchQuery(e.target.value);
                 setIsSearchFocused(true);
               }}
               onFocus={() => setIsSearchFocused(true)}
-              className="w-28 sm:w-44 md:w-56 lg:w-64 bg-transparent text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
+              className="flex-1 bg-transparent text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none min-w-0"
             />
             {globalSearchQuery ? (
               <button
@@ -375,23 +287,23 @@ export const Header: React.FC<HeaderProps> = ({
                   setGlobalSearchQuery('');
                   globalSearchInputRef.current?.focus();
                 }}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer shrink-0"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             ) : (
-              <kbd className="hidden sm:inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-white dark:bg-slate-700/70 rounded border border-slate-200 dark:border-slate-600 shadow-2xs">
+              <kbd className="hidden md:inline-flex items-center justify-center px-1.5 py-0.5 text-[9px] font-mono text-slate-400 bg-white dark:bg-slate-700/70 rounded border border-slate-200 dark:border-slate-600 shadow-2xs shrink-0">
                 ⌘K
               </kbd>
             )}
           </div>
 
-          {/* Global Search Results Flyout */}
+          {/* Search Flyout */}
           {isSearchFocused && globalSearchQuery.trim().length > 0 && (
             <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 max-h-[420px] flex flex-col">
               <div className="p-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between text-[11px] font-semibold text-slate-500">
                 <span>Arama Sonuçları ({searchResults?.total || 0})</span>
-                <span className="font-mono text-[10px] text-slate-400">ESC ile kapat</span>
+                <span className="font-mono text-[10px] text-slate-400">ESC</span>
               </div>
 
               <div className="overflow-y-auto p-2 space-y-3 flex-1">
@@ -511,7 +423,182 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* 2. Help / Docs Button */}
+        {/* 2. Compact Project Selector (Icon + Name Only, Kısaltma Yok, En Sağa Yaslı) */}
+        {onSelectProject && (
+          <div className="relative shrink-0" ref={projectDropdownRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsProjectDropdownOpen((prev) => !prev);
+                if (!isProjectDropdownOpen) {
+                  setTimeout(() => projectSearchInputRef.current?.focus(), 50);
+                }
+              }}
+              className={`flex items-center space-x-2 px-2.5 py-1.5 rounded-xl border text-left transition-all duration-150 cursor-pointer max-w-[180px] sm:max-w-[220px] ${
+                isProjectDropdownOpen
+                  ? 'bg-slate-50 dark:bg-[#1d232f] border-[#b83a4b]/50 ring-2 ring-[#b83a4b]/20 shadow-sm'
+                  : 'bg-slate-100/80 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-[#1d232f] border-slate-200/80 dark:border-slate-700/70 hover:border-[#b83a4b]/30'
+              }`}
+              title={selectedProject ? `Aktif Proje: ${selectedProject.name}` : 'Proje Seçin'}
+            >
+              {/* Meaningful colored project icon badge (Screenshot style) */}
+              <div className="w-5 h-5 rounded-md bg-[#b83a4b] text-white flex items-center justify-center font-bold text-[11px] shrink-0 shadow-2xs">
+                {selectedProject?.name?.charAt(0).toLocaleUpperCase('tr-TR') || 'P'}
+              </div>
+
+              {selectedProject ? (
+                <span className="text-xs font-bold truncate text-slate-900 dark:text-slate-100 flex-1">
+                  {selectedProject.name}
+                </span>
+              ) : (
+                <span className="text-xs text-slate-400 font-medium truncate flex-1">Proje Seçin</span>
+              )}
+
+              <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            </button>
+
+            {/* Project Switcher Popover Menu */}
+            {isProjectDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col">
+                {/* Search Box */}
+                <div className="p-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      ref={projectSearchInputRef}
+                      type="text"
+                      placeholder="Proje ara..."
+                      value={projectSearchQuery}
+                      onChange={(e) => setProjectSearchQuery(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 pl-8 pr-7 py-2 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]/50"
+                    />
+                    {projectSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setProjectSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Projects List */}
+                <div className="max-h-64 overflow-y-auto p-1.5 space-y-1">
+                  {filteredProjects.length === 0 ? (
+                    <div className="text-center py-4 px-3 text-slate-400 text-xs">
+                      <FolderKanban className="w-6 h-6 mx-auto mb-1 opacity-30 text-slate-400" />
+                      <p>Proje bulunamadı</p>
+                    </div>
+                  ) : (
+                    filteredProjects.map((p) => {
+                      const isSelected = selectedProject?.id === p.id;
+                      return (
+                        <div
+                          key={p.id}
+                          onClick={() => {
+                            if (onSelectProject) onSelectProject(p);
+                            setIsProjectDropdownOpen(false);
+                            setProjectSearchQuery('');
+                          }}
+                          className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition-all group ${
+                            isSelected
+                              ? 'bg-[#b83a4b]/10 dark:bg-[#b83a4b]/15 border border-[#b83a4b]/30 text-[#b83a4b] dark:text-[#d66b7a] font-semibold'
+                              : 'hover:bg-slate-100 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300 border border-transparent'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2.5 min-w-0 pr-2 flex-1">
+                            <div className="w-6 h-6 rounded-md bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a] font-bold text-xs flex items-center justify-center shrink-0">
+                              {p.name.charAt(0).toLocaleUpperCase('tr-TR')}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold truncate text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] transition-colors">
+                                {p.name}
+                              </p>
+                              {p.description && (
+                                <p className="text-[11px] text-slate-400 truncate mt-0.5">{p.description}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-1 shrink-0">
+                            {isSelected && <Check className="w-4 h-4 text-[#b83a4b] shrink-0" />}
+                            {onEditProject && can('EDIT_PROJECT') && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsProjectDropdownOpen(false);
+                                  onEditProject(p);
+                                }}
+                                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Projeyi Düzenle"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {onDeleteProject && can('DELETE_PROJECT') && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsProjectDropdownOpen(false);
+                                  if (confirm(`'${p.name}' adlı Test Projesini silmek istediğinize emin misiniz?`)) {
+                                    onDeleteProject(p.id);
+                                  }
+                                }}
+                                className="p-1.5 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Projeyi Sil"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* New Project Action */}
+                {can('CREATE_PROJECT') && onOpenNewProject && (
+                  <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProjectDropdownOpen(false);
+                        onOpenNewProject();
+                      }}
+                      className="w-full flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl text-xs font-semibold text-[#b83a4b] dark:text-[#d66b7a] hover:bg-[#b83a4b]/10 transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Yeni Test Projesi Oluştur</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Viewer Alert */}
+        {isViewer && (
+          <div
+            className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-semibold"
+            title="Gözlemci modundasınız. Veriler üzerinde değişiklik yapamazsınız."
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Salt Okunur</span>
+          </div>
+        )}
+
+        <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 shrink-0" />
+
+        {/* 3. Theme Selector */}
+        <ThemeSelector />
+
+        {/* 4. Help / Docs Button */}
         <a
           href={
             process.env.NEXT_PUBLIC_API_URL
@@ -520,107 +607,25 @@ export const Header: React.FC<HeaderProps> = ({
           }
           target="_blank"
           rel="noopener noreferrer"
-          className="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] bg-slate-100/90 dark:bg-slate-800/80 hover:bg-[#b83a4b]/10 dark:hover:bg-[#b83a4b]/15 border border-slate-200 dark:border-slate-700 hover:border-[#b83a4b]/30 dark:hover:border-[#b83a4b]/40 rounded-xl transition-all shadow-xs shrink-0 cursor-pointer"
+          className="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] bg-slate-100/90 dark:bg-slate-800/80 hover:bg-[#b83a4b]/10 dark:hover:bg-[#b83a4b]/15 border border-slate-200 dark:border-slate-700 hover:border-[#b83a4b]/30 dark:hover:border-[#b83a4b]/40 rounded-xl transition-all shadow-xs shrink-0 cursor-pointer"
           title="Yardım ve API Dokümantasyonu (Yeni Sekme)"
           aria-label="Yardım"
         >
-          <BookOpen className="w-4.5 h-4.5 text-[#b83a4b]" />
+          <BookOpen className="w-4 h-4 text-[#b83a4b]" />
         </a>
 
-        {/* 3. Notification Bell with Badge */}
-        <div className="relative" ref={notificationRef}>
-          <button
-            type="button"
-            onClick={() => setShowNotifications((prev) => !prev)}
-            className="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] bg-slate-100/90 dark:bg-slate-800/80 hover:bg-[#b83a4b]/10 dark:hover:bg-[#b83a4b]/15 border border-slate-200 dark:border-slate-700 hover:border-[#b83a4b]/30 dark:hover:border-[#b83a4b]/40 rounded-xl transition-all shadow-xs shrink-0 cursor-pointer relative"
-            title="Bildirimler (3 Yeni)"
-            aria-label="Bildirimler"
-          >
-            <Bell className="w-4.5 h-4.5 text-[#b83a4b]" />
-            <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-[#b83a4b] text-white font-bold text-[9px] flex items-center justify-center shadow-xs border-2 border-white dark:border-slate-900">
-              3
-            </span>
-          </button>
-
-          {/* Notifications Dropdown */}
-          {showNotifications && (
-            <div className="absolute right-0 mt-2 w-76 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-              <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">Bildirimler</span>
-                <span className="text-[10px] font-bold text-[#b83a4b] font-mono">3 Okunmamış</span>
-              </div>
-              <div className="p-2 space-y-1.5 text-xs">
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                  <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs">Sprint 13 Regresyon Tamamlandı</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">210 testten %76 başarı oranı ile sonuçlandı.</p>
-                </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                  <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs">Yeni Test Planı Eklendi</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Ödeme Modülü Test Planı aktif edildi.</p>
-                </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                  <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs">Jira Entegrasyonu Güncellendi</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Kayıtlı senaryolar senkronize edildi.</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 4. Viewer Mode Alert Indicator */}
-        {isViewer && (
-          <div
-            className="hidden md:flex items-center space-x-2 px-3 py-1.5 bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-semibold"
-            title="Gözlemci modundasınız. Veriler üzerinde değişiklik yapamazsınız."
-          >
-            <Eye className="w-4 h-4" />
-            <span>Salt Okunur</span>
-          </div>
-        )}
-
-        {/* 5. Admin: User Management Icon Button */}
-        {isAdmin && onOpenUserManagement && (
-          <button
-            type="button"
-            onClick={onOpenUserManagement}
-            className="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] bg-slate-100/90 dark:bg-slate-800/80 hover:bg-[#b83a4b]/10 dark:hover:bg-[#b83a4b]/15 border border-slate-200 dark:border-slate-700 hover:border-[#b83a4b]/30 dark:hover:border-[#b83a4b]/40 rounded-xl transition-all shadow-xs shrink-0 cursor-pointer"
-            title="Kullanıcı & Rol Yönetimi"
-            aria-label="Kullanıcı Yönetimi"
-          >
-            <Users className="w-4.5 h-4.5 text-[#b83a4b]" />
-          </button>
-        )}
-
-        {/* 6. Theme Selector Button */}
-        <ThemeSelector />
-
-        <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 shrink-0" />
-
-        {/* 7. User Profile Avatar & Dropdown */}
+        {/* 5. User Profile: ONLY Single Letter Circular Avatar (Screenshot style: e.g. Ü or A) */}
         <div className="relative" ref={userDropdownRef}>
           <button
             type="button"
             onClick={() => setIsUserDropdownOpen((prev) => !prev)}
-            className={`flex items-center space-x-2 p-1.5 pl-2 pr-3 rounded-full border transition-all duration-200 cursor-pointer ${
-              isUserDropdownOpen
-                ? 'bg-slate-100 dark:bg-[#1d232f] border-[#b83a4b]/50 ring-2 ring-[#b83a4b]/20 shadow-sm'
-                : 'bg-slate-100/80 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-[#1d232f] border-slate-200/80 dark:border-slate-700/70 hover:border-[#b83a4b]/30'
+            className={`w-8 h-8 rounded-full bg-gradient-to-tr from-[#821c2b] to-[#b83a4b] text-white font-bold text-xs sm:text-sm flex items-center justify-center shadow-xs transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-[#b83a4b]/40 ${
+              isUserDropdownOpen ? 'ring-2 ring-[#b83a4b] scale-105' : ''
             }`}
             title={`Kullanıcı: ${currentUser?.name || 'Kullanıcı'} (${role})`}
             aria-label="Kullanıcı Menüsü"
           >
-            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#821c2b] to-[#b83a4b] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
-              {userInitial}
-            </div>
-            <div className="hidden sm:flex flex-col text-left min-w-0 max-w-[120px]">
-              <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate leading-tight">
-                {currentUser?.name || 'Ahmet Yılmaz'}
-              </span>
-              <span className="text-[10px] text-slate-400 truncate leading-tight font-medium">
-                {role === 'ADMIN' ? 'Admin' : role === 'TEST_LEAD' ? 'Test Lead' : role === 'TESTER' ? 'Tester' : 'Viewer'}
-              </span>
-            </div>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            {userInitial}
           </button>
 
           {/* User Popover Menu */}

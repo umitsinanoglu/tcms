@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- Header dikey ayraç konumu sidebar'ın sağ kenar çizgisi (x = 280px) ile tam hizalandı
 - Test Planları tablosunda sabit kolonlar (Tür, Senaryo, Başarı Oranı, Durum, Son Çalıştırma, İşlemler) kilitlendi; Test Planı ve Kapsam kolonları esnek oranlandı
 - Test Planları tablosu aşırı sıkışmayı önleyecek akıllı minimum genişlik eşiği (980px) ve yatay kaydırma ile güncellendi
 - Test Planları tablosunda Test Planı kolonu ve diğer kolonlar responsive/table-fixed ile oranlandı
@@ -37,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Top navigasyon hiyerarşik breadcrumb yapısı, tek harfli kullanıcı avatarı, kompakt arama ve sağa yaslı proje seçici güncellendi
+- Top navigasyon ve sol menü yapısı güncellendi: RBAC ikonu sol alt köşeye taşındı, bildirimler kaldırıldı, arama esnetildi ve site ağacı sol menüye entegre edildi
+- Sidebar genişliği ve Header logo/ayraç hizalaması 280px olarak eşitlendi
 - Sol navigasyon menüsü daraltıldı ve Test Planları sağ detay kartı kaldırılarak tablo tam genişliğe genişletildi
 - Kurumsal Platin & Gri temada %80 gri tonları uygulandı; etiketler, statü kartları ve butonlar sade kurumsal standartlara getirildi
 - Test Planı detayında yeni senaryo oluşturma kaldırıldı, çoklu mevcut senaryo seçimi ve ekleme özelliği güçlendirildi
