@@ -17,7 +17,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsRight,
-  X,
   Play,
   Pencil,
   Trash2,
@@ -25,9 +24,7 @@ import {
   CheckCircle2,
   FolderKanban,
   Check,
-  ArrowRight,
   AlertTriangle,
-  PlayCircle,
   SlidersHorizontal,
 } from 'lucide-react';
 
@@ -62,8 +59,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>('ALL');
   const [statusDropdownFilter, setStatusDropdownFilter] = useState<string>('ALL');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [isInspectorActionsOpen, setIsInspectorActionsOpen] = useState(false);
 
   // Pagination State
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
@@ -78,11 +73,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   useEffect(() => {
     if (testPlans !== undefined) {
       setPlans(testPlans);
-      if (testPlans.length > 0) {
-        setSelectedPlanId((prev) => (prev && testPlans.some((p) => p.id === prev) ? prev : testPlans[0].id));
-      } else {
-        setSelectedPlanId(null);
-      }
     }
   }, [testPlans]);
 
@@ -97,11 +87,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
     try {
       const data = await TestPlansService.getAllByProject(project.id);
       setPlans(data || []);
-      if (data && data.length > 0) {
-        setSelectedPlanId((prev) => (prev && data.some((p) => p.id === prev) ? prev : data[0].id));
-      } else {
-        setSelectedPlanId(null);
-      }
     } catch (err) {
       console.error('Failed to load test plans:', err);
       setPlans([]);
@@ -125,7 +110,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
       } catch {
         // Ignore
       }
-      setSelectedPlanId(created.id);
     }
     await loadPlans();
   };
@@ -140,7 +124,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   const handleDeletePlan = async (id: string) => {
     if (!confirm('Bu test planını silmek istediğinize emin misiniz?')) return;
     await TestPlansService.delete(id);
-    if (selectedPlanId === id) setSelectedPlanId(null);
     await loadPlans();
   };
 
@@ -348,14 +331,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
 
   const totalPages = Math.ceil(filteredPlans.length / rowsPerPage) || 1;
 
-  // Selected plan object for inspector
-  const activeSelectedPlan = useMemo(() => {
-    if (!selectedPlanId) return filteredPlans[0] || plans[0] || null;
-    return plans.find((p) => p.id === selectedPlanId) || filteredPlans[0] || null;
-  }, [selectedPlanId, plans, filteredPlans]);
-
-  const activeSelectedStats = activeSelectedPlan ? planStatsMap.get(activeSelectedPlan.id) : null;
-
   if (!project) {
     return (
       <div className="flex-1 flex items-center justify-center p-6 text-slate-400">
@@ -531,10 +506,9 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Main Split View: Left Data Grid Table + Right Detail Drawer */}
-      <div className="min-w-0 px-6 pb-6 flex flex-col lg:flex-row gap-4">
-        {/* Left Side: Table & Tabs */}
-        <div className="flex-1 min-w-0 bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs overflow-hidden flex flex-col">
+      {/* 3. Main Data Grid Table (Full Width) */}
+      <div className="min-w-0 px-6 pb-6 w-full flex-1 flex flex-col">
+        <div className="w-full bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs overflow-hidden flex flex-col flex-1">
           {/* Tab Navigation */}
           <div className="flex items-center space-x-6 px-5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold">
             {[
@@ -555,7 +529,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                   }}
                   className={`py-3 border-b-2 transition-all cursor-pointer ${
                     isActive
-                      ? 'border-[#2563eb] text-[#2563eb] dark:text-[#3b82f6] font-bold'
+                      ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
                       : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
                   }`}
                 >
@@ -566,25 +540,40 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           </div>
 
           {/* Table Container */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left text-xs border-collapse min-w-[1150px]">
               <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
                 <tr className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                  <th className="py-2.5 px-4">TEST PLANI</th>
-                  <th className="py-2.5 px-3">TÜR</th>
-                  <th className="py-2.5 px-3">KAPSAM</th>
-                  <th className="py-2.5 px-3 text-center">SENARYO</th>
-                  <th className="py-2.5 px-3">BAŞARI ORANI</th>
-                  <th className="py-2.5 px-3">DURUM</th>
-                  <th className="py-2.5 px-3">SON ÇALIŞTIRMA</th>
-                  <th className="py-2.5 px-4 text-right">İŞLEMLER</th>
+                  {/* Flexible Column 1: Test Planı */}
+                  <th className="py-3.5 px-4 min-w-[280px] w-[34%]">TEST PLANI</th>
+                  
+                  {/* Fixed Column 1: Tür */}
+                  <th className="py-3.5 px-3 w-[88px] min-w-[88px] max-w-[88px] whitespace-nowrap">TÜR</th>
+                  
+                  {/* Flexible Column 2: Kapsam */}
+                  <th className="py-3.5 px-3 min-w-[220px] w-[26%]">KAPSAM</th>
+                  
+                  {/* Fixed Column 2: Senaryo */}
+                  <th className="py-3.5 px-3 w-[80px] min-w-[80px] max-w-[80px] text-center whitespace-nowrap">SENARYO</th>
+                  
+                  {/* Fixed Column 3: Başarı Oranı */}
+                  <th className="py-3.5 px-3 w-[130px] min-w-[130px] max-w-[130px] whitespace-nowrap">BAŞARI ORANI</th>
+                  
+                  {/* Fixed Column 4: Durum */}
+                  <th className="py-3.5 px-3 w-[110px] min-w-[110px] max-w-[110px] whitespace-nowrap">DURUM</th>
+                  
+                  {/* Fixed Column 5: Son Çalıştırma */}
+                  <th className="py-3.5 px-3 w-[140px] min-w-[140px] max-w-[140px] whitespace-nowrap">SON ÇALIŞTIRMA</th>
+                  
+                  {/* Fixed Column 6: İşlemler */}
+                  <th className="py-3.5 px-4 w-[100px] min-w-[100px] max-w-[100px] text-right whitespace-nowrap">İŞLEMLER</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {isLoading ? (
                   <tr>
                     <td colSpan={8} className="py-14 text-center text-slate-400">
-                      <div className="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
+                      <div className="w-6 h-6 border-2 border-[#b83a4b]/20 border-t-[#b83a4b] rounded-full animate-spin mx-auto mb-2" />
                       <span>Yükleniyor...</span>
                     </td>
                   </tr>
@@ -598,26 +587,28 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                 ) : (
                   paginatedPlans.map((p) => {
                     const stats = planStatsMap.get(p.id);
-                    const isSelected = activeSelectedPlan?.id === p.id;
 
                     return (
                       <tr
                         key={p.id}
-                        onClick={() => setSelectedPlanId(p.id)}
-                        className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group ${
-                          isSelected
-                            ? 'bg-blue-50/60 dark:bg-blue-900/10'
-                            : ''
-                        }`}
+                        onClick={() => {
+                          if (onSelectPlanToView) {
+                            onSelectPlanToView(p);
+                          } else {
+                            setSelectedPlanForEdit(p);
+                            setIsEditPlanOpen(true);
+                          }
+                        }}
+                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
                       >
-                        {/* Test Plan Name + Subtitle */}
-                        <td className="py-2.5 px-4">
-                          <div className="flex items-center space-x-2.5">
-                            <div className="w-7 h-7 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                              <Calendar className="w-3.5 h-3.5" />
+                        {/* 1. Flexible Column: Test Planı Adı ve Açıklaması */}
+                        <td className="py-3 px-4 min-w-[280px]">
+                          <div className="flex items-center space-x-3 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                              <Calendar className="w-4 h-4" />
                             </div>
-                            <div className="min-w-0 max-w-[260px]">
-                              <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-[#b83a4b] dark:group-hover:text-[#d66b7a] transition-colors">
                                 {p.title}
                               </p>
                               {p.description && (
@@ -629,34 +620,36 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                           </div>
                         </td>
 
-                        {/* Type Badge */}
-                        <td className="py-2.5 px-3">
+                        {/* 2. Fixed Column: Tür Rozeti */}
+                        <td className="py-3 px-3 w-[88px] min-w-[88px] max-w-[88px] whitespace-nowrap">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-xs ${
-                              stats?.typeColor.bg || 'bg-blue-500/10'
-                            } ${stats?.typeColor.text || 'text-blue-600'} ${
-                              stats?.typeColor.border || 'border-blue-500/20'
+                              stats?.typeColor.bg || 'bg-slate-100 dark:bg-slate-800'
+                            } ${stats?.typeColor.text || 'text-slate-700 dark:text-slate-300'} ${
+                              stats?.typeColor.border || 'border-slate-200 dark:border-slate-700'
                             }`}
                           >
                             {stats?.type || 'Regression'}
                           </span>
                         </td>
 
-                        {/* Scope */}
-                        <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 font-medium">
-                          {stats?.scope || 'Web, Mobil'}
+                        {/* 3. Flexible Column: Kapsam */}
+                        <td className="py-3 px-3 min-w-[220px]" title={stats?.scope || 'Web, Mobil'}>
+                          <p className="truncate text-xs text-slate-600 dark:text-slate-400 font-medium">
+                            {stats?.scope || 'Web, Mobil'}
+                          </p>
                         </td>
 
-                        {/* Scenario Count */}
-                        <td className="py-2.5 px-3 text-center font-bold text-slate-800 dark:text-slate-200 font-mono">
+                        {/* 4. Fixed Column: Senaryo Sayısı */}
+                        <td className="py-3 px-3 w-[80px] min-w-[80px] max-w-[80px] text-center font-bold text-slate-800 dark:text-slate-200 font-mono whitespace-nowrap">
                           {stats ? stats.totalScenarios : 0}
                         </td>
 
-                        {/* Success Rate & Progress Bar */}
-                        <td className="py-2.5 px-3">
+                        {/* 5. Fixed Column: Başarı Oranı & Progress Bar */}
+                        <td className="py-3 px-3 w-[130px] min-w-[130px] max-w-[130px] whitespace-nowrap">
                           {stats && stats.executedScenarios > 0 ? (
-                            <div className="flex items-center space-x-2 w-28">
-                              <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-[11px]">
+                            <div className="flex items-center space-x-2 w-full">
+                              <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-[11px] shrink-0 w-8">
                                 %{stats.passRate}
                               </span>
                               <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -677,8 +670,8 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                           )}
                         </td>
 
-                        {/* Status - High Contrast Badges */}
-                        <td className="py-2.5 px-3">
+                        {/* 6. Fixed Column: Durum Rozeti */}
+                        <td className="py-3 px-3 w-[110px] min-w-[110px] max-w-[110px] whitespace-nowrap">
                           {stats?.statusKey === 'ACTIVE' ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
                               Aktif
@@ -698,14 +691,14 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                           )}
                         </td>
 
-                        {/* Last Run Date */}
-                        <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap">
+                        {/* 7. Fixed Column: Son Çalıştırma Tarihi */}
+                        <td className="py-3 px-3 w-[140px] min-w-[140px] max-w-[140px] text-slate-500 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap">
                           {stats?.lastRunDate || '—'}
                         </td>
 
-                        {/* Action Icons: Koşum Başlat, Düzenle, Sil */}
-                        <td className="py-2.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end space-x-1">
+                        {/* 8. Fixed Column: İşlemler Aksiyon Butonları */}
+                        <td className="py-3 px-4 w-[100px] min-w-[100px] max-w-[100px] text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end space-x-1.5">
                             {/* Koşum Başlat */}
                             <button
                               type="button"
@@ -714,7 +707,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                               title="Koşum Başlat"
                               aria-label="Koşum Başlat"
                             >
-                              <Play className="w-3.5 h-3.5 fill-current text-emerald-600 dark:text-emerald-400" />
+                              <Play className="w-4 h-4 fill-current text-emerald-600 dark:text-emerald-400" />
                             </button>
 
                             {/* Düzenle */}
@@ -732,7 +725,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                               title="Planı Düzenle"
                               aria-label="Planı Düzenle"
                             >
-                              <Pencil className="w-3.5 h-3.5" />
+                              <Pencil className="w-4 h-4" />
                             </button>
 
                             {/* Sil */}
@@ -743,7 +736,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                               title="Planı Sil"
                               aria-label="Planı Sil"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
@@ -756,7 +749,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           </div>
 
           {/* Table Footer: Total Count + Rows Per Page + Pagination Controls */}
-          <div className="p-3.5 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="p-3.5 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 shrink-0">
             <span className="font-medium">
               Toplam {filteredPlans.length} kayıt
             </span>
@@ -824,235 +817,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Right Side: Inspector / Detail Drawer ("Test Planı Detayları") */}
-        {activeSelectedPlan && (
-          <div className="w-80 lg:w-92 shrink-0 bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex flex-col overflow-hidden animate-in fade-in duration-150">
-            {/* Inspector Header */}
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                Test Planı Detayları
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedPlanId(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Inspector Scrollable Body */}
-            <div className="p-4 space-y-4 flex-1 overflow-y-auto text-xs">
-              {/* Title & Status */}
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  {activeSelectedPlan.title}
-                </h3>
-                {activeSelectedStats?.statusKey === 'ACTIVE' ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs shrink-0">
-                    Aktif
-                  </span>
-                ) : activeSelectedStats?.statusKey === 'IN_PROGRESS' ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs shrink-0">
-                    Devam Eden
-                  </span>
-                ) : activeSelectedStats?.statusKey === 'COMPLETED' ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 shadow-xs shrink-0">
-                    Tamamlandı
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs shrink-0">
-                    Pasif
-                  </span>
-                )}
-              </div>
-
-              {/* Metadata Key-Values */}
-              <div className="space-y-2.5 pt-1">
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 block">Proje</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {activeSelectedPlan.project?.name || project.name}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 block">Tür</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
-                    {activeSelectedStats?.type || 'Regression'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 block">Kapsam</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
-                    {activeSelectedStats?.scope || 'Web, Mobil'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 block">Tarih Aralığı</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300 font-mono text-[11px]">
-                    {activeSelectedStats?.dateRange || '13.05.2024 - 31.05.2024'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 block">Açıklama</span>
-                  <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed mt-0.5">
-                    {activeSelectedPlan.description ||
-                      'Bu test planı kapsamındaki tüm fonksiyonel alanların test senaryolarını ve regresyon adımlarını içerir.'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Özet (Summary Metrics) */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                <span className="text-[11px] font-bold text-slate-900 dark:text-slate-100 block">
-                  Özet
-                </span>
-
-                <div className="space-y-1.5 text-xs font-medium">
-                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                    <span>Toplam Senaryo</span>
-                    <span className="font-bold text-slate-900 dark:text-slate-100">
-                      {activeSelectedStats ? activeSelectedStats.totalScenarios : 0}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                    <span>Çalıştırılan Senaryo</span>
-                    <span className="font-bold text-slate-900 dark:text-slate-100">
-                      {activeSelectedStats ? activeSelectedStats.executedScenarios : 0}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-                    <span>Başarılı</span>
-                    <span className="font-bold">{activeSelectedStats ? activeSelectedStats.passed : 0}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
-                    <span>Başarısız</span>
-                    <span className="font-bold">{activeSelectedStats ? activeSelectedStats.failed : 0}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                    <span>Bloke</span>
-                    <span className="font-bold">{activeSelectedStats ? activeSelectedStats.blocked : 0}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                    <span>Atlandı</span>
-                    <span className="font-bold">{activeSelectedStats ? activeSelectedStats.skipped : 0}</span>
-                  </div>
-
-                  <div className="pt-1.5 flex items-center justify-between font-bold text-slate-900 dark:text-slate-100">
-                    <span>Başarı Oranı</span>
-                    {activeSelectedStats && activeSelectedStats.executedScenarios > 0 ? (
-                      <span className="font-mono">%{activeSelectedStats.passRate}</span>
-                    ) : (
-                      <span className="font-mono text-slate-400">—</span>
-                    )}
-                  </div>
-
-                  {/* Visual Progress Bar */}
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden mt-1">
-                    <div
-                      className={`h-full rounded-full ${
-                        (activeSelectedStats?.passRate || 0) >= 75
-                          ? 'bg-emerald-500'
-                          : (activeSelectedStats?.passRate || 0) >= 50
-                          ? 'bg-amber-500'
-                          : 'bg-rose-500'
-                      }`}
-                      style={{
-                        width: `${
-                          activeSelectedStats && activeSelectedStats.executedScenarios > 0
-                            ? activeSelectedStats.passRate
-                            : 0
-                        }%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Inspector Footer Actions */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-[#121926]/50 space-y-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (onSelectPlanToView && activeSelectedPlan) {
-                    onSelectPlanToView(activeSelectedPlan);
-                  } else if (activeSelectedPlan) {
-                    onStartRunWithPlan(activeSelectedPlan);
-                  }
-                }}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#2563eb] hover:bg-[#1d4ed8] dark:bg-[#3b82f6] dark:hover:bg-[#2563eb] shadow-md shadow-blue-500/20 flex items-center justify-center space-x-2 transition-all cursor-pointer"
-              >
-                <span>Planı Görüntüle</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsInspectorActionsOpen((prev) => !prev)}
-                  className="w-full py-2 px-4 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#161f30] border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between transition-all cursor-pointer"
-                >
-                  <span>İşlemler</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                </button>
-
-                {isInspectorActionsOpen && (
-                  <div className="absolute bottom-full mb-1.5 left-0 right-0 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200 dark:border-slate-700 shadow-xl z-50 py-1 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsInspectorActionsOpen(false);
-                        onStartRunWithPlan(activeSelectedPlan);
-                      }}
-                      className="w-full text-left px-3 py-2 flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold cursor-pointer"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current text-emerald-600 dark:text-emerald-400" />
-                      <span>Yeni Koşum Başlat</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsInspectorActionsOpen(false);
-                        if (onSelectPlanToView && activeSelectedPlan) {
-                          onSelectPlanToView(activeSelectedPlan);
-                        } else if (activeSelectedPlan) {
-                          setSelectedPlanForEdit(activeSelectedPlan);
-                          setIsEditPlanOpen(true);
-                        }
-                      }}
-                      className="w-full text-left px-3 py-2 flex items-center space-x-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      <span>Planı Düzenle</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsInspectorActionsOpen(false);
-                        handleDeletePlan(activeSelectedPlan.id);
-                      }}
-                      className="w-full text-left px-3 py-2 flex items-center space-x-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Planı Sil</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Modals */}

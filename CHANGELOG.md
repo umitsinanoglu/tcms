@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- Test Planları tablosunda sabit kolonlar (Tür, Senaryo, Başarı Oranı, Durum, Son Çalıştırma, İşlemler) kilitlendi; Test Planı ve Kapsam kolonları esnek oranlandı
+- Test Planları tablosu aşırı sıkışmayı önleyecek akıllı minimum genişlik eşiği (980px) ve yatay kaydırma ile güncellendi
+- Test Planları tablosunda Test Planı kolonu ve diğer kolonlar responsive/table-fixed ile oranlandı
 - Düzeltme: Yeni test planında senaryo ve başarı oranı mock veri temizlendi; yeni test senaryosu oluşturulduğunda liste ve sayaçların anında güncellenmesi sağlandı.
 - **Test Planı Liste Reaktivitesi ve Anında Güncelleme Düzeltmesi**: `TestPlansView` bileşeni `page.tsx`'teki `testPlans` state'i ile tam senkronize hale getirildi; yeni bir test planı oluşturulduğunda veya güncellendiğinde sayfa yenilemeye gerek kalmadan listenin anında güncellenmesi ve yeni planın otomatik seçilmesi sağlandı.
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
@@ -34,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Sol navigasyon menüsü daraltıldı ve Test Planları sağ detay kartı kaldırılarak tablo tam genişliğe genişletildi
 - Kurumsal Platin & Gri temada %80 gri tonları uygulandı; etiketler, statü kartları ve butonlar sade kurumsal standartlara getirildi
 - Test Planı detayında yeni senaryo oluşturma kaldırıldı, çoklu mevcut senaryo seçimi ve ekleme özelliği güçlendirildi
 - Enhanced UI information density, collapsible test plan summary, compact metric cards, prominent table headers, and high-contrast badges across views
