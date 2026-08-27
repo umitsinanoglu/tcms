@@ -11,6 +11,7 @@ import {
   ReportsService,
 } from '@/services/api';
 import { parseScreenshots } from './QuickRunModal';
+import { exportTestRunsToExcel } from '@/utils/excelUtils';
 import {
   Play,
   CheckCircle2,
@@ -368,6 +369,17 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             title="Yenile"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => exportTestRunsToExcel(runs, 'TCMS')}
+            disabled={runs.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] border border-[#d0d8e4] dark:border-[#2e3748] disabled:opacity-40 transition-all cursor-pointer shadow-xs"
+            title="Tüm Test Koşumlarını ve Detaylı Sonuçlarını Excel'e Aktar"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Excel'e Aktar</span>
           </button>
 
           <button

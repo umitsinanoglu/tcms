@@ -17,7 +17,12 @@ import {
   Zap,
   ListOrdered,
   Folder,
+  FileSpreadsheet,
+  Download,
+  Upload,
 } from 'lucide-react';
+import { ExcelImportModal } from './ExcelImportModal';
+import { downloadTestCaseTemplate, exportTestCasesToExcel } from '@/utils/excelUtils';
 
 interface TestScenariosViewProps {
   project: Project | null;
@@ -30,6 +35,7 @@ interface TestScenariosViewProps {
   onRunSingleCase?: (testCase: TestCase) => void;
   onRunMultipleCases?: (testCases: TestCase[]) => void;
   onDeleteCase: (caseId: string) => void;
+  onCasesChange?: () => Promise<void> | void;
 }
 
 export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
@@ -42,9 +48,11 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
   onOpenQuickRun,
   onRunSingleCase,
   onDeleteCase,
+  onCasesChange,
 }) => {
   const { can } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Pagination
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
@@ -112,7 +120,44 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 shrink-0">
+        <div className="flex items-center flex-wrap gap-2 shrink-0">
+          {/* Excel Actions Group */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700/80">
+            {/* Download Template */}
+            <button
+              type="button"
+              onClick={downloadTestCaseTemplate}
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer"
+              title="Excel İçe Aktarma Şablonunu İndir"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="hidden sm:inline">Şablon İndir</span>
+            </button>
+
+            {/* Export Cases */}
+            <button
+              type="button"
+              onClick={() => exportTestCasesToExcel(testCases, project?.name || 'Proje')}
+              disabled={testCases.length === 0}
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-40 transition-all cursor-pointer"
+              title="Mevcut Test Senaryolarını Excel'e Aktar"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span className="hidden sm:inline">Excel'e Aktar</span>
+            </button>
+
+            {/* Import Cases */}
+            <button
+              type="button"
+              onClick={() => setIsImportModalOpen(true)}
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer"
+              title="Excel Dosyasından Senaryo İçe Aktar"
+            >
+              <Upload className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span>İçe Aktar</span>
+            </button>
+          </div>
+
           {/* New Test Scenario Button */}
           <button
             type="button"
@@ -424,6 +469,22 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Excel Import Modal */}
+      {project && (
+        <ExcelImportModal
+          isOpen={isImportModalOpen}
+          type="TEST_CASES"
+          projectId={project.id}
+          projectName={project.name}
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={async () => {
+            if (onCasesChange) {
+              await onCasesChange();
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

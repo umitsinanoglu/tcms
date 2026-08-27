@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Excel import/export and downloadable template system for test cases, test plans, and test runs
 - Yeni Test Senaryosu Oluştur modalına modül oluşturma ve yönetimi entegrasyonu, DB boş/dummy modül temizliği
 - Test Planı ile Koşum Başlat modalı (ManualRunModal), Hızlı Koşum modalındaki modern kart yapısı, senaryo geçiş çubuğu, adım bazlı pass/fail bayrakları ve canlı süre sayacı ile güncellendi
 - Test koşumlarında iki farklı yöntem (Test Planı ile Kapsamlı Koşum vs Hızlı Test Koşumu), adım bazlı pass/fail bayrakları, canlı süre sayacı ve etiket parametreleri arayüzü eklendi

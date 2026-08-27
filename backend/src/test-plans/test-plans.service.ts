@@ -2,10 +2,45 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTestPlanDto } from './dto/create-test-plan.dto';
 import { UpdateTestPlanDto } from './dto/update-test-plan.dto';
+import { BulkCreateTestPlansDto } from './dto/bulk-create-test-plan.dto';
 
 @Injectable()
 export class TestPlansService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async createBulk(bulkDto: BulkCreateTestPlansDto) {
+    const { projectId, items } = bulkDto;
+
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    });
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+
+    const createdPlans = [];
+    for (const item of items) {
+      const plan = await this.prisma.testPlan.create({
+        data: {
+          title: item.title,
+          description: item.description,
+          version: item.version || 'v1.0.0',
+          environment: item.environment || 'STAGING',
+          status: item.status || 'ACTIVE',
+          scope: item.scope,
+          requirements: item.requirements,
+          projectId: project.id,
+        },
+      });
+      createdPlans.push(plan);
+    }
+
+    return {
+      success: true,
+      count: createdPlans.length,
+      data: createdPlans,
+    };
+  }
 
   async create(createTestPlanDto: CreateTestPlanDto) {
     const project = await this.prisma.project.findUnique({

@@ -26,7 +26,12 @@ import {
   Check,
   AlertTriangle,
   SlidersHorizontal,
+  FileSpreadsheet,
+  Download,
+  Upload,
 } from 'lucide-react';
+import { ExcelImportModal } from './ExcelImportModal';
+import { downloadTestPlanTemplate, exportTestPlansToExcel } from '@/utils/excelUtils';
 
 interface TestPlansViewProps {
   project: Project | null;
@@ -68,6 +73,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   const [isNewPlanOpen, setIsNewPlanOpen] = useState(false);
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
   const [selectedPlanForEdit, setSelectedPlanForEdit] = useState<TestPlan | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Synchronize when testPlans prop changes
   useEffect(() => {
@@ -355,7 +361,43 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center flex-wrap gap-2 shrink-0">
+          {/* Excel Actions Group */}
+          <div className="flex items-center bg-white dark:bg-[#161f30] p-0.5 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+            <button
+              type="button"
+              onClick={downloadTestPlanTemplate}
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+              title="Test Planı Excel Şablonunu İndir"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="hidden sm:inline">Şablon</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => exportTestPlansToExcel(plans, project?.name || 'Proje')}
+              disabled={plans.length === 0}
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 transition-all cursor-pointer"
+              title="Test Planlarını Excel'e Aktar"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span className="hidden sm:inline">Excel</span>
+            </button>
+
+            {project && can('CREATE_PLAN') && (
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(true)}
+                className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                title="Excel Dosyasından Test Planı İçe Aktar"
+              >
+                <Upload className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>İçe Aktar</span>
+              </button>
+            )}
+          </div>
+
           {/* Status Filter Dropdown */}
           <div className="relative">
             <button
@@ -841,6 +883,20 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         onUpdate={handleUpdatePlan}
         onDelete={handleDeletePlan}
       />
+
+      {/* Excel Import Modal */}
+      {project && (
+        <ExcelImportModal
+          isOpen={isImportModalOpen}
+          type="TEST_PLANS"
+          projectId={project.id}
+          projectName={project.name}
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={async () => {
+            await loadPlans();
+          }}
+        />
+      )}
     </div>
   );
 };
