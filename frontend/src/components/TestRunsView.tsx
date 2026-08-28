@@ -9,11 +9,16 @@ import {
   TestCase,
   TestPlan,
   ReportsService,
+  WebhooksService,
+  TriggerTargetScope,
 } from '@/services/api';
 import { parseScreenshots } from './QuickRunModal';
 import { exportTestRunsToExcel } from '@/utils/excelUtils';
 import {
   Play,
+  Send,
+  Radio,
+  Activity,
   CheckCircle2,
   XCircle,
   Clock,
@@ -91,6 +96,24 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
   const [detailSearch, setDetailSearch] = useState('');
   const [isAutomationModalOpen, setIsAutomationModalOpen] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
+
+  // Webhook Trigger Modal State
+  const [isWebhookModalOpen, setIsWebhookModalOpen] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('tcms_automation_webhook_url') || 'http://localhost:8000/api/webhook/trigger';
+    }
+    return 'http://localhost:8000/api/webhook/trigger';
+  });
+  const [webhookSecret, setWebhookSecret] = useState('');
+  const [webhookTitle, setWebhookTitle] = useState('Otomasyon Regresyon Koşusu');
+  const [webhookEnvironment, setWebhookEnvironment] = useState('STAGING');
+  const [webhookScope, setWebhookScope] = useState<TriggerTargetScope>('ALL');
+  const [webhookSuiteId, setWebhookSuiteId] = useState<string>('');
+  const [webhookTriggerLoading, setWebhookTriggerLoading] = useState(false);
+  const [webhookPingLoading, setWebhookPingLoading] = useState(false);
+  const [webhookPingResult, setWebhookPingResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [webhookResponse, setWebhookResponse] = useState<any | null>(null);
 
   // Quick Run Case Picker Modal (for Secondary Action)
   const [isQuickPickerOpen, setIsQuickPickerOpen] = useState(false);
@@ -175,6 +198,56 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
       } catch (err) {
         console.error('Failed to delete test run:', err);
       }
+    }
+  };
+
+  const handleTestWebhook = async () => {
+    if (!webhookUrl) return;
+    setWebhookPingLoading(true);
+    setWebhookPingResult(null);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tcms_automation_webhook_url', webhookUrl);
+      }
+      const res = await WebhooksService.testWebhook(projectId, webhookUrl, webhookSecret);
+      if (res.success) {
+        setWebhookPingResult({ success: true, message: `Bağlantı Başarılı! (HTTP ${res.status || 200})` });
+      } else {
+        setWebhookPingResult({ success: false, message: `Bağlantı Hatası: ${res.error || 'Cevap alınamadı'}` });
+      }
+    } catch (err: any) {
+      setWebhookPingResult({ success: false, message: `Hata: ${err?.message || 'Uzak sunucuya ulaşılamadı'}` });
+    } finally {
+      setWebhookPingLoading(false);
+    }
+  };
+
+  const handleTriggerWebhook = async () => {
+    if (!webhookUrl) return;
+    setWebhookTriggerLoading(true);
+    setWebhookResponse(null);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tcms_automation_webhook_url', webhookUrl);
+      }
+      const res = await WebhooksService.triggerAutomation(projectId, {
+        webhookUrl,
+        secretToken: webhookSecret || undefined,
+        title: webhookTitle || undefined,
+        environment: webhookEnvironment,
+        scope: webhookScope,
+        suiteId: webhookScope === 'SUITE' ? webhookSuiteId : undefined,
+      });
+
+      setWebhookResponse(res);
+      await loadRuns();
+    } catch (err: any) {
+      setWebhookResponse({
+        success: false,
+        message: err?.response?.data?.message || err?.message || 'Webhook tetiklenemedi',
+      });
+    } finally {
+      setWebhookTriggerLoading(false);
     }
   };
 
@@ -389,6 +462,20 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           >
             <Code className="w-3.5 h-3.5 text-[#b83a4b]" />
             <span>Otomasyon API (CI/CD)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setWebhookResponse(null);
+              setWebhookPingResult(null);
+              setIsWebhookModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50 hover:border-indigo-400 transition-all cursor-pointer shadow-xs"
+            title="Dış Test Otomasyon Merkezini Webhook ile anında tetikleyin"
+          >
+            <Send className="w-3.5 h-3.5 text-indigo-500" />
+            <span>⚡ Otomasyonu Tetikle (Webhook)</span>
           </button>
 
           {/* Yöntem 1: Hızlı Test Koşumu (Tekil Senaryo) */}
@@ -1303,6 +1390,189 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                 <div className="p-3.5 bg-slate-900 rounded-[10px] border border-slate-800 text-emerald-400 font-mono text-[11px] overflow-x-auto whitespace-pre">
                   {automationCurlExample}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 9. Outbound Webhook Trigger Modal */}
+      {isWebhookModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[16px] w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-[#d0d8e4] dark:border-[#2e3748] flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center border border-indigo-500/20">
+                  <Send className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    Test Otomasyonu Tetikleme (Webhook)
+                  </h3>
+                  <p className="text-[11px] text-[#64748b] dark:text-[#8e9bb0]">
+                    Dış projedeki (Test Otomasyon Merkezi) test botunu tetikleyin ve canlı sonuçları TCMS'e alın.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsWebhookModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 text-xs overflow-y-auto max-h-[75vh]">
+              {/* Webhook URL Input */}
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Webhook Hedef URL (Test Otomasyon Merkezi) *</span>
+                  <button
+                    type="button"
+                    onClick={handleTestWebhook}
+                    disabled={webhookPingLoading || !webhookUrl}
+                    className="text-[11px] font-semibold text-indigo-500 hover:underline flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Radio className={`w-3 h-3 ${webhookPingLoading ? 'animate-pulse' : ''}`} />
+                    <span>{webhookPingLoading ? 'Test Ediliyor...' : 'Bağlantıyı Test Et (Ping)'}</span>
+                  </button>
+                </label>
+                <input
+                  type="url"
+                  placeholder="http://localhost:8000/api/webhook/trigger"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] px-3.5 py-2 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Ping Result Alert */}
+              {webhookPingResult && (
+                <div
+                  className={`p-3 rounded-[10px] text-xs flex items-center gap-2 border ${
+                    webhookPingResult.success
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
+                  }`}
+                >
+                  {webhookPingResult.success ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                  <span>{webhookPingResult.message}</span>
+                </div>
+              )}
+
+              {/* Form Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Koşu Başlığı */}
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">Koşu Başlığı</label>
+                  <input
+                    type="text"
+                    value={webhookTitle}
+                    onChange={(e) => setWebhookTitle(e.target.value)}
+                    placeholder="Örn: Nightly Regression Suite"
+                    className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                {/* Ortam */}
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">Hedef Test Ortamı</label>
+                  <select
+                    value={webhookEnvironment}
+                    onChange={(e) => setWebhookEnvironment(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="DEV">DEV Ortamı</option>
+                    <option value="STAGING">STAGING Ortamı</option>
+                    <option value="UAT">UAT / Pre-Prod</option>
+                    <option value="PROD">PROD (Smoke Yalnızca)</option>
+                  </select>
+                </div>
+
+                {/* Kapsam */}
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">Test Kapsamı (Scope)</label>
+                  <select
+                    value={webhookScope}
+                    onChange={(e) => setWebhookScope(e.target.value as TriggerTargetScope)}
+                    className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="ALL">Tüm Test Senaryoları (Tam Kapsam)</option>
+                    <option value="SMOKE">Smoke Testleri</option>
+                    <option value="REGRESSION">Regresyon Paketi</option>
+                    <option value="SUITE">Belirli Test Suite (Klasör)</option>
+                  </select>
+                </div>
+
+                {/* Secret Token */}
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">
+                    Secret / Bearer Token <span className="text-slate-400 font-normal">(Opsiyonel)</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={webhookSecret}
+                    onChange={(e) => setWebhookSecret(e.target.value)}
+                    placeholder="webhook-secret-token"
+                    className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] px-3 py-2 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Webhook Response Box */}
+              {webhookResponse && (
+                <div className="space-y-2 pt-2 border-t border-[#d0d8e4] dark:border-[#2e3748]">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Tetikleme Sonucu:</span>
+                    <span
+                      className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        webhookResponse.success
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                          : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                      }`}
+                    >
+                      {webhookResponse.success ? 'BAŞARILI' : 'HATA'}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-slate-900 rounded-[10px] border border-slate-800 text-slate-300 font-mono text-[11px] overflow-x-auto whitespace-pre max-h-40">
+                    {JSON.stringify(webhookResponse, null, 2)}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-[#d0d8e4] dark:border-[#2e3748] flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80">
+              <a
+                href="http://localhost:3001/api/docs"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-blue-500 hover:underline flex items-center gap-1"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Swagger API Dokümanı</span>
+              </a>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setIsWebhookModalOpen(false)}
+                  className="px-4 py-2 rounded-[10px] text-xs font-semibold text-[#64748b] dark:text-[#8e9bb0] hover:bg-slate-100 dark:hover:bg-[#262e3d] transition-colors cursor-pointer"
+                >
+                  Kapat
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTriggerWebhook}
+                  disabled={webhookTriggerLoading || !webhookUrl}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2 text-xs font-bold text-white transition-all duration-200 rounded-[10px] bg-gradient-to-r from-indigo-600 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 shadow-md hover:shadow-indigo-500/25 disabled:opacity-50 cursor-pointer"
+                >
+                  <Send className={`w-3.5 h-3.5 ${webhookTriggerLoading ? 'animate-spin' : ''}`} />
+                  <span>{webhookTriggerLoading ? 'Tetikleniyor...' : '⚡ Koşuyu Başlat (Tetikle)'}</span>
+                </button>
               </div>
             </div>
           </div>
