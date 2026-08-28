@@ -37,6 +37,7 @@ import { useNavigation, NavigationState } from '@/context/NavigationContext';
 import { useAuth } from '@/context/AuthContext';
 import { LoginView } from '@/components/LoginView';
 import { ReportsView } from '@/components/ReportsView';
+import { SettingsView } from '@/components/SettingsView';
 
 export default function Home() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -267,6 +268,7 @@ export default function Home() {
         else if (tab === 'DEFECTS') label = 'Defectler & Hatalar';
         else if (tab === 'REPORTS') label = 'Test Raporları';
         else if (tab === 'EXPLORER') label = 'Test Senaryoları';
+        else if (tab === 'SETTINGS') label = 'Sistem Ayarları';
 
         pushState({
           tab,
@@ -656,7 +658,7 @@ export default function Home() {
           if (found) targetProj = found;
         }
 
-        const validTabs: SidebarTab[] = ['DASHBOARD', 'PLANS', 'EXPLORER', 'RUNS', 'REPORTS'];
+        const validTabs: SidebarTab[] = ['DASHBOARD', 'PLANS', 'EXPLORER', 'RUNS', 'DEFECTS', 'REPORTS', 'SETTINGS'];
         const targetTab: SidebarTab =
           savedState?.tab && validTabs.includes(savedState.tab)
             ? savedState.tab
@@ -682,8 +684,10 @@ export default function Home() {
         let label = 'Ana Sayfa';
         if (targetTab === 'PLANS') label = 'Test Planları';
         else if (targetTab === 'RUNS') label = 'Test Koşumları';
+        else if (targetTab === 'DEFECTS') label = 'Defectler & Hatalar';
         else if (targetTab === 'REPORTS') label = 'Test Raporları';
         else if (targetTab === 'EXPLORER') label = 'Test Senaryoları';
+        else if (targetTab === 'SETTINGS') label = 'Sistem Ayarları';
 
         pushState({
           tab: targetTab,
@@ -1205,6 +1209,27 @@ export default function Home() {
                 if (target) {
                   handleSelectCase(target);
                 }
+              }}
+            />
+          )}
+
+          {activeTab === 'SETTINGS' && (
+            <SettingsView
+              projects={projects}
+              selectedProject={selectedProject}
+              onSelectProject={(proj) => {
+                handleSelectProject(proj);
+              }}
+              onRefreshProjects={async () => {
+                await loadProjects();
+              }}
+              onOpenCreateProject={() => setIsNewProjectOpen(true)}
+              onOpenEditProject={(proj) => {
+                setActiveEditProject(proj);
+                setIsEditProjectOpen(true);
+              }}
+              onDeleteProject={async (id) => {
+                await handleDeleteProject(id);
               }}
             />
           )}

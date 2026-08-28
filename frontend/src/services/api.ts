@@ -758,6 +758,103 @@ export const WebhooksService = {
     ).then((res) => res.data),
 };
 
+export interface SystemSettings {
+  systemTitle: string;
+  defaultEnvironment: string;
+  defaultTestType: string;
+  runTimeoutMinutes: number;
+  logRetentionDays: number;
+  sessionTimeoutHours: number;
+  allowMultipleSessions: boolean;
+  version: string;
+  updatedAt: string;
+}
+
+export interface LdapConfig {
+  serverUrl: string;
+  baseDn: string;
+  bindDn: string;
+  bindPassword?: string;
+  hasPassword?: boolean;
+  userFilter?: string;
+  useSsl?: boolean;
+  isEnabled?: boolean;
+  syncIntervalHours?: number;
+  groupMappings?: { ldapGroup: string; tcmsRole: string }[];
+  lastSyncedAt?: string;
+  lastSyncStatus?: string;
+}
+
+export interface ApiKeyItem {
+  id: string;
+  name: string;
+  keyPreview: string;
+  fullKey?: string;
+  scope: string;
+  createdBy: string;
+  createdAt: string;
+  expiresAt: string | null;
+  lastUsedAt: string | null;
+  isActive: boolean;
+}
+
+export interface ActiveSessionItem {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  ipAddress: string;
+  userAgent: string;
+  device: string;
+  location: string;
+  loginTime: string;
+  lastActiveTime: string;
+  isCurrent?: boolean;
+}
+
+export interface LdapTestResult {
+  success: boolean;
+  message: string;
+  latencyMs: number;
+  details?: any;
+}
+
+export interface LdapSyncResult {
+  success: boolean;
+  message: string;
+  syncedAt: string;
+  stats: {
+    totalScanned: number;
+    usersAdded: number;
+    usersUpdated: number;
+    usersUnchanged: number;
+    rolesMapped: Record<string, number>;
+  };
+}
+
+export const SettingsService = {
+  getSystemSettings: () => api.get<SystemSettings>('/settings/system').then((res) => res.data),
+  updateSystemSettings: (data: Partial<SystemSettings>) =>
+    api.patch<SystemSettings>('/settings/system', data).then((res) => res.data),
+
+  getLdapConfig: () => api.get<LdapConfig>('/settings/ldap').then((res) => res.data),
+  updateLdapConfig: (data: LdapConfig) => api.patch<LdapConfig>('/settings/ldap', data).then((res) => res.data),
+  testLdap: (data: Partial<LdapConfig>) => api.post<LdapTestResult>('/settings/ldap/test', data).then((res) => res.data),
+  syncLdap: () => api.post<LdapSyncResult>('/settings/ldap/sync').then((res) => res.data),
+
+  getApiKeys: () => api.get<ApiKeyItem[]>('/settings/api-keys').then((res) => res.data),
+  createApiKey: (data: { name: string; scope: string; expiresInDays?: number }) =>
+    api.post<ApiKeyItem>('/settings/api-keys', data).then((res) => res.data),
+  revokeApiKey: (id: string) => api.delete<{ success: boolean; message: string }>(`/settings/api-keys/${id}`).then((res) => res.data),
+
+  getActiveSessions: () => api.get<ActiveSessionItem[]>('/settings/sessions').then((res) => res.data),
+  terminateSession: (id: string) => api.delete<{ success: boolean; message: string }>(`/settings/sessions/${id}`).then((res) => res.data),
+  terminateAllOtherSessions: () =>
+    api.post<{ success: boolean; message: string }>('/settings/sessions/terminate-all-others').then((res) => res.data),
+};
+
+
 
 
 
