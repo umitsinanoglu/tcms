@@ -13,7 +13,7 @@ import {
   Settings,
 } from 'lucide-react';
 
-export type SidebarTab = 'DASHBOARD' | 'PLANS' | 'EXPLORER' | 'RUNS' | 'DEFECTS' | 'REPORTS';
+export type SidebarTab = 'DASHBOARD' | 'PLANS' | 'EXPLORER' | 'RUNS' | 'DEFECTS' | 'REPORTS' | 'SETTINGS';
 
 interface AppSidebarProps {
   projects?: Project[];
@@ -92,6 +92,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       label: 'Test Raporları',
       icon: BarChart3,
     },
+    {
+      id: 'SETTINGS' as SidebarTab,
+      label: 'Sistem Ayarları',
+      icon: Settings,
+    },
   ];
 
 
@@ -149,12 +154,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
         {/* Collapsed Footer: Admin Settings Icon & Expand Toggle */}
         <div className="flex flex-col items-center space-y-2 w-full px-2">
-          {isAdmin && onOpenUserManagement && (
+          {isAdmin && (
             <button
               type="button"
-              onClick={onOpenUserManagement}
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:text-[#b83a4b] dark:text-slate-400 dark:hover:text-[#d66b7a] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Sistem & Kullanıcı Yönetimi (RBAC)"
+              onClick={() => onTabChange('SETTINGS')}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
+                activeTab === 'SETTINGS'
+                  ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white shadow-sm shadow-[#821c2b]/30'
+                  : 'text-slate-500 hover:text-[#b83a4b] dark:text-slate-400 dark:hover:text-[#d66b7a] hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+              title="Sistem & Yönetim Ayarları"
               aria-label="Yönetim Ayarları"
             >
               <Settings className="w-4.5 h-4.5" />
@@ -260,12 +269,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       {/* 4. Footer: Admin Settings Button (Sol Alt Köşe) + Collapse Action */}
       <div className="p-2.5 px-3 border-t border-slate-100 dark:border-slate-800/80 shrink-0 flex items-center justify-between gap-1 bg-slate-50/50 dark:bg-[#141821]/80">
         {/* Admin Settings Button (Bottom Left) */}
-        {isAdmin && onOpenUserManagement ? (
+        {isAdmin ? (
           <button
             type="button"
-            onClick={onOpenUserManagement}
-            className="flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Sistem & Kullanıcı Yönetimi (RBAC Ayarları)"
+            onClick={() => onTabChange('SETTINGS')}
+            className={`flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === 'SETTINGS'
+                ? 'bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a]'
+                : 'text-slate-700 dark:text-slate-300 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] hover:bg-slate-200/70 dark:hover:bg-slate-800'
+            }`}
+            title="Sistem & Yönetim Ayarları"
             aria-label="Yönetim Ayarları"
           >
             <Settings className="w-3.5 h-3.5 text-[#b83a4b]" />

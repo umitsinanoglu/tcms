@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 export interface NavigationState {
-  tab: 'DASHBOARD' | 'PLANS' | 'EXPLORER' | 'RUNS' | 'DEFECTS' | 'REPORTS';
+  tab: 'DASHBOARD' | 'PLANS' | 'EXPLORER' | 'RUNS' | 'DEFECTS' | 'REPORTS' | 'SETTINGS';
   projectId: string | null;
   suiteId: string | null;
   caseId: string | null;

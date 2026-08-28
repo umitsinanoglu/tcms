@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { TestPlansModule } from './test-plans/test-plans.module';
 import { DefectsModule } from './defects/defects.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     UsersModule,
     DefectsModule,
     WebhooksModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}
