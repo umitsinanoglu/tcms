@@ -38,6 +38,7 @@ async function bootstrap() {
     .addTag('Suites', "Klasör yapısı ve sürükle-bırak sıralama API'leri")
     .addTag('Test Cases', "Test senaryoları ve adımları API'leri")
     .addTag('Test Runs & Automation', "Otomasyon araçları ve manuel koşu API'leri")
+    .addTag('Webhooks & Automation Trigger', "Dış otomasyon sistemlerini (Test Otomasyon Merkezi) tetikleme ve webhook API'leri")
     .addTag('Reports & Analytics', "Proje, Koşu, Suite ve TestCase analitik ve rapor dışa aktarma (CSV/HTML/JSON) API'leri")
     .addTag('Users & RBAC', "Kullanıcı yönetimi, oturum ve rol tabanlı yetkilendirme (RBAC) API'leri")
     .build();

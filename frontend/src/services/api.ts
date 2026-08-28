@@ -721,6 +721,44 @@ export const DefectsService = {
     api.delete(`/defects/${id}`).then((res) => res.data),
 };
 
+export type TriggerTargetScope = 'ALL' | 'SMOKE' | 'REGRESSION' | 'SELECTED_CASES' | 'SUITE';
+
+export interface TriggerAutomationWebhookDto {
+  webhookUrl: string;
+  title?: string;
+  environment?: string;
+  version?: string;
+  scope?: TriggerTargetScope;
+  suiteId?: string;
+  caseCodes?: string[];
+  secretToken?: string;
+  triggeredBy?: string;
+}
+
+export interface WebhookTriggerResponse {
+  success: boolean;
+  message: string;
+  testRun: TestRun;
+  targetCaseCount: number;
+  outboundPayload: any;
+  remoteResponse: {
+    status: number | null;
+    body: any;
+    error: string | null;
+  };
+}
+
+export const WebhooksService = {
+  triggerAutomation: (projectId: string, dto: TriggerAutomationWebhookDto) =>
+    api.post<WebhookTriggerResponse>(`/projects/${projectId}/webhooks/trigger`, dto).then((res) => res.data),
+  testWebhook: (projectId: string, webhookUrl: string, secretToken?: string) =>
+    api.post<{ success: boolean; status?: number; response?: string; error?: string }>(
+      `/projects/${projectId}/webhooks/ping`,
+      { webhookUrl, secretToken },
+    ).then((res) => res.data),
+};
+
+
 
 
 
