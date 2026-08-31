@@ -162,7 +162,7 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
           <button
             type="button"
             onClick={onOpenNewCase}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] transition-all shadow-sm shadow-[#821c2b]/20 active:scale-98 cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 transition-all shadow-sm shadow-[var(--accent-dark)]/20 active:scale-98 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Yeni Test Senaryosu</span>

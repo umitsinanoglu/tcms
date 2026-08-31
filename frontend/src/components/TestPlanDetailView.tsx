@@ -682,7 +682,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                       type="button"
                       disabled={isSavingMetadata}
                       onClick={handleSaveMetadata}
-                      className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] disabled:opacity-50 transition-all shadow-xs cursor-pointer"
+                      className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 disabled:opacity-50 transition-all shadow-xs cursor-pointer"
                     >
                       {isSavingMetadata ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -845,8 +845,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
           </div>
         </div>
       </div>
-
-      {/* 4. Tab Navigation & Content */}
+{/* 4. Tab Navigation & Content */}
       <div className="min-w-0 px-6 pb-6">
         <div className="bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs overflow-hidden">
           {/* Tabs Header */}
@@ -857,12 +856,12 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                 onClick={() => setActiveTab('SCENARIOS')}
                 className={`py-3 border-b-2 transition-all cursor-pointer flex items-center space-x-2 ${
                   activeTab === 'SCENARIOS'
-                    ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
+                    ? 'border-[var(--accent-primary)] text-[var(--accent-primary)] font-bold'
                     : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 <span>Test Senaryoları</span>
-                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] font-bold">
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-bold">
                   {planCases.length}
                 </span>
               </button>
@@ -872,7 +871,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                 onClick={() => setActiveTab('RUNS')}
                 className={`py-3 border-b-2 transition-all cursor-pointer flex items-center space-x-2 ${
                   activeTab === 'RUNS'
-                    ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
+                    ? 'border-[var(--accent-primary)] text-[var(--accent-primary)] font-bold'
                     : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
@@ -945,7 +944,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                       setCandidateCaseIdsToAdd([]);
                       setIsAddCasesModalOpen(true);
                     }}
-                    className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] transition-all shadow-xs cursor-pointer active:scale-98"
+                    className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 transition-all shadow-xs cursor-pointer active:scale-98"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Test Senaryosu Ekle</span>
@@ -964,7 +963,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                           checked={isAllFilteredSelected && filteredPlanCases.length > 0}
                           onChange={handleToggleSelectAllPlanCases}
                           aria-label="Tümünü seç"
-                          className="rounded border-slate-300 text-[#b83a4b] focus:ring-0 cursor-pointer"
+                          className="rounded border-slate-300 text-[var(--accent-primary)] focus:ring-0 cursor-pointer"
                         />
                       </th>
                       <th className="py-2.5 px-3 w-28">KOD</th>
@@ -993,7 +992,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                               setCandidateCaseIdsToAdd([]);
                               setIsAddCasesModalOpen(true);
                             }}
-                            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-xs cursor-pointer transition-all active:scale-98"
+                            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 shadow-xs cursor-pointer transition-all active:scale-98"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             <span>Test Senaryosu Ekle</span>
@@ -1017,7 +1016,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={(e) => handleToggleCaseSelection(tc.id, e as any)}
-                                className="rounded border-slate-300 text-[#b83a4b] focus:ring-0 cursor-pointer"
+                                className="rounded border-slate-300 text-[var(--accent-primary)] focus:ring-0 cursor-pointer"
                               />
                             </td>
 
@@ -1199,7 +1198,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
             <div className="p-4 px-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/40 dark:bg-[#121926]/40">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <FolderKanban className="w-4 h-4 text-[#b83a4b]" />
+                  <FolderKanban className="w-4 h-4 text-[var(--accent-primary)]" />
                   <span>Test Planına Senaryoları Ekle</span>
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -1283,7 +1282,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                 >
                   {isAllCandidatesSelected ? (
                     <>
-                      <MinusSquare className="w-3.5 h-3.5 text-[#b83a4b]" />
+                      <MinusSquare className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                       <span>Filtrelenenlerin Seçimini Kaldır</span>
                     </>
                   ) : (
@@ -1345,7 +1344,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => {}}
-                          className="rounded border-slate-300 text-[#b83a4b] focus:ring-0 cursor-pointer h-4 w-4 shrink-0"
+                          className="rounded border-slate-300 text-[var(--accent-primary)] focus:ring-0 cursor-pointer h-4 w-4 shrink-0"
                         />
                         <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shrink-0">
                           {c.code}
@@ -1404,7 +1403,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                   type="button"
                   disabled={candidateCaseIdsToAdd.length === 0}
                   onClick={handleConfirmAddCases}
-                  className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] disabled:opacity-50 transition-all shadow-xs cursor-pointer"
+                  className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 disabled:opacity-50 transition-all shadow-xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Seçilenleri Plana Ekle ({candidateCaseIdsToAdd.length})</span>

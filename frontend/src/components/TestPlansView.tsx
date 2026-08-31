@@ -438,12 +438,12 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                     }}
                     className={`w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
                       statusDropdownFilter === item.key
-                        ? 'font-bold text-[#b83a4b] dark:text-[#d66b7a]'
+                        ? 'font-bold text-[var(--accent-primary)]'
                         : 'text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     <span>{item.label}</span>
-                    {statusDropdownFilter === item.key && <Check className="w-3.5 h-3.5 text-[#b83a4b]" />}
+                    {statusDropdownFilter === item.key && <Check className="w-3.5 h-3.5 text-[var(--accent-primary)]" />}
                   </button>
                 ))}
               </div>
@@ -454,7 +454,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           <button
             type="button"
             onClick={() => (onOpenNewPlan ? onOpenNewPlan() : setIsNewPlanOpen(true))}
-            className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] transition-all shadow-md shadow-[#821c2b]/25 active:scale-98 cursor-pointer"
+            className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 transition-all shadow-md shadow-[var(--accent-dark)]/25 active:scale-98 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Yeni Test Planı</span>
@@ -571,7 +571,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                   }}
                   className={`py-3 border-b-2 transition-all cursor-pointer ${
                     isActive
-                      ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
+                      ? 'border-[var(--accent-primary)] text-[var(--accent-primary)] font-bold'
                       : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
                   }`}
                 >
@@ -615,7 +615,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                 {isLoading ? (
                   <tr>
                     <td colSpan={8} className="py-14 text-center text-slate-400">
-                      <div className="w-6 h-6 border-2 border-[#b83a4b]/20 border-t-[#b83a4b] rounded-full animate-spin mx-auto mb-2" />
+                      <div className="w-6 h-6 border-2 border-[var(--accent-primary)]/20 border-t-[var(--accent-primary)] rounded-full animate-spin mx-auto mb-2" />
                       <span>Yükleniyor...</span>
                     </td>
                   </tr>
@@ -650,7 +650,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                               <Calendar className="w-3.5 h-3.5" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-[#b83a4b] dark:group-hover:text-[#d66b7a] transition-colors text-xs" title={p.title}>
+                              <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-[var(--accent-primary)] transition-colors text-xs" title={p.title}>
                                 {p.title}
                               </p>
                               {p.description && (
@@ -832,7 +832,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                     onClick={() => setCurrentPage(i + 1)}
                     className={`w-6 h-6 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
                       currentPage === i + 1
-                        ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white'
+                        ? 'bg-[var(--accent-gradient)] text-white'
                         : 'bg-white dark:bg-[#161f30] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >

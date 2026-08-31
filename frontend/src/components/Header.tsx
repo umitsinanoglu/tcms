@@ -130,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
   const getRoleBadge = (r: string) => {
     switch (r) {
       case 'ADMIN':
-        return { label: 'ADMIN', bg: 'bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border-[#b83a4b]/30' };
+        return { label: 'ADMIN', bg: 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border-[var(--accent-primary)]/30' };
       case 'TEST_LEAD':
         return { label: 'LEAD', bg: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30' };
       case 'TESTER':
@@ -251,7 +251,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onNavigateHome}
-            className="flex items-center space-x-1 text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] transition-colors font-medium cursor-pointer shrink-0"
+            className="flex items-center space-x-1 text-slate-600 dark:text-slate-300 hover:text-[var(--accent-primary)] transition-colors font-medium cursor-pointer shrink-0"
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
             <span>Dashboard</span>
@@ -262,7 +262,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onNavigateHome}
-            className="hover:text-[#b83a4b] dark:hover:text-[#d66b7a] transition-colors font-medium cursor-pointer shrink-0"
+            className="hover:text-[var(--accent-primary)] transition-colors font-medium cursor-pointer shrink-0"
           >
             Projeler
           </button>
@@ -272,7 +272,7 @@ export const Header: React.FC<HeaderProps> = ({
               <ChevronRight className="w-3 h-3 text-slate-400 dark:text-slate-600 shrink-0" />
               <span
                 onClick={() => onTabChange?.('DASHBOARD')}
-                className="font-semibold text-slate-700 dark:text-slate-200 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] transition-colors cursor-pointer truncate max-w-[140px] md:max-w-[200px]"
+                className="font-semibold text-slate-700 dark:text-slate-200 hover:text-[var(--accent-primary)] transition-colors cursor-pointer truncate max-w-[140px] md:max-w-[200px]"
                 title={selectedProject.name}
               >
                 {selectedProject.name}
@@ -297,8 +297,8 @@ export const Header: React.FC<HeaderProps> = ({
           <div
             className={`flex items-center space-x-2 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-[#1d232f] border transition-all duration-150 rounded-xl px-2.5 py-1.5 w-40 sm:w-52 md:w-60 ${
               isSearchFocused
-                ? 'bg-white dark:bg-[#1d232f] border-[#b83a4b]/50 ring-2 ring-[#b83a4b]/20 shadow-sm'
-                : 'border-slate-200/80 dark:border-slate-700/70 hover:border-[#b83a4b]/30'
+                ? 'bg-white dark:bg-[#1d232f] border-[var(--accent-primary)]/50 ring-2 ring-[var(--accent-primary)]/20 shadow-sm'
+                : 'border-slate-200/80 dark:border-slate-700/70 hover:border-[var(--accent-primary)]/30'
             }`}
           >
             <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -352,7 +352,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {searchResults && searchResults.cases.length > 0 && (
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1 flex items-center gap-1.5">
-                      <FileText className="w-3 h-3 text-[#b83a4b]" />
+                      <FileText className="w-3 h-3 text-[var(--accent-primary)]" />
                       <span>Test Senaryoları ({searchResults.cases.length})</span>
                     </div>
                     <div className="space-y-0.5">
@@ -371,7 +371,7 @@ export const Header: React.FC<HeaderProps> = ({
                               <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
                                 {c.code}
                               </span>
-                              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] truncate">
+                              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[var(--accent-primary)] truncate">
                                 {c.title}
                               </p>
                             </div>
@@ -404,7 +404,7 @@ export const Header: React.FC<HeaderProps> = ({
                           className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition-colors group"
                         >
                           <div className="min-w-0 pr-2">
-                            <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] truncate">
+                            <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[var(--accent-primary)] truncate">
                               {p.title}
                             </p>
                             <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400 font-mono">
@@ -454,7 +454,7 @@ export const Header: React.FC<HeaderProps> = ({
                             className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition-colors group"
                           >
                             <div className="min-w-0 pr-2">
-                              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] truncate">
+                              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[var(--accent-primary)] truncate">
                                 {r.title}
                               </p>
                               <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400 font-mono">
@@ -514,7 +514,7 @@ export const Header: React.FC<HeaderProps> = ({
                                     {d.jiraBugKey}
                                   </span>
                                 )}
-                                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] truncate">
+                                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[var(--accent-primary)] truncate">
                                   {d.title}
                                 </p>
                               </div>
@@ -537,7 +537,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {searchResults && searchResults.projects.length > 0 && (
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1 flex items-center gap-1.5">
-                      <FolderKanban className="w-3 h-3 text-[#b83a4b]" />
+                      <FolderKanban className="w-3 h-3 text-[var(--accent-primary)]" />
                       <span>Projeler ({searchResults.projects.length})</span>
                     </div>
                     <div className="space-y-0.5">
@@ -552,10 +552,10 @@ export const Header: React.FC<HeaderProps> = ({
                           className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition-colors group"
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/20">
+                            <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20">
                               [{p.key}]
                             </span>
-                            <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] truncate">
+                            <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[var(--accent-primary)] truncate">
                               {p.name}
                             </span>
                           </div>
@@ -582,13 +582,13 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               className={`flex items-center space-x-2 px-2.5 py-1.5 rounded-xl border text-left transition-all duration-150 cursor-pointer max-w-[180px] sm:max-w-[220px] ${
                 isProjectDropdownOpen
-                  ? 'bg-slate-50 dark:bg-[#1d232f] border-[#b83a4b]/50 ring-2 ring-[#b83a4b]/20 shadow-sm'
-                  : 'bg-slate-100/80 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-[#1d232f] border-slate-200/80 dark:border-slate-700/70 hover:border-[#b83a4b]/30'
+                  ? 'bg-slate-50 dark:bg-[#1d232f] border-[var(--accent-primary)]/50 ring-2 ring-[var(--accent-primary)]/20 shadow-sm'
+                  : 'bg-slate-100/80 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-[#1d232f] border-slate-200/80 dark:border-slate-700/70 hover:border-[var(--accent-primary)]/30'
               }`}
               title={selectedProject ? `Aktif Proje: ${selectedProject.name}` : 'Proje Seçin'}
             >
-              {/* Meaningful colored project icon badge (Screenshot style) */}
-              <div className="w-5 h-5 rounded-md bg-[#b83a4b] text-white flex items-center justify-center font-bold text-[11px] shrink-0 shadow-2xs">
+              {/* Meaningful colored project icon badge */}
+              <div className="w-5 h-5 rounded-md bg-[var(--accent-primary)] text-white flex items-center justify-center font-bold text-[11px] shrink-0 shadow-2xs">
                 {selectedProject?.name?.charAt(0).toLocaleUpperCase('tr-TR') || 'P'}
               </div>
 
@@ -616,7 +616,7 @@ export const Header: React.FC<HeaderProps> = ({
                       placeholder="Proje ara..."
                       value={projectSearchQuery}
                       onChange={(e) => setProjectSearchQuery(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 pl-8 pr-7 py-2 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]/50"
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 pl-8 pr-7 py-2 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]/50"
                     />
                     {projectSearchQuery && (
                       <button
@@ -650,16 +650,16 @@ export const Header: React.FC<HeaderProps> = ({
                           }}
                           className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition-all group ${
                             isSelected
-                              ? 'bg-[#b83a4b]/10 dark:bg-[#b83a4b]/15 border border-[#b83a4b]/30 text-[#b83a4b] dark:text-[#d66b7a] font-semibold'
+                              ? 'bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 text-[var(--accent-primary)] font-semibold'
                               : 'hover:bg-slate-100 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300 border border-transparent'
                           }`}
                         >
                           <div className="flex items-center space-x-2.5 min-w-0 pr-2 flex-1">
-                            <div className="w-6 h-6 rounded-md bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a] font-bold text-xs flex items-center justify-center shrink-0">
+                            <div className="w-6 h-6 rounded-md bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-bold text-xs flex items-center justify-center shrink-0">
                               {p.name.charAt(0).toLocaleUpperCase('tr-TR')}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs font-bold truncate text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] transition-colors">
+                              <p className="text-xs font-bold truncate text-slate-900 dark:text-slate-100 group-hover:text-[var(--accent-primary)] transition-colors">
                                 {p.name}
                               </p>
                               {p.description && (
@@ -669,7 +669,7 @@ export const Header: React.FC<HeaderProps> = ({
                           </div>
 
                           <div className="flex items-center space-x-1 shrink-0">
-                            {isSelected && <Check className="w-4 h-4 text-[#b83a4b] shrink-0" />}
+                            {isSelected && <Check className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />}
                             {onEditProject && can('EDIT_PROJECT') && (
                               <button
                                 type="button"
@@ -716,7 +716,7 @@ export const Header: React.FC<HeaderProps> = ({
                         setIsProjectDropdownOpen(false);
                         onOpenNewProject();
                       }}
-                      className="w-full flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl text-xs font-semibold text-[#b83a4b] dark:text-[#d66b7a] hover:bg-[#b83a4b]/10 transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Yeni Test Projesi Oluştur</span>
@@ -753,20 +753,20 @@ export const Header: React.FC<HeaderProps> = ({
           }
           target="_blank"
           rel="noopener noreferrer"
-          className="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] bg-slate-100/90 dark:bg-slate-800/80 hover:bg-[#b83a4b]/10 dark:hover:bg-[#b83a4b]/15 border border-slate-200 dark:border-slate-700 hover:border-[#b83a4b]/30 dark:hover:border-[#b83a4b]/40 rounded-xl transition-all shadow-xs shrink-0 cursor-pointer"
+          className="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[var(--accent-primary)] bg-slate-100/90 dark:bg-slate-800/80 hover:bg-[var(--accent-primary)]/10 border border-slate-200 dark:border-slate-700 hover:border-[var(--accent-primary)]/30 rounded-xl transition-all shadow-xs shrink-0 cursor-pointer"
           title="Yardım ve API Dokümantasyonu (Yeni Sekme)"
           aria-label="Yardım"
         >
-          <BookOpen className="w-4 h-4 text-[#b83a4b]" />
+          <BookOpen className="w-4 h-4 text-[var(--accent-primary)]" />
         </a>
 
-        {/* 5. User Profile: ONLY Single Letter Circular Avatar (Screenshot style: e.g. Ü or A) */}
+        {/* 5. User Profile: ONLY Single Letter Circular Avatar */}
         <div className="relative" ref={userDropdownRef}>
           <button
             type="button"
             onClick={() => setIsUserDropdownOpen((prev) => !prev)}
-            className={`w-8 h-8 rounded-full bg-gradient-to-tr from-[#821c2b] to-[#b83a4b] text-white font-bold text-xs sm:text-sm flex items-center justify-center shadow-xs transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-[#b83a4b]/40 ${
-              isUserDropdownOpen ? 'ring-2 ring-[#b83a4b] scale-105' : ''
+            className={`w-8 h-8 rounded-full bg-[var(--accent-gradient)] text-white font-bold text-xs sm:text-sm flex items-center justify-center shadow-xs transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-[var(--accent-primary)]/40 ${
+              isUserDropdownOpen ? 'ring-2 ring-[var(--accent-primary)] scale-105' : ''
             }`}
             title={`Kullanıcı: ${currentUser?.name || 'Kullanıcı'} (${role})`}
             aria-label="Kullanıcı Menüsü"
@@ -779,7 +779,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col">
               {/* Profile Card Header */}
               <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#821c2b] to-[#b83a4b] text-white font-bold text-base flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-10 h-10 rounded-full bg-[var(--accent-gradient)] text-white font-bold text-base flex items-center justify-center shrink-0 shadow-sm">
                   {userInitial}
                 </div>
                 <div className="min-w-0 flex-1">

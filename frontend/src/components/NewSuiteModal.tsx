@@ -117,7 +117,7 @@ export const NewSuiteModal: React.FC<NewSuiteModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white text-xs font-semibold rounded-xl shadow-md shadow-[#821c2b]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+              className="flex items-center space-x-2 px-5 py-2 bg-[var(--accent-gradient)] hover:brightness-110 text-white text-xs font-semibold rounded-xl shadow-md shadow-[var(--accent-dark)]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
             >
               <FolderPlus className="w-4 h-4" />
               <span>{isSubmitting ? 'Oluşturuluyor...' : 'Suite Oluştur'}</span>

@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Azure Mavisi (Jira/Atlassian style single dominant color scheme) theme and dynamic accent variable refactoring across all views
 - Mimari Altyapı, OOP & Concurrency Refactor: Atomic Sequence Pattern, DB composite indexes, N+1 query elimination, Facade/Strategy exporters, DRY UI tokens
 - Test Automation Center (TAC) cift yonlu entegrasyonu: TACService, canli WebSocket log terminali, cihaz taramasi ve otomasyon tetikleme paneli eklendi
 - Kapsamlı Ayarlar Sayfası (Kullanıcılar, Oturumlar, Rol Matrisi, LDAP Entegrasyonu, API Anahtarları, Webhook'lar, Proje & Sistem Parametreleri)

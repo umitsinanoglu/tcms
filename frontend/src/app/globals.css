@@ -51,6 +51,29 @@
   --accent-glow: rgba(184, 58, 75, 0.15);
 }
 
+[data-theme="azure-blue"],
+.theme-azure-blue {
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Jira-inspired Azure Mavisi Theme Variables (Crisp, Modern, Single Dominant Color) */
+  --bg-background: #f4f5f7;
+  --bg-surface: #ffffff;
+  --bg-surface-secondary: #ebecf0;
+  --border-color: #dfe1e6;
+  --text-main: #091e42;
+  --text-muted: #626f86;
+  --accent-primary: #0c66e4;
+  --accent-dark: #0052cc;
+  --accent-gradient: linear-gradient(135deg, #0c66e4 0%, #0052cc 100%);
+  --accent-hover: #0055cc;
+  --scrollbar-track: #f4f5f7;
+  --scrollbar-thumb: #cbd5e1;
+  --glass-panel-bg: rgba(255, 255, 255, 0.95);
+  --glass-panel-border: rgba(12, 102, 228, 0.18);
+  --accent-glow: rgba(12, 102, 228, 0.18);
+}
+
 [data-theme="corporate-light"],
 .theme-corporate-light {
   --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -123,19 +146,22 @@ body {
 }
 
 /* Enterprise Button Utilities */
+.btn-primary,
 .btn-crimson {
   background: var(--accent-gradient);
   color: #ffffff;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 6px rgba(130, 28, 43, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
+.btn-primary:hover,
 .btn-crimson:hover {
-  filter: brightness(1.06);
-  box-shadow: 0 4px 12px rgba(130, 28, 43, 0.35);
+  filter: brightness(1.08);
+  box-shadow: 0 4px 12px var(--accent-glow);
   transform: translateY(-0.5px);
 }
 
+.btn-primary:active,
 .btn-crimson:active {
   transform: scale(0.98);
 }
@@ -149,7 +175,7 @@ body {
 
 .btn-secondary:hover {
   background-color: var(--bg-surface-secondary);
-  border-color: rgba(184, 58, 75, 0.30);
+  border-color: var(--accent-primary);
 }
 
 .btn-secondary:active {

@@ -508,7 +508,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className={`flex items-center space-x-2.5 px-4 py-3 rounded-xl shadow-xl text-xs font-semibold backdrop-blur-md border ${
               toast.type === 'SUCCESS'
                 ? 'bg-emerald-500/90 border-emerald-400 text-white'
-                : 'bg-[#b83a4b]/95 border-rose-400 text-white'
+                : 'bg-rose-600/95 border-rose-400 text-white'
             }`}
           >
             {toast.type === 'SUCCESS' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
@@ -520,7 +520,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 1. Header Bar */}
       <div className="p-4 sm:px-6 border-b border-slate-200 dark:border-slate-800/80 bg-white/80 dark:bg-[#1d232f]/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#b83a4b] to-[#821c2b] text-white flex items-center justify-center shadow-md shadow-[#821c2b]/25">
+          <div className="w-10 h-10 rounded-xl bg-[var(--accent-gradient)] text-white flex items-center justify-center shadow-md shadow-[var(--accent-dark)]/25">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
@@ -528,7 +528,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <h1 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
                 Sistem & Yönetim Ayarları
               </h1>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/30">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30">
                 Enterprise Hub
               </span>
             </div>
@@ -568,7 +568,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
                   isActive
-                    ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white shadow-sm shadow-[#821c2b]/30 font-bold'
+                    ? 'bg-[var(--accent-gradient)] text-white shadow-sm shadow-[var(--accent-dark)]/30 font-bold'
                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -603,7 +603,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="p-5 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 rounded-xl bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a]">
+                    <div className="p-2 rounded-xl bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]">
                       <Building2 className="w-5 h-5" />
                     </div>
                     <div>
@@ -620,7 +620,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={onOpenCreateProject}
-                      className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white text-xs font-semibold shadow-md shadow-[#821c2b]/20 hover:from-[#c54859] hover:to-[#962534] transition-all cursor-pointer"
+                      className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Yeni Proje Ekle</span>
@@ -637,7 +637,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         key={proj.id}
                         className={`p-4 rounded-xl border transition-all flex flex-col justify-between ${
                           isSelected
-                            ? 'bg-[#b83a4b]/5 dark:bg-[#b83a4b]/10 border-[#b83a4b]/40 ring-1 ring-[#b83a4b]/30'
+                            ? 'bg-[var(--accent-primary)]/5 dark:bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/40 ring-1 ring-[var(--accent-primary)]/30'
                             : 'bg-slate-50/70 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                         }`}
                       >
@@ -679,7 +679,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onSelectProject(proj)}
-                            className="text-xs font-semibold text-[#b83a4b] dark:text-[#d66b7a] hover:underline cursor-pointer"
+                            className="text-xs font-semibold text-[var(--accent-primary)] hover:underline cursor-pointer"
                           >
                             Bu Projeyi Seç →
                           </button>
@@ -745,7 +745,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       type="text"
                       value={systemSettings.systemTitle}
                       onChange={(e) => setSystemSettings({ ...systemSettings, systemTitle: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
                   </div>
 
@@ -756,7 +756,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <select
                       value={systemSettings.defaultEnvironment}
                       onChange={(e) => setSystemSettings({ ...systemSettings, defaultEnvironment: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b] font-medium"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] font-medium"
                     >
                       <option value="DEV">DEV (Geliştirme)</option>
                       <option value="TEST">TEST (QA Ortamı)</option>
@@ -778,7 +778,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       onChange={(e) =>
                         setSystemSettings({ ...systemSettings, runTimeoutMinutes: parseInt(e.target.value) || 60 })
                       }
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
                   </div>
 
@@ -794,7 +794,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       onChange={(e) =>
                         setSystemSettings({ ...systemSettings, sessionTimeoutHours: parseInt(e.target.value) || 24 })
                       }
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
                   </div>
                 </div>
@@ -807,7 +807,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="submit"
                       disabled={isSavingSystem}
-                      className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white text-xs font-semibold shadow-md shadow-[#821c2b]/20 hover:from-[#c54859] hover:to-[#962534] transition-all cursor-pointer disabled:opacity-50"
+                      className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer disabled:opacity-50"
                     >
                       <Save className="w-3.5 h-3.5" />
                       <span>{isSavingSystem ? 'Kaydediliyor...' : 'Ayarları Kaydet'}</span>
@@ -827,7 +827,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="p-5 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 rounded-xl bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a]">
+                    <div className="p-2 rounded-xl bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]">
                       <Users className="w-5 h-5" />
                     </div>
                     <div>
@@ -844,7 +844,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsUserModalOpen(true)}
-                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white text-xs font-semibold shadow-md shadow-[#821c2b]/20 hover:from-[#c54859] hover:to-[#962534] transition-all cursor-pointer"
+                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Yeni Kullanıcı Ekle</span>
@@ -859,7 +859,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     placeholder="Kullanıcı adı, e-posta veya departman ile ara..."
                     value={userSearchQuery}
                     onChange={(e) => setUserSearchQuery(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   />
                 </div>
 
@@ -880,7 +880,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#b83a4b]/20 to-[#821c2b]/30 text-[#b83a4b] dark:text-[#d66b7a] flex items-center justify-center font-bold text-sm shrink-0 border border-[#b83a4b]/30">
+                            <div className="w-10 h-10 rounded-full bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] flex items-center justify-center font-bold text-sm shrink-0 border border-[var(--accent-primary)]/30">
                               {u.name.charAt(0)}
                             </div>
                           )}
@@ -891,7 +891,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 {u.name}
                               </span>
                               {isMe && (
-                                <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/30">
+                                <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30">
                                   BEN
                                 </span>
                               )}
@@ -919,7 +919,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             <select
                               value={u.role}
                               onChange={(e) => handleRoleChange(u.id, e.target.value as UserRole)}
-                              className="text-xs font-bold font-mono px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] cursor-pointer"
+                              className="text-xs font-bold font-mono px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] cursor-pointer"
                             >
                               <option value="ADMIN">ADMIN</option>
                               <option value="TEST_LEAD">TEST_LEAD</option>
@@ -952,7 +952,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 type="button"
                                 onClick={() => handleDeleteUser(u)}
                                 disabled={isMe}
-                                className={`p-1.5 rounded-xl bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/20 hover:bg-[#b83a4b]/20 transition-colors cursor-pointer ${
+                                className={`p-1.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-colors cursor-pointer ${
                                   isMe ? 'opacity-40 cursor-not-allowed' : ''
                                 }`}
                                 title="Kullanıcıyı Sil"
@@ -1011,7 +1011,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         key={sess.id}
                         className={`p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                           sess.isCurrent
-                            ? 'bg-[#b83a4b]/5 dark:bg-[#b83a4b]/10 border-[#b83a4b]/30'
+                            ? 'bg-[var(--accent-primary)]/5 dark:bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/30'
                             : 'bg-slate-50/60 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800'
                         }`}
                       >
@@ -1073,12 +1073,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="space-y-6 animate-in fade-in duration-150 max-w-5xl">
               {/* Role Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                <div className="p-4 rounded-xl bg-white dark:bg-[#1d232f] border border-[#b83a4b]/30 shadow-xs space-y-2">
+                <div className="p-4 rounded-xl bg-white dark:bg-[#1d232f] border border-[var(--accent-primary)]/30 shadow-xs space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold font-mono px-2 py-0.5 rounded bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a]">
+                    <span className="text-xs font-bold font-mono px-2 py-0.5 rounded bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]">
                       ADMIN
                     </span>
-                    <ShieldCheck className="w-4 h-4 text-[#b83a4b]" />
+                    <ShieldCheck className="w-4 h-4 text-[var(--accent-primary)]" />
                   </div>
                   <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">Sistem Yöneticisi</h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -1242,7 +1242,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       type="button"
                       onClick={handleSyncLdap}
                       disabled={isSyncingLdap}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white text-xs font-semibold shadow-md shadow-[#821c2b]/20 hover:from-[#c54859] hover:to-[#962534] transition-all cursor-pointer disabled:opacity-50"
+                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer disabled:opacity-50"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isSyncingLdap ? 'animate-spin' : ''}`} />
                       <span>{isSyncingLdap ? 'Senkronize Ediliyor...' : 'Kullanıcıları Senkronize Et'}</span>
@@ -1256,7 +1256,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     className={`p-3.5 rounded-xl border text-xs animate-in fade-in ${
                       ldapTestResult.success
                         ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
-                        : 'bg-[#b83a4b]/10 border-[#b83a4b]/30 text-rose-700 dark:text-rose-300'
+                        : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
                     }`}
                   >
                     <div className="flex items-center justify-between font-bold">
@@ -1299,7 +1299,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="ldap://ad.company.local:389 veya ldaps://..."
                       value={ldapConfig.serverUrl}
                       onChange={(e) => setLdapConfig({ ...ldapConfig, serverUrl: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
                   </div>
 
@@ -1313,7 +1313,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="dc=company,dc=local"
                       value={ldapConfig.baseDn}
                       onChange={(e) => setLdapConfig({ ...ldapConfig, baseDn: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
                   </div>
 
@@ -1327,7 +1327,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="cn=tcms-svc,ou=ServiceAccounts,dc=company,dc=local"
                       value={ldapConfig.bindDn}
                       onChange={(e) => setLdapConfig({ ...ldapConfig, bindDn: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
                   </div>
 
@@ -1341,7 +1341,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         placeholder={ldapConfig.hasPassword ? '•••••••• (Kayıtlı)' : 'Şifre giriniz'}
                         value={ldapConfig.bindPassword || ''}
                         onChange={(e) => setLdapConfig({ ...ldapConfig, bindPassword: e.target.value })}
-                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-3 pr-9 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-3 pr-9 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                       />
                       <button
                         type="button"
@@ -1362,7 +1362,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="(&(objectClass=user)(sAMAccountName={username}))"
                       value={ldapConfig.userFilter || ''}
                       onChange={(e) => setLdapConfig({ ...ldapConfig, userFilter: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
                   </div>
                 </div>
@@ -1375,7 +1375,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono">
                     <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex justify-between">
                       <span>CN=TCMS_Admins</span>
-                      <strong className="text-[#b83a4b]">ADMIN</strong>
+                      <strong className="text-[var(--accent-primary)]">ADMIN</strong>
                     </div>
                     <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex justify-between">
                       <span>CN=TCMS_TestLeads</span>
@@ -1396,7 +1396,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <div className="pt-3 flex justify-end">
                     <button
                       type="submit"
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white text-xs font-semibold shadow-md shadow-[#821c2b]/20 hover:from-[#c54859] hover:to-[#962534] transition-all cursor-pointer"
+                      className="px-4 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
                     >
                       LDAP Yapılandırmasını Kaydet
                     </button>
@@ -1466,7 +1466,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsNewKeyModalOpen(true)}
-                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white text-xs font-semibold shadow-md shadow-[#821c2b]/20 hover:from-[#c54859] hover:to-[#962534] transition-all cursor-pointer"
+                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Yeni API Anahtarı Oluştur</span>
@@ -1513,7 +1513,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleRevokeApiKey(k.id)}
-                            className="p-1.5 rounded-xl bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/20 hover:bg-[#b83a4b]/20 text-xs font-semibold transition-colors cursor-pointer"
+                            className="p-1.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 text-xs font-semibold transition-colors cursor-pointer"
                             title="Anahtarı İptal Et"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1617,7 +1617,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsWebhookModalOpen(true)}
-                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white text-xs font-semibold shadow-md shadow-[#821c2b]/20 hover:from-[#c54859] hover:to-[#962534] transition-all cursor-pointer"
+                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Yeni Webhook Ekle</span>
@@ -1631,7 +1631,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     className={`p-3 rounded-xl border text-xs animate-in fade-in ${
                       webhookPingResult.success
                         ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                        : 'bg-[#b83a4b]/10 border-[#b83a4b]/30 text-rose-300'
+                        : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
                     }`}
                   >
                     <div className="flex items-center space-x-2 font-bold">
@@ -1689,7 +1689,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleDeleteWebhook(wh.id)}
-                            className="p-1.5 rounded-xl bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/20 hover:bg-[#b83a4b]/20 text-xs font-semibold transition-colors cursor-pointer"
+                            className="p-1.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 text-xs font-semibold transition-colors cursor-pointer"
                             title="Webhook'u Sil"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1713,7 +1713,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center space-x-2">
-                <Users className="w-4 h-4 text-[#b83a4b]" />
+                <Users className="w-4 h-4 text-[var(--accent-primary)]" />
                 <span>Yeni Kullanıcı Tanımla</span>
               </h3>
               <button
@@ -1733,7 +1733,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   placeholder="Örn: Ayşe Demir"
                   value={userFormData.name}
                   onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 />
               </div>
 
@@ -1745,7 +1745,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   placeholder="ayse.demir@company.com"
                   value={userFormData.email}
                   onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 />
               </div>
 
@@ -1755,7 +1755,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <select
                     value={userFormData.role}
                     onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value as UserRole })}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b] font-medium"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] font-medium"
                   >
                     <option value="ADMIN">ADMIN</option>
                     <option value="TEST_LEAD">TEST_LEAD</option>
@@ -1771,7 +1771,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     placeholder="QA / Core Banking"
                     value={userFormData.department}
                     onChange={(e) => setUserFormData({ ...userFormData, department: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   />
                 </div>
               </div>
@@ -1786,7 +1786,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white text-xs font-semibold shadow-md shadow-[#821c2b]/20 hover:from-[#c54859] hover:to-[#962534]"
+                  className="px-4 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110"
                 >
                   Kullanıcıyı Kaydet
                 </button>
@@ -1830,7 +1830,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   placeholder="Örn: Jenkins Playwright Pipeline"
                   value={newKeyData.name}
                   onChange={(e) => setNewKeyData({ ...newKeyData, name: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 />
               </div>
 
@@ -1839,7 +1839,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <select
                   value={newKeyData.scope}
                   onChange={(e) => setNewKeyData({ ...newKeyData, scope: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b] font-medium"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] font-medium"
                 >
                   <option value="write:runs">write:runs (Koşum Oluşturma & Sonuç Kaydetme)</option>
                   <option value="write:results">write:results (Yalnızca Test Sonucu Gönderme)</option>
@@ -1853,7 +1853,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <select
                   value={newKeyData.expiresInDays}
                   onChange={(e) => setNewKeyData({ ...newKeyData, expiresInDays: parseInt(e.target.value) })}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b] font-medium"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] font-medium"
                 >
                   <option value={30}>30 Gün</option>
                   <option value={90}>90 Gün (Önerilen)</option>
@@ -1873,7 +1873,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white text-xs font-semibold shadow-md shadow-[#821c2b]/20 hover:from-[#c54859] hover:to-[#962534]"
+                  className="px-4 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110"
                 >
                   Anahtarı Üret
                 </button>
@@ -1911,7 +1911,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   placeholder="Örn: CI/CD Test Otomasyon Merkezi"
                   value={newWebhookData.name}
                   onChange={(e) => setNewWebhookData({ ...newWebhookData, name: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 />
               </div>
 
@@ -1923,7 +1923,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   placeholder="http://localhost:8000/api/webhook veya https://..."
                   value={newWebhookData.url}
                   onChange={(e) => setNewWebhookData({ ...newWebhookData, url: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 />
               </div>
 
@@ -1934,7 +1934,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   placeholder="İsteğe bağlı secret token"
                   value={newWebhookData.secretToken}
                   onChange={(e) => setNewWebhookData({ ...newWebhookData, secretToken: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 />
               </div>
 
@@ -1948,7 +1948,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white text-xs font-semibold shadow-md shadow-[#821c2b]/20 hover:from-[#c54859] hover:to-[#962534]"
+                  className="px-4 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110"
                 >
                   Webhook Kaydet
                 </button>

@@ -233,7 +233,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
             )}
             <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shrink-0 ${
               suite.id === '__root_cases__'
-                ? 'bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] border-[#b83a4b]/20'
+                ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]/20'
                 : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
             }`}>
               {suite.id === '__root_cases__' ? <FileText className="w-6 h-6" /> : <FolderOpen className="w-6 h-6" />}
@@ -310,7 +310,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
               <button
                 type="button"
                 onClick={() => onAddCaseInSuite(suite.id === '__root_cases__' ? '' : suite.id)}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-[#b83a4b] hover:bg-[#a32e3e] text-white text-xs font-semibold rounded-xl shadow-md shadow-[#b83a4b]/20 transition-all active:scale-95 cursor-pointer"
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-[var(--accent-gradient)] hover:brightness-110 text-white text-xs font-semibold rounded-xl shadow-md shadow-[var(--accent-dark)]/20 transition-all active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Yeni Case</span>

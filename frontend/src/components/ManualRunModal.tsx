@@ -578,8 +578,8 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
         {/* Modal Header */}
         <div className="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#151b28] shrink-0">
           <div className="flex items-center space-x-3 min-w-0">
-            {/* Red Clipboard Badge */}
-            <div className="w-10 h-10 rounded-xl bg-[#b83a4b]/10 text-[#b83a4b] border border-[#b83a4b]/20 flex items-center justify-center shrink-0 shadow-xs">
+            {/* Accent Clipboard Badge */}
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20 flex items-center justify-center shrink-0 shadow-xs">
               <ClipboardList className="w-5 h-5" />
             </div>
             <div className="min-w-0">
@@ -613,7 +613,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
             {/* Live Stopwatch Widget during Execution */}
             {wizardStep === 'EXECUTION' && (
               <div className="flex items-center space-x-2 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                <Timer className={`w-4 h-4 ${isTimerRunning ? 'text-[#b83a4b] animate-pulse' : 'text-slate-400'}`} />
+                <Timer className={`w-4 h-4 ${isTimerRunning ? 'text-[var(--accent-primary)] animate-pulse' : 'text-slate-400'}`} />
                 <span className="font-mono font-extrabold text-sm text-slate-800 dark:text-slate-200 min-w-[50px]">
                   {Math.floor(currentScenarioTimerMs / 1000)} sn
                 </span>
@@ -643,7 +643,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="text-slate-400 hover:text-slate-700 dark:hover:white p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title="Kapat"
             >
               <X className="w-5 h-5" />
@@ -674,7 +674,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   onClick={() => setIsCreatingNewPlan(false)}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     !isCreatingNewPlan
-                      ? 'bg-white dark:bg-[#151b28] text-[#b83a4b] dark:text-[#d66b7a] shadow-xs'
+                      ? 'bg-white dark:bg-[#151b28] text-[var(--accent-primary)] shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
@@ -687,7 +687,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   onClick={() => setIsCreatingNewPlan(true)}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     isCreatingNewPlan
-                      ? 'bg-white dark:bg-[#151b28] text-[#b83a4b] dark:text-[#d66b7a] shadow-xs'
+                      ? 'bg-white dark:bg-[#151b28] text-[var(--accent-primary)] shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
@@ -704,7 +704,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                     <select
                       value={selectedPlanId}
                       onChange={(e) => handleSelectPlan(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#b83a4b]/30"
+                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30"
                     >
                       {plans.map((p) => (
                         <option key={p.id} value={p.id}>
@@ -719,7 +719,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   </div>
                 )
               ) : (
-                <div className="space-y-3 p-4 rounded-xl border border-dashed border-[#b83a4b]/40 bg-[#b83a4b]/5">
+                <div className="space-y-3 p-4 rounded-xl border border-dashed border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/5">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Yeni Test Planı Başlığı <span className="text-rose-500">*</span>
@@ -734,13 +734,13 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Kapsam / Açıklama
+                      Açıklama & Notlar
                     </label>
-                    <input
-                      type="text"
+                    <textarea
+                      rows={2}
                       value={newPlanScope}
                       onChange={(e) => setNewPlanScope(e.target.value)}
-                      placeholder="Örn: Ödeme ve Sepet modülleri regresyon doğrulaması"
+                      placeholder="Test planı kapsamı, hedefler..."
                       className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs"
                     />
                   </div>
@@ -748,30 +748,21 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               )}
             </div>
 
-            {/* Run Details Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                  Koşum Başlığı
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Koşum Başlığı"
-                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-slate-100"
-                />
-              </div>
+            {/* Target Execution Environment & Parameters */}
+            <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                Hedef Koşum Parametreleri
+              </label>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                    Hedef Ortam
+                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                    🌐 Hedef Ortam
                   </label>
                   <select
                     value={environment}
                     onChange={(e) => setEnvironment(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-slate-100"
+                    className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   >
                     <option value="UAT">UAT</option>
                     <option value="DEV">DEV</option>
@@ -780,22 +771,37 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                     <option value="PROD">PROD</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                    Sürüm
+                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                    📦 Koşum Versiyonu
                   </label>
                   <input
                     type="text"
                     value={version}
                     onChange={(e) => setVersion(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100"
+                    placeholder="v1.0.0"
+                    className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                    👤 Yürüten Tester
+                  </label>
+                  <input
+                    type="text"
+                    value={executedBy}
+                    onChange={(e) => setExecutedBy(e.target.value)}
+                    placeholder="QA Lead"
+                    className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   />
                 </div>
               </div>
             </div>
 
             {/* Step 1 Footer Action */}
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <button
                 type="button"
                 onClick={onClose}
@@ -806,7 +812,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               <button
                 type="button"
                 onClick={() => setWizardStep('CASE_SELECT')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-md shadow-[#821c2b]/25 cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
               >
                 <span>Senaryo Seçimine İlerle ({selectedCaseIds.length} Senaryo)</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -845,7 +851,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                 >
                   Temizle
                 </button>
-                <span className="font-mono text-xs font-bold text-[#b83a4b] px-2">
+                <span className="font-mono text-xs font-bold text-[var(--accent-primary)] px-2">
                   {selectedCaseIds.length} / {testCases.length} Seçili
                 </span>
               </div>
@@ -868,7 +874,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                       onClick={() => handleToggleCaseSelect(tc.id)}
                       className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all ${
                         isChecked
-                          ? 'bg-white dark:bg-[#1d232f] border border-[#b83a4b]/30 shadow-xs'
+                          ? 'bg-white dark:bg-[#1d232f] border border-[var(--accent-primary)]/30 shadow-xs'
                           : 'opacity-60 hover:opacity-90 hover:bg-white dark:hover:bg-[#1d232f]'
                       }`}
                     >
@@ -877,7 +883,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => {}}
-                          className="w-4 h-4 rounded text-[#b83a4b] focus:ring-[#b83a4b] cursor-pointer"
+                          className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] cursor-pointer"
                         />
                         <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
                           {tc.code}
@@ -964,7 +970,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                       onClick={() => handleChangeIndex(idx)}
                       className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-bold transition-all cursor-pointer ${
                         isCurrent
-                          ? 'bg-[#b83a4b] text-white shadow-xs'
+                          ? 'bg-[var(--accent-primary)] text-white shadow-xs'
                           : cSt === 'PASSED'
                           ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                           : cSt === 'FAILED'
@@ -1052,7 +1058,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               {/* 2. Koşum Etiketleri & Cihaz / Kullanıcı Parametreleri Card */}
               <div className="p-4 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
                 <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300">
-                  <SlidersHorizontal className="w-4 h-4 text-[#b83a4b]" />
+                  <SlidersHorizontal className="w-4 h-4 text-[var(--accent-primary)]" />
                   <h4 className="text-xs font-bold uppercase tracking-wider">
                     Koşum Etiketleri & Cihaz / Kullanıcı Parametreleri
                   </h4>
@@ -1068,7 +1074,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                     <select
                       value={currentCaseState.environment}
                       onChange={(e) => handleUpdateCurrentState({ environment: e.target.value })}
-                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     >
                       <option value="UAT">UAT</option>
                       <option value="DEV">DEV</option>
@@ -1086,7 +1092,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                     <select
                       value={currentCaseState.platform}
                       onChange={(e) => handleUpdateCurrentState({ platform: e.target.value })}
-                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     >
                       <option value="Web">🌐 Web</option>
                       <option value="iOS">🍎 iOS</option>
@@ -1105,7 +1111,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                       value={currentCaseState.appVersion}
                       onChange={(e) => handleUpdateCurrentState({ appVersion: e.target.value })}
                       placeholder="v2.4.1"
-                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
                   </div>
 
@@ -1119,7 +1125,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                       value={currentCaseState.device}
                       onChange={(e) => handleUpdateCurrentState({ device: e.target.value })}
                       placeholder="Chrome 128 (macOS)"
-                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
                   </div>
 
@@ -1133,7 +1139,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                       value={currentCaseState.userProfile}
                       onChange={(e) => handleUpdateCurrentState({ userProfile: e.target.value })}
                       placeholder="BLACK FRIDAY İNDİRİM KULLANICISI"
-                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
                   </div>
 
@@ -1145,7 +1151,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                     <select
                       value={currentCaseState.customerType}
                       onChange={(e) => handleUpdateCurrentState({ customerType: e.target.value })}
-                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     >
                       <option value="BIREYSEL">👥 BİREYSEL</option>
                       <option value="KURUMSAL">🏢 KURUMSAL</option>
@@ -1161,7 +1167,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                     <select
                       value={currentCaseState.flakyStatus}
                       onChange={(e) => handleUpdateCurrentState({ flakyStatus: e.target.value })}
-                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     >
                       <option value="NONE">Stabil (Retry Yok)</option>
                       <option value="+1 retry">+1 retry</option>
@@ -1180,7 +1186,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                       value={currentCaseState.executionMs}
                       onChange={(e) => handleUpdateCurrentState({ executionMs: Number(e.target.value) })}
                       placeholder="240"
-                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
                   </div>
                 </div>
@@ -1191,7 +1197,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                 <div className="p-4 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300">
-                      <ClipboardList className="w-4 h-4 text-[#b83a4b]" />
+                      <ClipboardList className="w-4 h-4 text-[var(--accent-primary)]" />
                       <h4 className="text-xs font-bold uppercase tracking-wider">
                         Test Adımları Kontrol Listesi
                       </h4>
@@ -1300,7 +1306,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
-                    <MessageSquare className="w-4 h-4 text-[#b83a4b]" />
+                    <MessageSquare className="w-4 h-4 text-[var(--accent-primary)]" />
                     <span>Yorum / Not & Doğrulama Açıklaması</span>
                   </label>
                   <span className="text-[11px] text-slate-400">(Her durum için eklenebilir)</span>
@@ -1310,7 +1316,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   value={currentCaseState.errorMessage}
                   onChange={(e) => handleUpdateCurrentState({ errorMessage: e.target.value })}
                   placeholder="Kampanya kupon motoru üretim ortamında 240ms içinde yanıt verdi."
-                  className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] resize-none shadow-xs"
+                  className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none shadow-xs"
                 />
               </div>
 
@@ -1331,7 +1337,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                     });
                   }}
                   placeholder="Örn: MOB-542 veya QA-102"
-                  className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] shadow-xs"
+                  className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] shadow-xs"
                 />
               </div>
 
@@ -1339,7 +1345,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
-                    <ImageIcon className="w-4 h-4 text-[#b83a4b]" />
+                    <ImageIcon className="w-4 h-4 text-[var(--accent-primary)]" />
                     <span>Ekran Görüntüleri & Kanıtlar ({currentCaseState.screenshots.length})</span>
                   </label>
                   <span className="text-[11px] text-slate-400">
@@ -1350,7 +1356,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                 {/* Upload and URL input row */}
                 <div className="flex items-center gap-2">
                   <label className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer transition-colors shadow-xs">
-                    <Upload className="w-4 h-4 text-[#b83a4b]" />
+                    <Upload className="w-4 h-4 text-[var(--accent-primary)]" />
                     <span>Dosya Seç</span>
                     <input
                       type="file"
@@ -1373,13 +1379,13 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                         }
                       }}
                       placeholder="veya Görsel URL'si yapıştırın..."
-                      className="flex-1 bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] shadow-xs"
+                      className="flex-1 bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] shadow-xs"
                     />
                     <button
                       type="button"
                       onClick={handleAddImageUrl}
                       disabled={!activeNewImageUrl.trim()}
-                      className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[#b83a4b] hover:bg-[#c54859] disabled:opacity-40 transition-colors shadow-xs cursor-pointer"
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[var(--accent-primary)] hover:brightness-110 disabled:opacity-40 transition-colors shadow-xs cursor-pointer"
                     >
                       Ekle
                     </button>
@@ -1463,7 +1469,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   type="button"
                   disabled={isSubmitting}
                   onClick={handleSubmitRun}
-                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] disabled:opacity-50 transition-all shadow-md shadow-[#821c2b]/20 active:scale-98 cursor-pointer"
+                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 disabled:opacity-50 transition-all shadow-md shadow-[var(--accent-dark)]/20 active:scale-98 cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
                   <span>
@@ -1524,7 +1530,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-8 py-2.5 rounded-xl text-xs font-bold text-white bg-[#b83a4b] hover:bg-[#a32f3f] shadow-md shadow-[#821c2b]/25 cursor-pointer"
+                className="px-8 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
               >
                 Kapat ve Koşum Geçmişine Dön
               </button>
