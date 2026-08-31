@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   TestCase,
   TestRunsService,
@@ -82,6 +82,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const [wizardStep, setWizardStep] = useState<WizardStep>('PLAN_SELECT');
+  const wasOpenRef = useRef(false);
 
   // Test Plans State
   const [plans, setPlans] = useState<TestPlan[]>([]);
@@ -173,7 +174,8 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
   // Load project test plans on open
   useEffect(() => {
-    if (isOpen && projectId) {
+    if (isOpen && !wasOpenRef.current && projectId) {
+      wasOpenRef.current = true;
       TestPlansService.getAllByProject(projectId)
         .then((data) => {
           setPlans(data || []);
@@ -208,6 +210,8 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       setErrorMsg(null);
       setCurrentScenarioTimerMs(0);
       setIsTimerRunning(false);
+    } else if (!isOpen) {
+      wasOpenRef.current = false;
     }
   }, [isOpen, projectId, initialTestPlan, currentUser, testCases]);
 

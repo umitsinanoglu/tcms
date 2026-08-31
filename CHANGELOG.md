@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- ManualRunModal kosu tamamlandiginda verilerin yenilenmesi sirasinda modalin basa sarip tekrar acilmasina neden olan useEffect re-trigger hatasi duzeltildi
 - Test kosumu tamamlandiginda Test Kosumlari sayfasinin otomatik ve aninda guncellenmesi saglandi.
 - Kosum detay sayfasinda kosum sirasinda defect olusturulan senaryolara (Defect Edildi) rozeti ve defect detay tiklama destegi eklendi.
 - Manuel coklu senaryo kosumunda adim seviyesinde fail isaretlendiginde de Defect Olustur butonunun aninda tetiklenmesi saglandi.
