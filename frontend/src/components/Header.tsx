@@ -240,7 +240,7 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center shrink-0 cursor-pointer hover:opacity-95 transition-opacity"
           title="Ana Sayfa / Dashboard"
         >
-          <TTBLogo variant="horizontal" height={38} showSubtitle={false} />
+          <TTBLogo variant="horizontal" height={36} showSubtitle={true} subtitleText="Test Yönetim Sistemi" />
         </div>
       </div>
 
