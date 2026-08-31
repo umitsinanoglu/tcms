@@ -3,20 +3,17 @@
 echo "🛑 TCMS servisleri durduruluyor..."
 
 # Kill processes listening on ports 3000 (frontend) and 3001 (backend)
-PID_FE=$(lsof -ti:3000 2>/dev/null)
-if [ -n "$PID_FE" ]; then
-  echo "  - Frontend servisi (Port 3000, PID: $PID_FE) sonlandırılıyor..."
-  kill -9 $PID_FE 2>/dev/null || true
-else
-  echo "  - Port 3000'de çalışan frontend bulunamadı."
-fi
+for PORT in 3000 3001; do
+  PIDS=$(lsof -i tcp:$PORT -t 2>/dev/null)
+  if [ -n "$PIDS" ]; then
+    echo "  - Port $PORT üzerindeki süreçler ($PIDS) sonlandırılıyor..."
+    kill -9 $PIDS 2>/dev/null || true
+  fi
+done
 
-PID_BE=$(lsof -ti:3001 2>/dev/null)
-if [ -n "$PID_BE" ]; then
-  echo "  - Backend servisi (Port 3001, PID: $PID_BE) sonlandırılıyor..."
-  kill -9 $PID_BE 2>/dev/null || true
-else
-  echo "  - Port 3001'de çalışan backend bulunamadı."
-fi
+pkill -f "nest start" 2>/dev/null || true
+pkill -f "next dev" 2>/dev/null || true
+pkill -f "next-server" 2>/dev/null || true
 
 echo "✅ Durdurma işlemi tamamlandı."
+
