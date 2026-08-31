@@ -121,7 +121,7 @@ export const LoginView: React.FC = () => {
       {/* Top Bar / Theme Switcher */}
       <header className="relative z-10 w-full px-6 sm:px-12 pt-6 pb-2 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <TTBLogo variant="horizontal" height={38} showSubtitle={false} />
+          <TTBLogo variant="horizontal" height={38} showSubtitle={true} subtitleText="Test Yönetim Sistemi" />
           <span className="hidden sm:inline-block h-5 w-px bg-slate-300 dark:bg-slate-700" />
           <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20">
             <Sparkles className="w-3 h-3" />
