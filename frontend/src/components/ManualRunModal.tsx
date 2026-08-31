@@ -8,9 +8,13 @@ import {
   ResultStatus,
   TestRun,
   TestPlan,
+  DefectsService,
+  CreateDefectDto,
+  DefectSeverity,
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { parseScreenshots, formatScreenshots } from './QuickRunModal';
+import { NewDefectModal } from './NewDefectModal';
 import {
   X,
   Play,
@@ -35,6 +39,7 @@ import {
   Search,
   SlidersHorizontal,
   Image as ImageIcon,
+  Info,
 } from 'lucide-react';
 
 interface ManualRunModalProps {
@@ -43,13 +48,14 @@ interface ManualRunModalProps {
   projectId: string;
   testCases: TestCase[];
   initialTestPlan?: TestPlan | null;
+  onSuccess?: (run?: TestRun) => void;
 }
 
 type WizardStep = 'PLAN_SELECT' | 'CASE_SELECT' | 'EXECUTION' | 'SUMMARY';
 type StepStatus = 'PASSED' | 'FAILED' | 'BLOCKED' | 'NONE';
 
 interface CaseRunState {
-  status: ResultStatus;
+  status: ResultStatus | '';
   environment: string;
   platform: string;
   appVersion: string;
@@ -63,6 +69,7 @@ interface CaseRunState {
   jiraBugUrl: string;
   screenshots: string[];
   stepStatuses: Record<number, StepStatus>;
+  createdDefect?: { id: string; key: string; title: string };
 }
 
 export const ManualRunModal: React.FC<ManualRunModalProps> = ({
@@ -71,6 +78,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
   projectId,
   testCases,
   initialTestPlan = null,
+  onSuccess,
 }) => {
   const { currentUser } = useAuth();
   const [wizardStep, setWizardStep] = useState<WizardStep>('PLAN_SELECT');
@@ -115,6 +123,16 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     blocked: number;
     passRate: number;
   } | null>(null);
+
+  // Defect Modal State
+  const [isDefectModalOpen, setIsDefectModalOpen] = useState(false);
+  const [defectInitialData, setDefectInitialData] = useState<Partial<CreateDefectDto> | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   // Stopwatch state for current scenario
   const [currentScenarioTimerMs, setCurrentScenarioTimerMs] = useState<number>(0);
@@ -279,7 +297,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
         const rawScreens = tc.screenshotUrl ? parseScreenshots(tc.screenshotUrl) : [];
 
         initialMap[tc.id] = {
-          status: 'PASSED',
+          status: '',
           environment: environment || 'UAT',
           platform: tc.type === 'IOS' ? 'iOS' : tc.type === 'ANDROID' ? 'Android' : 'Web',
           appVersion: version || 'v1.2.0 (106)',
@@ -326,6 +344,25 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     setLightboxIndex(null);
   };
 
+  // Set status helper: When PASSED is selected, mark all steps as PASSED
+  const handleSetStatus = (newStatus: ResultStatus) => {
+    if (!currentCase) return;
+    if (newStatus === 'PASSED') {
+      const allPassed: Record<number, StepStatus> = {};
+      if (currentCase.steps && currentCase.steps.length > 0) {
+        currentCase.steps.forEach((_, idx) => {
+          allPassed[idx] = 'PASSED';
+        });
+      }
+      handleUpdateCurrentState({
+        status: 'PASSED',
+        stepStatuses: allPassed,
+      });
+    } else {
+      handleUpdateCurrentState({ status: newStatus });
+    }
+  };
+
   // Keyboard Shortcuts (P, F, B, S, ArrowLeft, ArrowRight)
   useEffect(() => {
     if (!isOpen || wizardStep !== 'EXECUTION' || !currentCase) return;
@@ -336,16 +373,16 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       const key = e.key.toUpperCase();
       if (key === 'P') {
         e.preventDefault();
-        handleUpdateCurrentState({ status: 'PASSED' });
+        handleSetStatus('PASSED');
       } else if (key === 'F') {
         e.preventDefault();
-        handleUpdateCurrentState({ status: 'FAILED' });
+        handleSetStatus('FAILED');
       } else if (key === 'B') {
         e.preventDefault();
-        handleUpdateCurrentState({ status: 'BLOCKED' });
+        handleSetStatus('BLOCKED');
       } else if (key === 'S') {
         e.preventDefault();
-        handleUpdateCurrentState({ status: 'SKIPPED' });
+        handleSetStatus('SKIPPED');
       } else if (key === 'ARROWLEFT' && currentIndex > 0) {
         e.preventDefault();
         handleChangeIndex(currentIndex - 1);
@@ -417,11 +454,12 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
   const handleToggleStepCheckbox = (stepIdx: number) => {
     if (!currentCase || !currentCaseState) return;
-    const currentStatus = currentCaseState.stepStatuses[stepIdx] || 'NONE';
+    const currentSteps = currentCaseState.stepStatuses || {};
+    const currentStatus = currentSteps[stepIdx] || 'NONE';
     const nextStatus: StepStatus = currentStatus === 'PASSED' ? 'NONE' : 'PASSED';
-    const nextSteps = { ...currentCaseState.stepStatuses, [stepIdx]: nextStatus };
+    const nextSteps = { ...currentSteps, [stepIdx]: nextStatus };
 
-    let recommendedStatus = currentCaseState.status;
+    let recommendedStatus: ResultStatus | '' = currentCaseState.status;
     const values = Object.values(nextSteps);
     if (values.some((v) => v === 'FAILED')) recommendedStatus = 'FAILED';
     else if (values.some((v) => v === 'BLOCKED')) recommendedStatus = 'BLOCKED';
@@ -435,11 +473,12 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
   const handleSetStepFlag = (stepIdx: number, flag: StepStatus) => {
     if (!currentCase || !currentCaseState) return;
-    const currentStatus = currentCaseState.stepStatuses[stepIdx] || 'NONE';
+    const currentSteps = currentCaseState.stepStatuses || {};
+    const currentStatus = currentSteps[stepIdx] || 'NONE';
     const nextStatus: StepStatus = currentStatus === flag ? 'NONE' : flag;
-    const nextSteps = { ...currentCaseState.stepStatuses, [stepIdx]: nextStatus };
+    const nextSteps = { ...currentSteps, [stepIdx]: nextStatus };
 
-    let recommendedStatus = currentCaseState.status;
+    let recommendedStatus: ResultStatus | '' = currentCaseState.status;
     const values = Object.values(nextSteps);
     if (values.some((v) => v === 'FAILED')) recommendedStatus = 'FAILED';
     else if (values.some((v) => v === 'BLOCKED')) recommendedStatus = 'BLOCKED';
@@ -510,6 +549,101 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     });
   };
 
+  const handleOpenDefectModal = () => {
+    if (!currentCase) return;
+    const curState = caseStates[currentCase.id] || {
+      status: 'FAILED',
+      environment: environment || 'UAT',
+      platform: 'Web',
+      appVersion: version || 'v1.2.0 (106)',
+      device: 'iphone 15',
+      userProfile: 'ÜMİT SİNANOĞLU (ADMIN)',
+      customerType: 'BIREYSEL',
+      flakyStatus: 'NONE',
+      executionMs: currentScenarioTimerMs,
+      errorMessage: '',
+      jiraBugKey: '',
+      jiraBugUrl: '',
+      screenshots: [],
+      stepStatuses: {},
+    };
+
+    // Format steps checklist summary
+    let stepsText = '';
+    if (currentCase.steps && currentCase.steps.length > 0) {
+      stepsText = '\n\nTest Adımları Kontrol Listesi:\n' + currentCase.steps.map((st, idx) => {
+        const stepSt = curState.stepStatuses?.[idx] || 'NONE';
+        const statusLabel = stepSt === 'PASSED' ? '[PASSED]' : stepSt === 'FAILED' ? '[FAILED]' : stepSt === 'BLOCKED' ? '[BLOCKED]' : '[NOT RUN]';
+        const action = (st as any).action || (st as any).step || `Adım ${idx + 1}`;
+        const expected = (st as any).expectedResult || (st as any).expected || '';
+        return `${idx + 1}. ${statusLabel} ${action}${expected ? ` (Beklenen: ${expected})` : ''}`;
+      }).join('\n');
+    }
+
+    const descParts: string[] = [];
+    if (curState.errorMessage?.trim()) {
+      descParts.push(`Hata / Açıklama:\n${curState.errorMessage.trim()}`);
+    } else {
+      descParts.push(`Test senaryosu (${currentCase.code} - ${currentCase.title}) "${title || 'Manuel Koşum'}" koşumunda başarısız oldu.`);
+    }
+
+    descParts.push(`\nKoşum Parametreleri:\n- Ortam: ${curState.environment || environment}\n- Platform: ${curState.platform}\n- Uygulama Versiyonu: ${curState.appVersion || version}\n- Cihaz: ${curState.device}\n- Kullanıcı Profili: ${curState.userProfile}\n- Müşteri Tipi: ${curState.customerType}\n- Flaky / Retry: ${curState.flakyStatus}${curState.executionMs > 0 ? `\n- Süre: ${Math.round(curState.executionMs / 1000)} sn (${curState.executionMs} ms)` : ''}`);
+
+    if (stepsText) {
+      descParts.push(stepsText);
+    }
+
+    if (currentCase.preconditions || currentCase.precondition) {
+      descParts.push(`\nÖn Koşul:\n${currentCase.preconditions || currentCase.precondition}`);
+    }
+
+    if ((currentCase as any).expectedResult) {
+      descParts.push(`\nBeklenen Genel Sonuç:\n${(currentCase as any).expectedResult}`);
+    }
+
+    let mappedSeverity: DefectSeverity = 'MAJOR';
+    if (currentCase.priority === 'BLOCKER') mappedSeverity = 'BLOCKER';
+    else if (currentCase.priority === 'CRITICAL') mappedSeverity = 'CRITICAL';
+    else if (currentCase.priority === 'LOW') mappedSeverity = 'MINOR';
+
+    setDefectInitialData({
+      projectId,
+      title: `[FAILED] ${currentCase.code} - ${currentCase.title}`,
+      description: descParts.join('\n'),
+      severity: mappedSeverity,
+      status: 'OPEN',
+      environment: curState.environment || environment || 'STAGING',
+      channel: curState.platform ? curState.platform.toUpperCase() : 'WEB',
+      testCaseId: currentCase.id,
+      testRunId: activeRun?.id || undefined,
+      reportedBy: executedBy || (currentUser?.name ?? (typeof window !== 'undefined' ? localStorage.getItem('tcms_active_user_name') || '' : '')),
+      jiraBugKey: curState.jiraBugKey?.trim() || undefined,
+      jiraBugUrl: curState.jiraBugUrl?.trim() || (curState.jiraBugKey?.trim() ? `https://company.atlassian.net/browse/${curState.jiraBugKey.trim()}` : undefined),
+    });
+
+    setIsDefectModalOpen(true);
+  };
+
+  const handleCreateDefectSubmit = async (data: CreateDefectDto) => {
+    try {
+      const created = await DefectsService.create(data);
+      if (currentCase) {
+        handleUpdateCurrentState({
+          createdDefect: { id: created.id, key: created.key, title: created.title },
+          jiraBugKey: created.jiraBugKey || currentCaseState?.jiraBugKey || '',
+          jiraBugUrl: created.jiraBugUrl || (created.jiraBugKey ? `https://company.atlassian.net/browse/${created.jiraBugKey}` : '') || currentCaseState?.jiraBugUrl || '',
+        });
+      }
+      showToast(`Defect başarıyla oluşturuldu (${created.key || 'DEF'}).`, 'success');
+      setIsDefectModalOpen(false);
+      setDefectInitialData(null);
+    } catch (err: any) {
+      console.error('Defect creation error:', err);
+      showToast('Defect oluşturulurken hata meydana geldi: ' + (err?.response?.data?.message || err?.message || 'Hata'), 'error');
+      throw err;
+    }
+  };
+
   // Submit and Complete Run Results
   const handleSubmitRun = async () => {
     if (!activeRun) return;
@@ -533,9 +667,23 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           }
         }
 
+        let effectiveStatus: ResultStatus = 'SKIPPED';
+        if (cState?.status) {
+          effectiveStatus = cState.status as ResultStatus;
+        } else if (cState?.stepStatuses) {
+          const vals = Object.values(cState.stepStatuses);
+          if (vals.length > 0 && vals.every((v) => v === 'PASSED')) {
+            effectiveStatus = 'PASSED';
+          } else if (vals.some((v) => v === 'FAILED')) {
+            effectiveStatus = 'FAILED';
+          } else if (vals.some((v) => v === 'BLOCKED')) {
+            effectiveStatus = 'BLOCKED';
+          }
+        }
+
         return {
           testCaseId: tc.id,
-          status: cState ? cState.status : ('SKIPPED' as ResultStatus),
+          status: effectiveStatus,
           executionMs: cState?.executionMs || Math.floor(Math.random() * 800) + 200,
           errorMessage: finalErrorMsg,
           jiraBugKey: cState?.jiraBugKey || undefined,
@@ -545,7 +693,10 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       });
 
       await TestRunsService.saveResults(projectId, activeRun.id, { results: resultsPayload });
-      await TestRunsService.completeRun(activeRun.id, 'COMPLETED');
+      const completedRun = await TestRunsService.completeRun(activeRun.id, 'COMPLETED');
+      if (onSuccess) {
+        onSuccess(completedRun || activeRun);
+      }
 
       const total = resultsPayload.length;
       const passed = resultsPayload.filter((r) => r.status === 'PASSED').length;
@@ -656,6 +807,33 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           <div className="p-3 mx-6 mt-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {/* Toast Alert Banner */}
+        {toastMessage && (
+          <div
+            className={`mx-6 mt-3 p-3 rounded-xl text-xs font-semibold shrink-0 flex items-center justify-between border animate-in fade-in duration-200 ${
+              toastMessage.type === 'success'
+                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                : toastMessage.type === 'error'
+                ? 'bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300'
+                : 'bg-blue-500/15 border-blue-500/30 text-blue-700 dark:text-blue-300'
+            }`}
+          >
+            <div className="flex items-center space-x-2">
+              {toastMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+              {toastMessage.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />}
+              {toastMessage.type === 'info' && <Info className="w-4 h-4 text-blue-500 shrink-0" />}
+              <span>{toastMessage.text}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToastMessage(null)}
+              className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg text-current"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
@@ -961,7 +1139,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               {/* Fast Scenario Case Selector Chips */}
               <div className="flex items-center space-x-1 overflow-x-auto max-w-[50%] py-0.5">
                 {runCases.map((tc, idx) => {
-                  const cSt = caseStates[tc.id]?.status || 'PASSED';
+                  const cSt = caseStates[tc.id]?.status;
                   const isCurrent = idx === currentIndex;
                   return (
                     <button
@@ -977,9 +1155,11 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                           ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
                           : cSt === 'BLOCKED'
                           ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                          : cSt === 'SKIPPED'
+                          ? 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                       }`}
-                      title={`${tc.code}: ${tc.title} [${cSt}]`}
+                      title={`${tc.code}: ${tc.title}${cSt ? ` [${cSt}]` : ''}`}
                     >
                       {tc.code}
                     </button>
@@ -1000,7 +1180,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   {/* PASSED */}
                   <button
                     type="button"
-                    onClick={() => handleUpdateCurrentState({ status: 'PASSED' })}
+                    onClick={() => handleSetStatus('PASSED')}
                     className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                       currentCaseState.status === 'PASSED'
                         ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-600/20'
@@ -1014,7 +1194,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   {/* FAILED */}
                   <button
                     type="button"
-                    onClick={() => handleUpdateCurrentState({ status: 'FAILED' })}
+                    onClick={() => handleSetStatus('FAILED')}
                     className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                       currentCaseState.status === 'FAILED'
                         ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-600/20'
@@ -1028,7 +1208,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   {/* BLOCKED */}
                   <button
                     type="button"
-                    onClick={() => handleUpdateCurrentState({ status: 'BLOCKED' })}
+                    onClick={() => handleSetStatus('BLOCKED')}
                     className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                       currentCaseState.status === 'BLOCKED'
                         ? 'bg-amber-600 text-white border-amber-500 shadow-md shadow-amber-600/20'
@@ -1042,7 +1222,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   {/* SKIPPED */}
                   <button
                     type="button"
-                    onClick={() => handleUpdateCurrentState({ status: 'SKIPPED' })}
+                    onClick={() => handleSetStatus('SKIPPED')}
                     className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                       currentCaseState.status === 'SKIPPED'
                         ? 'bg-slate-700 text-white border-slate-600 shadow-md shadow-slate-700/20'
@@ -1320,26 +1500,96 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                 />
               </div>
 
-              {/* 5. Jira Bug Key Section */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
-                  <Bug className="w-4 h-4 text-rose-500" />
-                  <span>Jira Bug Key (Opsiyonel)</span>
-                </label>
-                <input
-                  type="text"
-                  value={currentCaseState.jiraBugKey}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    handleUpdateCurrentState({
-                      jiraBugKey: val,
-                      jiraBugUrl: val.trim() ? `https://company.atlassian.net/browse/${val.trim()}` : '',
-                    });
-                  }}
-                  placeholder="Örn: MOB-542 veya QA-102"
-                  className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] shadow-xs"
-                />
-              </div>
+              {/* 5. Jira Bug Key & Defect Creation Section */}
+              {currentCaseState.status === 'FAILED' || Object.values(currentCaseState.stepStatuses || {}).some((s) => s === 'FAILED') ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+                      <Bug className="w-4 h-4 text-rose-500" />
+                      <span>Jira Bug Key (Opsiyonel)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={currentCaseState.jiraBugKey}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleUpdateCurrentState({
+                          jiraBugKey: val,
+                          jiraBugUrl: val.trim() ? `https://company.atlassian.net/browse/${val.trim()}` : '',
+                        });
+                      }}
+                      placeholder="Örn: MOB-542 veya QA-102"
+                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] shadow-xs"
+                    />
+                  </div>
+
+                  {currentCaseState.createdDefect ? (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Defect Oluşturuldu
+                        </span>
+                        <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          {currentCaseState.createdDefect.key}
+                        </span>
+                      </div>
+                      <div className="w-full h-[38px] inline-flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 shadow-2xs">
+                        <div className="inline-flex items-center space-x-1.5 min-w-0 flex-1 truncate">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span className="truncate">{currentCaseState.createdDefect.key}: Hata Kaydı Açıldı</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleOpenDefectModal}
+                          className="ml-2 text-[10px] text-emerald-700 dark:text-emerald-300 hover:underline shrink-0 cursor-pointer font-bold"
+                          title="Yeni bir defect daha oluştur veya düzenle"
+                        >
+                          Düzenle / Yeni
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          Defect Yönetimi
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-normal">(Opsiyonel)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleOpenDefectModal}
+                        className="w-full h-[38px] inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 active:scale-[0.99] border border-rose-500/40 shadow-sm shadow-rose-900/20 transition-all cursor-pointer"
+                      >
+                        <Bug className="w-4 h-4" />
+                        <span>Defect Oluştur</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+                    <Bug className="w-4 h-4 text-rose-500" />
+                    <span>Jira Bug Key (Opsiyonel)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={currentCaseState.jiraBugKey}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      handleUpdateCurrentState({
+                        jiraBugKey: val,
+                        jiraBugUrl: val.trim() ? `https://company.atlassian.net/browse/${val.trim()}` : '',
+                      });
+                    }}
+                    placeholder="Örn: MOB-542 veya QA-102"
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] shadow-xs"
+                  />
+                </div>
+              )}
 
               {/* 6. Ekran Görüntüleri & Kanıtlar Section */}
               <div className="space-y-2">
@@ -1539,6 +1789,23 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
         )}
 
       </div>
+
+      {/* New Defect Creation Modal */}
+      {isDefectModalOpen && defectInitialData && (
+        <NewDefectModal
+          isOpen={isDefectModalOpen}
+          onClose={() => {
+            setIsDefectModalOpen(false);
+            setDefectInitialData(null);
+          }}
+          projectId={projectId}
+          projectName={(runCases[currentIndex] as any)?.project?.name}
+          projectKey={(runCases[currentIndex] as any)?.project?.key}
+          allCases={runCases[currentIndex] ? [runCases[currentIndex]] : []}
+          initialData={defectInitialData}
+          onSubmit={handleCreateDefectSubmit}
+        />
+      )}
 
       {/* Lightbox Modal */}
       {lightboxIndex !== null && currentCaseState && currentCaseState.screenshots[lightboxIndex] && (

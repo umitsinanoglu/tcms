@@ -383,6 +383,17 @@ export class TestRunsService {
 
   async deleteRun(runId: string) {
     await this.findOne(runId);
+
+    // Explicitly clean up all defects generated from or linked to this run
+    await this.prisma.defect.deleteMany({
+      where: {
+        OR: [
+          { testRunId: runId },
+          { testResult: { testRunId: runId } },
+        ],
+      },
+    });
+
     return this.prisma.testRun.delete({
       where: { id: runId },
     });

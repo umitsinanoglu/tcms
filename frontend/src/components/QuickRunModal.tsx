@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { TestCase, ResultStatus, TestRunsService } from '@/services/api';
+import { TestCase, ResultStatus, TestRunsService, DefectsService, CreateDefectDto, DefectSeverity } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
+import { NewDefectModal } from './NewDefectModal';
 import {
   X,
   Play,
@@ -24,6 +26,8 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
+  AlertCircle,
+  Info,
 } from 'lucide-react';
 
 export const parseScreenshots = (raw?: string | null): string[] => {
@@ -71,6 +75,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   initialEnvironment = 'UAT',
   onSuccess,
 }) => {
+  const { currentUser } = useAuth();
   const [version, setVersion] = useState(initialVersion);
   const [environment, setEnvironment] = useState(initialEnvironment);
   const [platform, setPlatform] = useState<string>('Web');
@@ -81,7 +86,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   const [flakyStatus, setFlakyStatus] = useState<string>('NONE');
 
   const [executedBy, setExecutedBy] = useState('Ümit Sinanoğlu');
-  const [status, setStatus] = useState<ResultStatus>('PASSED');
+  const [status, setStatus] = useState<ResultStatus | ''>('');
   const [errorMessage, setErrorMessage] = useState('');
   const [jiraBugKey, setJiraBugKey] = useState('');
   const [jiraBugUrl, setJiraBugUrl] = useState('');
@@ -90,6 +95,17 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Defect Modal State
+  const [isDefectModalOpen, setIsDefectModalOpen] = useState(false);
+  const [defectInitialData, setDefectInitialData] = useState<Partial<CreateDefectDto> | null>(null);
+  const [createdDefect, setCreatedDefect] = useState<{ id: string; key: string; title: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   // Step-level statuses and checklist state
   const [stepStatuses, setStepStatuses] = useState<Record<number, StepStatus>>({});
@@ -116,7 +132,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   useEffect(() => {
     if (isOpen && testCase) {
       const lastResult = testCase.results && testCase.results.length > 0 ? testCase.results[0] : null;
-      setStatus(lastResult?.status || 'PASSED');
+      setStatus(lastResult?.status || '');
       setErrorMessage(lastResult?.errorMessage || '');
       setJiraBugKey(lastResult?.jiraBugKey || '');
       setJiraBugUrl(lastResult?.jiraBugUrl || '');
@@ -228,6 +244,18 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
     });
   };
 
+  // Set status helper: When PASSED is selected, mark all steps as PASSED
+  const handleSetStatus = (newStatus: ResultStatus) => {
+    setStatus(newStatus);
+    if (newStatus === 'PASSED' && testCase?.steps && testCase.steps.length > 0) {
+      const allPassed: Record<number, StepStatus> = {};
+      testCase.steps.forEach((_, idx) => {
+        allPassed[idx] = 'PASSED';
+      });
+      setStepStatuses(allPassed);
+    }
+  };
+
   // Smart overall status recommendation based on step flags
   const evaluateOverallStatus = (statuses: Record<number, StepStatus>) => {
     const values = Object.values(statuses);
@@ -276,10 +304,92 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
     }
   };
 
+  const handleOpenDefectModal = () => {
+    if (!testCase) return;
+
+    // Format steps checklist summary
+    let stepsText = '';
+    if (testCase.steps && testCase.steps.length > 0) {
+      stepsText = '\n\nTest Adımları Kontrol Listesi:\n' + testCase.steps.map((st, idx) => {
+        const stepSt = stepStatuses[idx] || 'NONE';
+        const statusLabel = stepSt === 'PASSED' ? '[PASSED]' : stepSt === 'FAILED' ? '[FAILED]' : stepSt === 'BLOCKED' ? '[BLOCKED]' : '[NOT RUN]';
+        const action = (st as any).action || (st as any).step || `Adım ${idx + 1}`;
+        const expected = (st as any).expectedResult || (st as any).expected || '';
+        return `${idx + 1}. ${statusLabel} ${action}${expected ? ` (Beklenen: ${expected})` : ''}`;
+      }).join('\n');
+    }
+
+    const descParts: string[] = [];
+    if (errorMessage.trim()) {
+      descParts.push(`Hata / Açıklama:\n${errorMessage.trim()}`);
+    } else {
+      descParts.push(`Test senaryosu (${testCase.code} - ${testCase.title}) koşum sırasında başarısız oldu.`);
+    }
+
+    descParts.push(`\nKoşum Parametreleri:\n- Ortam: ${environment}\n- Platform: ${platform}\n- Uygulama Versiyonu: ${appVersion || version}\n- Cihaz: ${device}\n- Kullanıcı Profili: ${userProfile}\n- Müşteri Tipi: ${customerType}\n- Flaky / Retry: ${flakyStatus}${executionMs > 0 ? `\n- Süre: ${Math.round(executionMs / 1000)} sn (${executionMs} ms)` : ''}`);
+
+    if (stepsText) {
+      descParts.push(stepsText);
+    }
+
+    if (testCase.preconditions || testCase.precondition) {
+      descParts.push(`\nÖn Koşul:\n${testCase.preconditions || testCase.precondition}`);
+    }
+
+    if ((testCase as any).expectedResult) {
+      descParts.push(`\nBeklenen Genel Sonuç:\n${(testCase as any).expectedResult}`);
+    }
+
+    let mappedSeverity: DefectSeverity = 'MAJOR';
+    if (testCase.priority === 'BLOCKER') mappedSeverity = 'BLOCKER';
+    else if (testCase.priority === 'CRITICAL') mappedSeverity = 'CRITICAL';
+    else if (testCase.priority === 'LOW') mappedSeverity = 'MINOR';
+
+    setDefectInitialData({
+      projectId,
+      title: `[FAILED] ${testCase.code} - ${testCase.title}`,
+      description: descParts.join('\n'),
+      severity: mappedSeverity,
+      status: 'OPEN',
+      environment: environment || 'STAGING',
+      channel: platform ? platform.toUpperCase() : 'WEB',
+      testCaseId: testCase.id,
+      reportedBy: executedBy || (currentUser?.name ?? (typeof window !== 'undefined' ? localStorage.getItem('tcms_active_user_name') || '' : '')),
+      jiraBugKey: jiraBugKey.trim() || undefined,
+      jiraBugUrl: jiraBugUrl.trim() || (jiraBugKey.trim() ? `https://company.atlassian.net/browse/${jiraBugKey.trim()}` : undefined),
+    });
+
+    setIsDefectModalOpen(true);
+  };
+
+  const handleCreateDefectSubmit = async (data: CreateDefectDto) => {
+    try {
+      const created = await DefectsService.create(data);
+      setCreatedDefect({ id: created.id, key: created.key, title: created.title });
+      if (created.jiraBugKey && !jiraBugKey) {
+        setJiraBugKey(created.jiraBugKey);
+        setJiraBugUrl(created.jiraBugUrl || `https://company.atlassian.net/browse/${created.jiraBugKey}`);
+      }
+      showToast(`Defect başarıyla oluşturuldu (${created.key || 'DEF'}).`, 'success');
+      setIsDefectModalOpen(false);
+      setDefectInitialData(null);
+    } catch (err: any) {
+      console.error('Defect creation error:', err);
+      showToast('Defect oluşturulurken hata meydana geldi: ' + (err?.response?.data?.message || err?.message || 'Hata'), 'error');
+      throw err;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setErrorMsg('');
+
+    if (!status) {
+      setErrorMsg('Lütfen bir test koşum sonucu seçiniz (PASSED, FAILED, BLOCKED, SKIPPED).');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const formattedScreenshot = formatScreenshots(screenshots);
 
@@ -300,7 +410,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
 
       await TestRunsService.quickRun(projectId, {
         testCaseId: testCase.id,
-        status,
+        status: status as ResultStatus,
         version: appVersion.trim() || version.trim() || 'v1.2.0 (106)',
         environment: environment.trim() || 'UAT',
         platform,
@@ -402,8 +512,35 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
         </div>
 
         {errorMsg && (
-          <div className="mx-6 mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium shrink-0">
-            {errorMsg}
+          <div className="mx-6 mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium shrink-0 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {toastMessage && (
+          <div
+            className={`mx-6 mt-3 p-3 rounded-xl text-xs font-semibold shrink-0 flex items-center justify-between border animate-in fade-in duration-200 ${
+              toastMessage.type === 'success'
+                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                : toastMessage.type === 'error'
+                ? 'bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300'
+                : 'bg-blue-500/15 border-blue-500/30 text-blue-700 dark:text-blue-300'
+            }`}
+          >
+            <div className="flex items-center space-x-2">
+              {toastMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+              {toastMessage.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />}
+              {toastMessage.type === 'info' && <Info className="w-4 h-4 text-blue-500 shrink-0" />}
+              <span>{toastMessage.text}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToastMessage(null)}
+              className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg text-current"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
@@ -420,7 +557,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                 {/* PASSED */}
                 <button
                   type="button"
-                  onClick={() => setStatus('PASSED')}
+                  onClick={() => handleSetStatus('PASSED')}
                   className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                     status === 'PASSED'
                       ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-600/20'
@@ -434,7 +571,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                 {/* FAILED */}
                 <button
                   type="button"
-                  onClick={() => setStatus('FAILED')}
+                  onClick={() => handleSetStatus('FAILED')}
                   className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                     status === 'FAILED'
                       ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-600/20'
@@ -448,7 +585,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                 {/* BLOCKED */}
                 <button
                   type="button"
-                  onClick={() => setStatus('BLOCKED')}
+                  onClick={() => handleSetStatus('BLOCKED')}
                   className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                     status === 'BLOCKED'
                       ? 'bg-amber-600 text-white border-amber-500 shadow-md shadow-amber-600/20'
@@ -462,7 +599,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                 {/* SKIPPED */}
                 <button
                   type="button"
-                  onClick={() => setStatus('SKIPPED')}
+                  onClick={() => handleSetStatus('SKIPPED')}
                   className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                     status === 'SKIPPED'
                       ? 'bg-slate-700 text-white border-slate-600 shadow-md shadow-slate-700/20'
@@ -740,26 +877,96 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
               />
             </div>
 
-            {/* 6. Jira Bug Key Section */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
-                <Bug className="w-4 h-4 text-rose-500" />
-                <span>Jira Bug Key (Opsiyonel)</span>
-              </label>
-              <input
-                type="text"
-                value={jiraBugKey}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setJiraBugKey(val);
-                  if (val.trim()) {
-                    setJiraBugUrl(`https://company.atlassian.net/browse/${val.trim()}`);
-                  }
-                }}
-                placeholder="Örn: MOB-542 veya QA-102"
-                className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] shadow-xs"
-              />
-            </div>
+            {/* 6. Jira Bug Key & Defect Creation Section */}
+            {status === 'FAILED' || Object.values(stepStatuses || {}).some((s) => s === 'FAILED') ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+                    <Bug className="w-4 h-4 text-rose-500" />
+                    <span>Jira Bug Key (Opsiyonel)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={jiraBugKey}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setJiraBugKey(val);
+                      if (val.trim()) {
+                        setJiraBugUrl(`https://company.atlassian.net/browse/${val.trim()}`);
+                      }
+                    }}
+                    placeholder="Örn: MOB-542 veya QA-102"
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] shadow-xs"
+                  />
+                </div>
+
+                {createdDefect ? (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Defect Oluşturuldu
+                        </span>
+                        <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          {createdDefect.key}
+                        </span>
+                      </div>
+                      <div className="w-full h-[38px] inline-flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 shadow-2xs">
+                        <div className="inline-flex items-center space-x-1.5 min-w-0 flex-1 truncate">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span className="truncate">{createdDefect.key}: Hata Kaydı Açıldı</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleOpenDefectModal}
+                          className="ml-2 text-[10px] text-emerald-700 dark:text-emerald-300 hover:underline shrink-0 cursor-pointer font-bold"
+                          title="Yeni bir defect daha oluştur veya düzenle"
+                        >
+                          Düzenle / Yeni
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          Defect Yönetimi
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-normal">(Opsiyonel)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleOpenDefectModal}
+                        className="w-full h-[38px] inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 active:scale-[0.99] border border-rose-500/40 shadow-sm shadow-rose-900/20 transition-all cursor-pointer"
+                      >
+                        <Bug className="w-4 h-4" />
+                        <span>Defect Oluştur</span>
+                      </button>
+                    </div>
+                  )}
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+                  <Bug className="w-4 h-4 text-rose-500" />
+                  <span>Jira Bug Key (Opsiyonel)</span>
+                </label>
+                <input
+                  type="text"
+                  value={jiraBugKey}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setJiraBugKey(val);
+                    if (val.trim()) {
+                      setJiraBugUrl(`https://company.atlassian.net/browse/${val.trim()}`);
+                    }
+                  }}
+                  placeholder="Örn: MOB-542 veya QA-102"
+                  className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] shadow-xs"
+                />
+              </div>
+            )}
 
             {/* 7. Ekran Görüntüleri & Kanıtlar Section */}
             <div className="space-y-2">
@@ -872,6 +1079,23 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
         </form>
 
       </div>
+
+      {/* New Defect Creation Modal */}
+      {isDefectModalOpen && defectInitialData && (
+        <NewDefectModal
+          isOpen={isDefectModalOpen}
+          onClose={() => {
+            setIsDefectModalOpen(false);
+            setDefectInitialData(null);
+          }}
+          projectId={projectId}
+          projectName={(testCase as any)?.project?.name}
+          projectKey={(testCase as any)?.project?.key}
+          allCases={testCase ? [testCase] : []}
+          initialData={defectInitialData}
+          onSubmit={handleCreateDefectSubmit}
+        />
+      )}
 
       {/* Lightbox Modal */}
       {lightboxIndex !== null && screenshots[lightboxIndex] && (
