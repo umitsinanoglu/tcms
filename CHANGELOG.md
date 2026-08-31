@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- Fixed active menu items, top-right user avatar and gradient buttons contrast by ensuring CSS linear-gradient and solid color fallbacks
 - DefectsView re-render ve sonsuz döngü sorunu giderildi (useRef ve callback stabilizasyonu)
 - Global arama kutusuna Defect detayına ve Test Koşumlarına doğrudan gitme desteği eklendi
 - Modül silindiğinde test senaryolarının korunması (SetNull) ve silinme engeli

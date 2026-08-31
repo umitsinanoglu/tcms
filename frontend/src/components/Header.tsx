@@ -765,9 +765,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={() => setIsUserDropdownOpen((prev) => !prev)}
-            className={`w-8 h-8 rounded-full bg-[var(--accent-gradient)] text-white font-bold text-xs sm:text-sm flex items-center justify-center shadow-xs transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-[var(--accent-primary)]/40 ${
+            className={`w-8 h-8 rounded-full bg-[var(--accent-primary)] text-white font-bold text-xs sm:text-sm flex items-center justify-center shadow-xs transition-all duration-200 cursor-pointer hover:brightness-110 hover:ring-2 hover:ring-[var(--accent-primary)]/40 ${
               isUserDropdownOpen ? 'ring-2 ring-[var(--accent-primary)] scale-105' : ''
             }`}
+            style={{ background: 'var(--accent-gradient)' }}
             title={`Kullanıcı: ${currentUser?.name || 'Kullanıcı'} (${role})`}
             aria-label="Kullanıcı Menüsü"
           >
@@ -779,7 +780,10 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col">
               {/* Profile Card Header */}
               <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-[var(--accent-gradient)] text-white font-bold text-base flex items-center justify-center shrink-0 shadow-sm">
+                <div
+                  className="w-10 h-10 rounded-full bg-[var(--accent-primary)] text-white font-bold text-base flex items-center justify-center shrink-0 shadow-sm"
+                  style={{ background: 'var(--accent-gradient)' }}
+                >
                   {userInitial}
                 </div>
                 <div className="min-w-0 flex-1">

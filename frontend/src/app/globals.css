@@ -147,6 +147,28 @@ body {
 
 /* Enterprise Button Utilities */
 .btn-primary,
+.btn-crimson,
+.bg-accent-gradient,
+[class*="bg-[var(--accent-gradient)]"],
+.bg-\[var\(--accent-gradient\)\] {
+  background: var(--accent-gradient) !important;
+  background-color: var(--accent-primary) !important;
+  color: #ffffff;
+}
+
+.bg-\[var\(--accent-primary\)\] {
+  background-color: var(--accent-primary) !important;
+}
+
+.text-\[var\(--accent-primary\)\] {
+  color: var(--accent-primary) !important;
+}
+
+.border-\[var\(--accent-primary\)\] {
+  border-color: var(--accent-primary) !important;
+}
+
+.btn-primary,
 .btn-crimson {
   background: var(--accent-gradient);
   color: #ffffff;

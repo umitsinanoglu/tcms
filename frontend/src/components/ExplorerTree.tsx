@@ -410,8 +410,8 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
                   onClick={() => onSelectCase(tc)}
                   className={`group flex items-center justify-between py-1.5 pr-2 rounded-lg transition-all cursor-pointer text-xs ${
                     isSelected
-                      ? 'bg-blue-500/10 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 font-semibold border-l-2 border-blue-500 shadow-sm'
-                      : 'hover:bg-slate-200/50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      ? 'bg-[var(--accent-primary)]/15 dark:bg-[var(--accent-primary)]/25 text-[var(--accent-dark)] dark:text-[var(--accent-primary)] font-bold border-l-2 border-[var(--accent-primary)] shadow-xs'
+                      : 'hover:bg-slate-200/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100'
                   }`}
                 >
                   <div className="flex items-center space-x-2 min-w-0 flex-1 mr-2">
@@ -552,9 +552,10 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
             onClick={() => setStatusFilter('ALL')}
             className={`px-2 py-0.5 rounded-full border transition-colors ${
               statusFilter === 'ALL'
-                ? 'bg-[var(--accent-gradient)] text-white border-[var(--accent-dark)]'
+                ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-dark)] font-bold'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
             }`}
+            style={statusFilter === 'ALL' ? { background: 'var(--accent-gradient)' } : undefined}
           >
             Tümü
           </button>
@@ -673,8 +674,8 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
                         onClick={() => onSelectCase(tc)}
                         className={`group flex items-center justify-between py-1.5 px-2 rounded-lg transition-all cursor-pointer text-xs ${
                           isSelected
-                            ? 'bg-blue-500/10 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 font-semibold border-l-2 border-blue-500 shadow-sm'
-                            : 'hover:bg-slate-200/50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            ? 'bg-[var(--accent-primary)]/15 dark:bg-[var(--accent-primary)]/25 text-[var(--accent-dark)] dark:text-[var(--accent-primary)] font-bold border-l-2 border-[var(--accent-primary)] shadow-xs'
+                            : 'hover:bg-slate-200/50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100'
                         }`}
                       >
                         <div className="flex items-center space-x-2 min-w-0 flex-1 mr-2">
