@@ -427,7 +427,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#d0d8e4] dark:border-[#2e3748]">
         <div className="space-y-1">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#821c2b] to-[#b83a4b] text-white flex items-center justify-center shadow-md shadow-[#821c2b]/25">
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent-gradient)] text-white flex items-center justify-center shadow-md shadow-[var(--accent-dark)]/25">
               <Play className="w-5 h-5 fill-current" />
             </div>
             <div>
@@ -446,7 +446,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           <button
             type="button"
             onClick={loadRuns}
-            className="p-2 rounded-[10px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] hover:border-[#b83a4b]/40 transition-all cursor-pointer shadow-xs"
+            className="p-2 rounded-[10px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] hover:border-[var(--accent-primary)]/40 transition-all cursor-pointer shadow-xs"
             title="Yenile"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -468,7 +468,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             onClick={() => setIsAutomationModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] border border-[#d0d8e4] dark:border-[#2e3748] transition-all cursor-pointer shadow-xs"
           >
-            <Code className="w-3.5 h-3.5 text-[#b83a4b]" />
+            <Code className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
             <span>Otomasyon API (CI/CD)</span>
           </button>
 
@@ -525,7 +525,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           <button
             type="button"
             onClick={() => onOpenManualRun(null)}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white transition-all duration-200 rounded-[10px] bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-sm hover:shadow-[0_4px_12px_rgba(130,28,43,0.35)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white transition-all duration-200 rounded-[10px] bg-[var(--accent-gradient)] hover:brightness-110 shadow-sm hover:shadow-[0_4px_12px_var(--accent-glow)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
             title="Bir test planı veya çoklu senaryo seçerek kapsamlı koşum başlatın"
           >
             <ClipboardList className="w-4 h-4" />
@@ -541,15 +541,15 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           onClick={() => setStatusFilter('ALL')}
           className={`p-3.5 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs cursor-pointer ${
             statusFilter === 'ALL'
-              ? 'border-[#b83a4b] ring-1 ring-[#b83a4b]/30'
-              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-[#b83a4b]/40'
+              ? 'border-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)]/30'
+              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-[var(--accent-primary)]/40'
           }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-[#64748b] dark:text-[#8e9bb0] uppercase tracking-wider">
               Toplam Koşum
             </span>
-            <div className="p-1.5 rounded-lg bg-[#b83a4b]/10 text-[#b83a4b]">
+            <div className="p-1.5 rounded-lg bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]">
               <ClipboardList className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -676,7 +676,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
               placeholder="Koşum adı, plan, versiyon veya tester ara..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] pl-9 pr-3 py-1.5 text-xs text-[#0f172a] dark:text-[#f1f5f9] placeholder-[#64748b] dark:placeholder-[#8e9bb0] focus:outline-none focus:border-[#b83a4b] focus:ring-1 focus:ring-[#b83a4b]/30 transition-all"
+              className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] pl-9 pr-3 py-1.5 text-xs text-[#0f172a] dark:text-[#f1f5f9] placeholder-[#64748b] dark:placeholder-[#8e9bb0] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)]/30 transition-all"
             />
             {searchQuery && (
               <button
@@ -692,7 +692,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer"
+            className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer"
           >
             <option value="ALL">Durum: Tümü</option>
             <option value="IN_PROGRESS">Durum: Çalışıyor</option>
@@ -706,7 +706,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           <select
             value={planFilter}
             onChange={(e) => setPlanFilter(e.target.value)}
-            className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer max-w-[180px] truncate"
+            className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer max-w-[180px] truncate"
           >
             <option value="ALL">Plan: Tüm Test Planları</option>
             <option value="__NO_PLAN__">Plan: Bağımsız / Hızlı Koşumlar</option>
@@ -721,7 +721,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value as any)}
-            className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer"
+            className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer"
           >
             <option value="ALL">Tarih: Tüm Zamanlar</option>
             <option value="TODAY">Tarih: Bugün</option>
@@ -734,7 +734,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             <select
               value={testerFilter}
               onChange={(e) => setTesterFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#b83a4b] cursor-pointer max-w-[150px] truncate"
+              className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer max-w-[150px] truncate"
             >
               <option value="ALL">Çalıştıran: Tümü</option>
               {uniqueTesters.map((t) => (
@@ -786,7 +786,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                     {runs.length === 0 ? (
                       /* 5. Clean Empty State: No runs at all */
                       <div className="max-w-md mx-auto space-y-3 px-4">
-                        <div className="w-12 h-12 rounded-2xl bg-[#b83a4b]/10 text-[#b83a4b] flex items-center justify-center mx-auto">
+                        <div className="w-12 h-12 rounded-2xl bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] flex items-center justify-center mx-auto">
                           <Play className="w-6 h-6 fill-current" />
                         </div>
                         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -799,7 +799,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onOpenManualRun(null)}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white rounded-[10px] bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] shadow-md shadow-[#821c2b]/25 cursor-pointer"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white rounded-[10px] bg-[var(--accent-gradient)] hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             <span>Test Planından Koşum Başlat</span>
@@ -824,7 +824,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                         <button
                           type="button"
                           onClick={handleResetFilters}
-                          className="text-xs font-semibold text-[#b83a4b] hover:underline"
+                          className="text-xs font-semibold text-[var(--accent-primary)] hover:underline"
                         >
                           Filtreleri Sıfırla
                         </button>
@@ -851,7 +851,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                           </div>
                           <div className="min-w-0 space-y-1">
                             <div className="flex items-center space-x-2">
-                              <span className="truncate max-w-xs group-hover:text-[#b83a4b] transition-colors">
+                              <span className="truncate max-w-xs group-hover:text-[var(--accent-primary)] transition-colors">
                                 {run.title}
                               </span>
                             </div>
@@ -986,7 +986,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                       {/* Çalıştıran */}
                       <td className="py-3 px-4">
                         <div className="flex items-center space-x-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#262e3d] text-[#b83a4b] font-bold text-[10px] flex items-center justify-center border border-[#d0d8e4] dark:border-[#2e3748] shrink-0 uppercase">
+                          <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#262e3d] text-[var(--accent-primary)] font-bold text-[10px] flex items-center justify-center border border-[#d0d8e4] dark:border-[#2e3748] shrink-0 uppercase">
                             {run.executedBy ? run.executedBy.charAt(0) : 'T'}
                           </div>
                           <span className="truncate max-w-[120px] text-slate-800 dark:text-slate-200 font-medium text-xs">
@@ -1040,7 +1040,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                                   }}
                                   className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-slate-700 dark:text-slate-300"
                                 >
-                                  <Eye className="w-3.5 h-3.5 text-[#b83a4b]" />
+                                  <Eye className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                                   <span>Detayları İncele</span>
                                 </button>
 
@@ -1109,7 +1109,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-[#d0d8e4] dark:border-[#2e3748] flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80 shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#821c2b] to-[#b83a4b] text-white flex items-center justify-center shadow-md">
+                <div className="w-10 h-10 rounded-xl bg-[var(--accent-gradient)] text-white flex items-center justify-center shadow-md">
                   <Play className="w-5 h-5 fill-current" />
                 </div>
                 <div>
@@ -1151,7 +1151,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleUpdateRunStatus(selectedRunDetails.id, 'COMPLETED')}
-                    className="px-3 py-1.5 bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white rounded-[8px] text-xs font-bold shadow-xs transition-all"
+                    className="px-3 py-1.5 bg-[var(--accent-gradient)] hover:brightness-110 text-white rounded-[8px] text-xs font-bold shadow-xs transition-all"
                   >
                     Koşuyu Tamamla
                   </button>
@@ -1179,7 +1179,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                       onClick={() => setDetailFilterStatus(st)}
                       className={`px-2.5 py-1 rounded-[6px] text-xs font-bold transition-all ${
                         detailFilterStatus === st
-                          ? 'bg-[#b83a4b] text-white'
+                          ? 'bg-[var(--accent-primary)] text-white'
                           : 'bg-slate-100 dark:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9]'
                       }`}
                     >
@@ -1367,7 +1367,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                         <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#141821] text-blue-600 dark:text-blue-400 border border-[#d0d8e4] dark:border-[#2e3748] shrink-0">
                           {tc.code}
                         </span>
-                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-[#b83a4b]">
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-[var(--accent-primary)]">
                           {tc.title}
                         </span>
                       </div>

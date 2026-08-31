@@ -499,10 +499,10 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
 
             <button
               onClick={() => onOpenNewCase ? onOpenNewCase() : onAddCaseInSuite('')}
-              className="flex items-center justify-center space-x-1.5 px-2.5 py-1.5 text-xs font-semibold bg-[#b83a4b]/10 hover:bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/30 rounded-lg transition-all shadow-sm active:scale-95 cursor-pointer"
+              className="flex items-center justify-center space-x-1.5 px-2.5 py-1.5 text-xs font-semibold bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30 rounded-lg transition-all shadow-sm active:scale-95 cursor-pointer"
               title="Plan Altında Yeni Case Oluştur"
             >
-              <FilePlus className="w-3.5 h-3.5 text-[#b83a4b] shrink-0" />
+              <FilePlus className="w-3.5 h-3.5 text-[var(--accent-primary)] shrink-0" />
               <span>+ Yeni Case</span>
             </button>
           </div>
@@ -552,7 +552,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
             onClick={() => setStatusFilter('ALL')}
             className={`px-2 py-0.5 rounded-full border transition-colors ${
               statusFilter === 'ALL'
-                ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white border-[#821c2b]'
+                ? 'bg-[var(--accent-gradient)] text-white border-[var(--accent-dark)]'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
             }`}
           >

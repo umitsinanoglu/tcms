@@ -1,4 +1,4 @@
-export type ThemeId = 'crimson-dark' | 'crimson-light' | 'corporate-light';
+export type ThemeId = 'crimson-dark' | 'crimson-light' | 'corporate-light' | 'azure-blue';
 
 export interface ThemeMeta {
   id: ThemeId;
@@ -55,6 +55,12 @@ export interface DesignTokens {
 }
 
 export const THEME_METADATA: Record<ThemeId, ThemeMeta> = {
+  'azure-blue': {
+    id: 'azure-blue',
+    name: 'Azure Mavisi (Jira Teması)',
+    description: 'Jira tarzı sade beyaz zemin üzerine canlı Azure mavisi ve dengeli kontrast',
+    swatchColors: ['#f4f5f7', '#0c66e4', '#ffffff'],
+  },
   'crimson-dark': {
     id: 'crimson-dark',
     name: 'Kurumsal Grafit (Koyu)',

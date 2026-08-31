@@ -108,7 +108,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           <button
             type="button"
             onClick={toggleCollapsed}
-            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-[#b83a4b]/10 text-slate-600 dark:text-slate-300 hover:text-[#b83a4b] transition-colors shadow-xs mb-1 cursor-pointer"
+            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-[var(--accent-primary)]/10 text-slate-600 dark:text-slate-300 hover:text-[var(--accent-primary)] transition-colors shadow-xs mb-1 cursor-pointer"
             title="Menüyü Genişlet"
           >
             <PanelLeftOpen className="w-4.5 h-4.5" />
@@ -118,7 +118,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           {selectedProject && (
             <div
               onClick={toggleCollapsed}
-              className="w-10 h-10 rounded-xl bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] font-mono font-bold text-xs flex items-center justify-center border border-[#b83a4b]/30 mb-1 cursor-pointer shadow-xs"
+              className="w-10 h-10 rounded-xl bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] font-mono font-bold text-xs flex items-center justify-center border border-[var(--accent-primary)]/30 mb-1 cursor-pointer shadow-xs"
               title={`Proje: ${selectedProject.name}`}
             >
               {selectedProject.name.charAt(0).toLocaleUpperCase('tr-TR')}
@@ -137,14 +137,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   onClick={() => onTabChange(item.id)}
                   className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
                     isActive
-                      ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white shadow-md shadow-[#821c2b]/30 scale-105 font-bold'
+                      ? 'bg-[var(--accent-gradient)] text-white shadow-md shadow-[var(--accent-dark)]/30 scale-105 font-bold'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100'
                   }`}
                   title={item.label}
                 >
                   <Icon className="w-4.5 h-4.5" />
                   {item.badge !== undefined && (
-                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#b83a4b] ring-2 ring-white dark:ring-slate-900" />
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[var(--accent-primary)] ring-2 ring-white dark:ring-slate-900" />
                   )}
                 </button>
               );
@@ -160,8 +160,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               onClick={() => onTabChange('SETTINGS')}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
                 activeTab === 'SETTINGS'
-                  ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white shadow-sm shadow-[#821c2b]/30'
-                  : 'text-slate-500 hover:text-[#b83a4b] dark:text-slate-400 dark:hover:text-[#d66b7a] hover:bg-slate-100 dark:hover:bg-slate-800'
+                  ? 'bg-[var(--accent-gradient)] text-white shadow-sm shadow-[var(--accent-dark)]/30'
+                  : 'text-slate-500 hover:text-[var(--accent-primary)] dark:text-slate-400 dark:hover:text-[var(--accent-primary)] hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
               title="Sistem & Yönetim Ayarları"
               aria-label="Yönetim Ayarları"
@@ -214,7 +214,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 onClick={() => onTabChange(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white shadow-sm shadow-[#821c2b]/25 font-bold'
+                    ? 'bg-[var(--accent-gradient)] text-white shadow-sm shadow-[var(--accent-dark)]/25 font-bold'
                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -275,13 +275,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             onClick={() => onTabChange('SETTINGS')}
             className={`flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
               activeTab === 'SETTINGS'
-                ? 'bg-[#b83a4b]/20 text-[#b83a4b] dark:text-[#d66b7a]'
-                : 'text-slate-700 dark:text-slate-300 hover:text-[#b83a4b] dark:hover:text-[#d66b7a] hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]'
+                : 'text-slate-700 dark:text-slate-300 hover:text-[var(--accent-primary)] hover:bg-slate-200/70 dark:hover:bg-slate-800'
             }`}
             title="Sistem & Yönetim Ayarları"
             aria-label="Yönetim Ayarları"
           >
-            <Settings className="w-3.5 h-3.5 text-[#b83a4b]" />
+            <Settings className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
             <span className="text-[11px]">Ayarlar</span>
           </button>
         ) : (

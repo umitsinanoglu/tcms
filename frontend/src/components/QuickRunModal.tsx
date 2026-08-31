@@ -343,8 +343,8 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
         {/* 1. Modal Top Header */}
         <div className="px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#151b28] shrink-0">
           <div className="flex items-center space-x-3 min-w-0">
-            {/* Red Clipboard Badge */}
-            <div className="w-10 h-10 rounded-xl bg-[#b83a4b]/10 text-[#b83a4b] border border-[#b83a4b]/20 flex items-center justify-center shrink-0 shadow-xs">
+            {/* Accent Clipboard Badge */}
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20 flex items-center justify-center shrink-0 shadow-xs">
               <ClipboardList className="w-5 h-5" />
             </div>
             <div className="min-w-0">
@@ -365,7 +365,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
           <div className="flex items-center space-x-3 shrink-0 ml-3">
             {/* Live Stopwatch Widget */}
             <div className="flex items-center space-x-2 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-              <Timer className={`w-4 h-4 ${isTimerRunning ? 'text-[#b83a4b] animate-pulse' : 'text-slate-400'}`} />
+              <Timer className={`w-4 h-4 ${isTimerRunning ? 'text-[var(--accent-primary)] animate-pulse' : 'text-slate-400'}`} />
               <span className="font-mono font-extrabold text-sm text-slate-800 dark:text-slate-200 min-w-[50px]">
                 {Math.floor(executionMs / 1000)} sn
               </span>
@@ -478,7 +478,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
             {/* 3. Koşum Etiketleri & Cihaz / Kullanıcı Parametreleri Card */}
             <div className="p-4 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
               <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300">
-                <SlidersHorizontal className="w-4 h-4 text-[#b83a4b]" />
+                <SlidersHorizontal className="w-4 h-4 text-[var(--accent-primary)]" />
                 <h4 className="text-xs font-bold uppercase tracking-wider">
                   Koşum Etiketleri & Cihaz / Kullanıcı Parametreleri
                 </h4>
@@ -494,7 +494,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                   <select
                     value={environment}
                     onChange={(e) => setEnvironment(e.target.value)}
-                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   >
                     <option value="UAT">UAT</option>
                     <option value="DEV">DEV</option>
@@ -512,7 +512,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                   <select
                     value={platform}
                     onChange={(e) => setPlatform(e.target.value)}
-                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   >
                     <option value="Web">🌐 Web</option>
                     <option value="iOS">🍎 iOS</option>
@@ -531,7 +531,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                     value={appVersion}
                     onChange={(e) => setAppVersion(e.target.value)}
                     placeholder="v1.2.0 (106)"
-                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   />
                 </div>
 
@@ -545,7 +545,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                     value={device}
                     onChange={(e) => setDevice(e.target.value)}
                     placeholder="iphone 15"
-                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   />
                 </div>
 
@@ -559,7 +559,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                     value={userProfile}
                     onChange={(e) => setUserProfile(e.target.value)}
                     placeholder="ÜMİT SİNANOĞLU (ADMIN)"
-                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   />
                 </div>
 
@@ -571,7 +571,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                   <select
                     value={customerType}
                     onChange={(e) => setCustomerType(e.target.value)}
-                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   >
                     <option value="BIREYSEL">👥 BİREYSEL</option>
                     <option value="KURUMSAL">🏢 KURUMSAL</option>
@@ -587,7 +587,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                   <select
                     value={flakyStatus}
                     onChange={(e) => setFlakyStatus(e.target.value)}
-                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   >
                     <option value="NONE">Stabil (Retry Yok)</option>
                     <option value="+1 retry">+1 retry</option>
@@ -606,7 +606,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                     value={executionMs}
                     onChange={(e) => setExecutionMs(Number(e.target.value))}
                     placeholder="37000"
-                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b]"
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   />
                 </div>
               </div>
@@ -617,7 +617,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
               <div className="p-4 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300">
-                    <ClipboardList className="w-4 h-4 text-[#b83a4b]" />
+                    <ClipboardList className="w-4 h-4 text-[var(--accent-primary)]" />
                     <h4 className="text-xs font-bold uppercase tracking-wider">
                       Test Adımları Kontrol Listesi
                     </h4>
@@ -651,7 +651,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                           onClick={() => handleToggleStepCheckbox(idx)}
                           className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
                             isVerified
-                              ? 'bg-blue-600 border-blue-600 text-white'
+                              ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white'
                               : 'border-slate-300 dark:border-slate-600 hover:border-slate-400'
                           }`}
                         >
@@ -726,7 +726,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
-                  <MessageSquare className="w-4 h-4 text-[#b83a4b]" />
+                  <MessageSquare className="w-4 h-4 text-[var(--accent-primary)]" />
                   <span>Yorum / Not & Doğrulama Açıklaması</span>
                 </label>
                 <span className="text-[11px] text-slate-400">(Her durum için eklenebilir)</span>
@@ -736,7 +736,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                 value={errorMessage}
                 onChange={(e) => setErrorMessage(e.target.value)}
                 placeholder="Örn: Test başarıyla tamamlandı. Döviz alış kuru UAT ortamında doğrulandı."
-                className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] resize-none shadow-xs"
+                className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none shadow-xs"
               />
             </div>
 
@@ -757,7 +757,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                   }
                 }}
                 placeholder="Örn: MOB-542 veya QA-102"
-                className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] shadow-xs"
+                className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] shadow-xs"
               />
             </div>
 
@@ -765,7 +765,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
-                  <ImageIcon className="w-4 h-4 text-[#b83a4b]" />
+                  <ImageIcon className="w-4 h-4 text-[var(--accent-primary)]" />
                   <span>Ekran Görüntüleri & Kanıtlar ({screenshots.length})</span>
                 </label>
                 <span className="text-[11px] text-slate-400">
@@ -776,7 +776,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
               {/* Upload and URL input row */}
               <div className="flex items-center gap-2">
                 <label className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer transition-colors shadow-xs">
-                  <Upload className="w-4 h-4 text-[#b83a4b]" />
+                  <Upload className="w-4 h-4 text-[var(--accent-primary)]" />
                   <span>Dosya Seç</span>
                   <input
                     type="file"
@@ -799,13 +799,13 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                       }
                     }}
                     placeholder="veya Görsel URL'si yapıştırın..."
-                    className="flex-1 bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] shadow-xs"
+                    className="flex-1 bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] shadow-xs"
                   />
                   <button
                     type="button"
                     onClick={handleAddImageUrl}
                     disabled={!newImageUrl.trim()}
-                    className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[#b83a4b] hover:bg-[#c54859] disabled:opacity-40 transition-colors shadow-xs"
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[var(--accent-primary)] hover:brightness-110 disabled:opacity-40 transition-colors shadow-xs"
                   >
                     Ekle
                   </button>
@@ -863,7 +863,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] disabled:opacity-50 transition-all shadow-md shadow-[#821c2b]/20 active:scale-98 cursor-pointer"
+              className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 disabled:opacity-50 transition-all shadow-md shadow-[var(--accent-dark)]/20 active:scale-98 cursor-pointer"
             >
               <Check className="w-4 h-4" />
               <span>{isSubmitting ? 'Kaydediliyor...' : 'Koşum Sonucunu ve Etiketleri Kaydet'}</span>

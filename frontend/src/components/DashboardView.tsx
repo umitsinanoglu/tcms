@@ -399,7 +399,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             placeholder="Test planı, senaryo veya ID ara..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm rounded-xl bg-white dark:bg-[#1d232f] border border-slate-300 dark:border-[#2e3748] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#b83a4b]/40 shadow-xs"
+            className="w-full pl-10 pr-4 py-2 text-sm rounded-xl bg-white dark:bg-[#1d232f] border border-slate-300 dark:border-[#2e3748] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40 shadow-xs"
           />
         </div>
       </div>
@@ -437,7 +437,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Calendar className="w-7 h-7" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#8e9bb0] group-hover:text-[#b83a4b] transition-colors">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#8e9bb0] group-hover:text-[var(--accent-primary)] transition-colors">
               Test Planları
             </span>
             <div className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-slate-50 tracking-tight mt-0.5">
@@ -461,7 +461,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <FileText className="w-7 h-7" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#8e9bb0] group-hover:text-[#b83a4b] transition-colors">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#8e9bb0] group-hover:text-[var(--accent-primary)] transition-colors">
               Test Senaryoları
             </span>
             <div className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-slate-50 tracking-tight mt-0.5">
@@ -478,14 +478,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card 4: Çalıştırmalar (Koşumlar) */}
         <div
           onClick={onNavigateToRuns}
-          className="p-4 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] shadow-xs hover:border-[#b83a4b]/40 transition-all flex items-center space-x-3.5 cursor-pointer group"
+          className="p-4 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] shadow-xs hover:border-[var(--accent-primary)]/40 transition-all flex items-center space-x-3.5 cursor-pointer group"
         >
           {/* Large Left Icon */}
-          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-[#b83a4b]/10 text-[#b83a4b] group-hover:scale-105 transition-transform">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] group-hover:scale-105 transition-transform">
             <CheckCircle2 className="w-7 h-7" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#8e9bb0] group-hover:text-[#b83a4b] transition-colors">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#8e9bb0] group-hover:text-[var(--accent-primary)] transition-colors">
               Çalıştırmalar (Koşumlar)
             </span>
             <div className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-slate-50 tracking-tight mt-0.5">
@@ -536,7 +536,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {onOpenNewPlan && (
                   <button
                     onClick={onOpenNewPlan}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white transition-all shadow-sm hover:shadow-[#821c2b]/30 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--accent-gradient)] text-white transition-all shadow-sm hover:brightness-110 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Test Planı Oluştur</span>
@@ -570,7 +570,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           <td className="py-2.5 px-3.5">
                             <div className="flex items-center space-x-2">
                               <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
-                              <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] transition-colors truncate max-w-[190px]">
+                              <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[var(--accent-primary)] transition-colors truncate max-w-[190px]">
                                 {plan.title}
                               </div>
                             </div>
@@ -588,15 +588,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             <div className="flex items-center space-x-2">
                               <span
                                 className={`font-mono font-bold text-xs ${
-                                  planRate >= 80 ? 'text-emerald-600 dark:text-emerald-400' : planRate >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'
+                                  planRate >= 75
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : planRate >= 50
+                                    ? 'text-amber-600 dark:text-amber-400'
+                                    : 'text-slate-500 dark:text-[#8e9bb0]'
                                 }`}
                               >
                                 %{planRate}
                               </span>
-                              <div className="flex-1 bg-slate-200/80 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden min-w-[50px]">
+                              <div className="w-16 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex">
                                 <div
-                                  className={`h-full rounded-full transition-all ${
-                                    planRate >= 80 ? 'bg-emerald-500' : planRate >= 50 ? 'bg-amber-500' : 'bg-slate-400'
+                                  className={`h-full rounded-full ${
+                                    planRate >= 75
+                                      ? 'bg-emerald-500'
+                                      : planRate >= 50
+                                      ? 'bg-amber-500'
+                                      : 'bg-slate-400'
                                   }`}
                                   style={{ width: `${planRate}%` }}
                                 />
@@ -607,17 +615,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             {formatDate(plan.updatedAt || plan.createdAt)}
                           </td>
                           <td className="py-2.5 px-2.5 text-right">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onOpenManualRun();
-                              }}
-                              className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-colors cursor-pointer"
-                              title="Bu Planı Koş"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-current text-emerald-600 dark:text-emerald-400" />
-                            </button>
+                            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                              Detay
+                            </span>
                           </td>
                         </tr>
                       );
@@ -659,7 +659,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <p className="font-medium text-xs">Henüz test senaryosu bulunmuyor.</p>
                 <button
                   onClick={onOpenNewCase}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white transition-all shadow-sm hover:shadow-[#821c2b]/30 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--accent-gradient)] text-white transition-all shadow-sm hover:brightness-110 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Yeni Senaryo Ekle</span>
@@ -696,7 +696,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             {tc.code}
                           </td>
                           <td className="py-2.5 px-3.5">
-                            <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] transition-colors truncate max-w-[210px]">
+                            <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[var(--accent-primary)] transition-colors truncate max-w-[210px]">
                               {tc.title}
                             </div>
                             {tc.description && (
@@ -778,7 +778,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-[#b83a4b] transition-colors">
+                        <div className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-[var(--accent-primary)] transition-colors">
                           {run.title}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-[#8e9bb0] font-mono mt-0.5 truncate">
@@ -830,7 +830,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           )}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-[#b83a4b] transition-colors">
+                          <div className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-[var(--accent-primary)] transition-colors">
                             {run.title}
                           </div>
                           <div className="text-[11px] text-slate-500 dark:text-[#8e9bb0] font-mono mt-0.5 truncate">
@@ -871,7 +871,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   onClick={() => setDistributionRange('1D')}
                   className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
                     distributionRange === '1D'
-                      ? 'bg-[#b83a4b] text-white shadow-xs'
+                      ? 'bg-[var(--accent-primary)] text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                   title="Son 24 Saat"
@@ -883,7 +883,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   onClick={() => setDistributionRange('7D')}
                   className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
                     distributionRange === '7D'
-                      ? 'bg-[#b83a4b] text-white shadow-xs'
+                      ? 'bg-[var(--accent-primary)] text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                   title="Son 7 Gün"
@@ -895,7 +895,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   onClick={() => setDistributionRange('30D')}
                   className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
                     distributionRange === '30D'
-                      ? 'bg-[#b83a4b] text-white shadow-xs'
+                      ? 'bg-[var(--accent-primary)] text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                   title="Son 30 Gün"
@@ -907,7 +907,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   onClick={() => setDistributionRange('ALL')}
                   className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
                     distributionRange === 'ALL'
-                      ? 'bg-[#b83a4b] text-white shadow-xs'
+                      ? 'bg-[var(--accent-primary)] text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                   title="Tüm Zamanlar"

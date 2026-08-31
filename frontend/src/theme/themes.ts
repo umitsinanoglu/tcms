@@ -1,6 +1,46 @@
 import { DesignTokens, ThemeId } from './tokens';
 
 export const themePresets: Record<ThemeId, DesignTokens> = {
+  'azure-blue': {
+    colors: {
+      background: '#f4f5f7',
+      surface: '#ffffff',
+      surfaceSecondary: '#ebecf0',
+      border: '#dfe1e6',
+      textMain: '#091e42',
+      textMuted: '#626f86',
+      accentPrimary: '#0c66e4',
+      accentDark: '#0052cc',
+      accentGradient: 'linear-gradient(135deg, #0c66e4 0%, #0052cc 100%)',
+      accentHover: '#0055cc',
+      glassPanelBg: 'rgba(255, 255, 255, 0.95)',
+      glassPanelBorder: 'rgba(12, 102, 228, 0.18)',
+      scrollbarTrack: '#f4f5f7',
+      scrollbarThumb: '#cbd5e1',
+    },
+    status: {
+      passed: { bg: '#e3fcef', text: '#006644', border: '#abf5d1' },
+      failed: { bg: '#ffebe6', text: '#bf2600', border: '#ffbdad' },
+      blocked: { bg: '#fffae6', text: '#ff8b00', border: '#fff0b3' },
+      inProgress: { bg: '#deebff', text: '#0c66e4', border: '#b3d4ff' },
+      draft: { bg: '#f4f5f7', text: '#626f86', border: '#dfe1e6' },
+    },
+    radii: {
+      sm: '8px',
+      button: '10px',
+      card: '14px',
+      container: '16px',
+      pill: '9999px',
+    },
+    shadows: {
+      xs: '0 1px 2px 0 rgba(9, 30, 66, 0.04)',
+      sm: '0 2px 4px 0 rgba(9, 30, 66, 0.06)',
+      md: '0 4px 12px 0 rgba(9, 30, 66, 0.08)',
+      lg: '0 10px 25px -5px rgba(9, 30, 66, 0.10)',
+      xl: '0 20px 40px -10px rgba(9, 30, 66, 0.14)',
+      accentGlow: '0 0 20px rgba(12, 102, 228, 0.18)',
+    },
+  },
   'crimson-dark': {
     colors: {
       background: '#141821',
