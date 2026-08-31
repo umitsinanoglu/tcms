@@ -520,7 +520,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 1. Header Bar */}
       <div className="p-4 sm:px-6 border-b border-slate-200 dark:border-slate-800/80 bg-white/80 dark:bg-[#1d232f]/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-[var(--accent-gradient)] text-white flex items-center justify-center shadow-md shadow-[var(--accent-dark)]/25">
+          <div className="w-10 h-10 rounded-xl bg-accent-gradient text-white flex items-center justify-center shadow-md shadow-[var(--accent-dark)]/25">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
@@ -568,7 +568,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
                   isActive
-                    ? 'bg-[var(--accent-primary)] text-white shadow-sm shadow-[var(--accent-dark)]/30 font-bold'
+                    ? 'bg-accent-gradient text-white shadow-sm shadow-[var(--accent-dark)]/30 font-bold'
                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
                 }`}
                 style={isActive ? { background: 'var(--accent-gradient)' } : undefined}
@@ -621,7 +621,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={onOpenCreateProject}
-                      className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
+                      className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-accent-gradient text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Yeni Proje Ekle</span>
@@ -808,7 +808,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="submit"
                       disabled={isSavingSystem}
-                      className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer disabled:opacity-50"
+                      className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-accent-gradient text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer disabled:opacity-50"
                     >
                       <Save className="w-3.5 h-3.5" />
                       <span>{isSavingSystem ? 'Kaydediliyor...' : 'Ayarları Kaydet'}</span>
@@ -845,7 +845,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsUserModalOpen(true)}
-                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
+                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-accent-gradient text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Yeni Kullanıcı Ekle</span>
@@ -1243,7 +1243,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       type="button"
                       onClick={handleSyncLdap}
                       disabled={isSyncingLdap}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer disabled:opacity-50"
+                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-accent-gradient text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer disabled:opacity-50"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isSyncingLdap ? 'animate-spin' : ''}`} />
                       <span>{isSyncingLdap ? 'Senkronize Ediliyor...' : 'Kullanıcıları Senkronize Et'}</span>
@@ -1397,7 +1397,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <div className="pt-3 flex justify-end">
                     <button
                       type="submit"
-                      className="px-4 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
+                      className="px-4 py-2 rounded-xl bg-accent-gradient text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
                     >
                       LDAP Yapılandırmasını Kaydet
                     </button>
@@ -1467,7 +1467,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsNewKeyModalOpen(true)}
-                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
+                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-accent-gradient text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Yeni API Anahtarı Oluştur</span>
@@ -1618,7 +1618,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsWebhookModalOpen(true)}
-                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
+                      className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-accent-gradient text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110 transition-all cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Yeni Webhook Ekle</span>
@@ -1787,7 +1787,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110"
+                  className="px-4 py-2 rounded-xl bg-accent-gradient text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110"
                 >
                   Kullanıcıyı Kaydet
                 </button>
@@ -1874,7 +1874,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110"
+                  className="px-4 py-2 rounded-xl bg-accent-gradient text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110"
                 >
                   Anahtarı Üret
                 </button>
@@ -1949,7 +1949,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[var(--accent-gradient)] text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110"
+                  className="px-4 py-2 rounded-xl bg-accent-gradient text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/20 hover:brightness-110"
                 >
                   Webhook Kaydet
                 </button>

@@ -145,7 +145,12 @@ body {
   border: 1px solid var(--border-color);
 }
 
-/* Enterprise Button Utilities */
+/* Enterprise Button & Gradient Utilities */
+.bg-accent-gradient,
+.bg-\[var\(--accent-gradient\)\] {
+  background: var(--accent-gradient) !important;
+}
+
 .btn-primary,
 .btn-crimson,
 .bg-accent-gradient,

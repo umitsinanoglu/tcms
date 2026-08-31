@@ -11,11 +11,14 @@ import {
   ResultStatus,
   TestRunsService,
   ReportsService,
+  DefectsService,
+  CreateDefectDto,
   SuiteTreeNode,
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { parseScreenshots } from './QuickRunModal';
 import { LiveRunTerminalModal } from './LiveRunTerminalModal';
+import { NewDefectModal } from './NewDefectModal';
 import {
   Terminal,
   ArrowLeft,
@@ -152,10 +155,67 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   // Bulk Selection
   const [selectedCaseIds, setSelectedCaseIds] = useState<string[]>([]);
 
+  // New Defect Modal State
+  const [isNewDefectModalOpen, setIsNewDefectModalOpen] = useState<boolean>(false);
+  const [defectModalInitialData, setDefectModalInitialData] = useState<Partial<CreateDefectDto> | null>(null);
+
   // Show toast notification helper
   const showToast = (text: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Open Create Defect with Pre-populated system info
+  const handleOpenCreateDefect = (testCase: TestCase, result?: TestResult) => {
+    if (!project?.id) return;
+
+    const defaultSeverity =
+      testCase.priority === 'BLOCKER'
+        ? 'BLOCKER'
+        : testCase.priority === 'CRITICAL'
+        ? 'CRITICAL'
+        : 'MAJOR';
+
+    const defaultPlatform =
+      result?.platform || (testCase.type === 'IOS' ? 'iOS' : testCase.type === 'ANDROID' ? 'Android' : 'WEB');
+
+    const defaultEnv = result?.environment || run.environment || 'STAGING';
+    const defaultVersion = result?.appVersion || run.version || 'v1.0.0';
+
+    const errorDetails = result?.errorMessage
+      ? `Hata Logu / Açıklama:\n${result.errorMessage}\n\nİlişkili Koşum: ${run.title} (${defaultVersion} / ${defaultEnv})`
+      : `Test senaryosu (${testCase.code}) "${run.title}" koşumunda başarısız oldu.`;
+
+    setDefectModalInitialData({
+      projectId: project.id,
+      title: `[Test Hatası] ${testCase.code} - ${testCase.title}`,
+      description: errorDetails,
+      severity: defaultSeverity as any,
+      status: 'OPEN' as any,
+      environment: defaultEnv,
+      channel: defaultPlatform,
+      testCaseId: testCase.id,
+      testRunId: run.id,
+      testResultId: result?.id,
+      reportedBy:
+        currentUser?.name || (typeof window !== 'undefined' ? localStorage.getItem('tcms_active_user_name') || '' : ''),
+      jiraBugKey: result?.jiraBugKey || '',
+      jiraBugUrl: result?.jiraBugUrl || '',
+    });
+
+    setIsNewDefectModalOpen(true);
+  };
+
+  // Submit Handler for Defect creation from Test Run
+  const handleCreateDefectSubmit = async (data: CreateDefectDto) => {
+    try {
+      await DefectsService.create(data);
+      showToast('Defect başarıyla oluşturuldu ve test senaryosuna bağlandı.', 'success');
+      await reloadRun();
+    } catch (err: any) {
+      console.error('Failed to create defect:', err);
+      showToast('Defect oluşturulurken hata oluştu: ' + (err?.response?.data?.message || err?.message || 'Hata'), 'error');
+    }
   };
 
   // Sync when initialRun changes
@@ -1483,11 +1543,34 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                               </button>
                             )}
 
+                            {/* Defect Badge or Button for FAILED tests */}
+                            {isFailed && (
+                              result?.defects && result.defects.length > 0 ? (
+                                <span
+                                  className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-mono font-bold"
+                                  title={`Bağlı Defect: ${result.defects[0].title}`}
+                                >
+                                  <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                                  <span>{result.defects[0].key}</span>
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenCreateDefect(testCase, result)}
+                                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-bold text-xs shadow-2xs transition-colors cursor-pointer"
+                                  title="Bu FAILED sonuç için Defect oluştur"
+                                >
+                                  <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                                  <span className="hidden sm:inline">Defect Oluştur</span>
+                                </button>
+                              )
+                            )}
+
                             {/* Eye Action Button */}
                             <button
                               type="button"
                               onClick={() => handleOpenResultDrawer(testCase, result)}
-                              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                               title="Sonuç Detaylarını Düzenle"
                             >
                               <Eye className="w-4 h-4" />
@@ -1742,14 +1825,36 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                           <td className="py-3 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-400">
                             {result?.executionMs ? formatDuration(result.executionMs) : '0 sn'}
                           </td>
-                          <td className="py-3 px-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenResultDrawer(testCase, result)}
-                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-[#991b1b]"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
+                          <td className="py-3 px-3 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end space-x-1">
+                              {currentStatus === 'FAILED' && (
+                                result?.defects && result.defects.length > 0 ? (
+                                  <span
+                                    className="font-mono font-bold text-[10px] text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/25 px-2 py-1 rounded-md"
+                                    title={`Bağlı Defect: ${result.defects[0].title}`}
+                                  >
+                                    {result.defects[0].key}
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenCreateDefect(testCase, result)}
+                                    className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 transition-colors cursor-pointer"
+                                    title="Bu FAILED sonuç için Defect oluştur"
+                                  >
+                                    <Bug className="w-3.5 h-3.5" />
+                                  </button>
+                                )
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleOpenResultDrawer(testCase, result)}
+                                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-[#991b1b] transition-colors cursor-pointer"
+                                title="Sonuç Detaylarını Düzenle"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1942,18 +2047,41 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                       )}
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs gap-2 flex-wrap">
                       <span className="text-[11px] text-slate-500">
                         Süre: <strong className="font-mono">{result?.executionMs || 0} ms</strong>
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenResultDrawer(testCase, result)}
-                        className="inline-flex items-center space-x-1 text-xs font-bold text-[#991b1b] dark:text-rose-400 hover:underline"
-                      >
-                        <span>Hata Bulgusunu Düzenle</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
+
+                      <div className="flex items-center space-x-2">
+                        {result?.defects && result.defects.length > 0 ? (
+                          <span
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-mono font-bold"
+                            title={`Bağlı Defect: ${result.defects[0].title}`}
+                          >
+                            <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                            <span>{result.defects[0].key}</span>
+                          </span>
+                        ) : result?.status === 'FAILED' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenCreateDefect(testCase, result)}
+                            className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-bold text-xs shadow-2xs transition-colors cursor-pointer"
+                            title="Bu FAILED sonuç için Defect oluştur"
+                          >
+                            <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                            <span>Defect Oluştur</span>
+                          </button>
+                        ) : null}
+
+                        <button
+                          type="button"
+                          onClick={() => handleOpenResultDrawer(testCase, result)}
+                          className="inline-flex items-center space-x-1 text-xs font-bold text-[#991b1b] dark:text-rose-400 hover:underline cursor-pointer"
+                        >
+                          <span>Hata Bulgusunu Düzenle</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -2487,17 +2615,33 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
             </div>
 
             {/* Drawer Footer */}
-            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsTimerRunning(false);
-                  setActiveResultModalCase(null);
-                }}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors"
-              >
-                Vazgeç
-              </button>
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80 shrink-0 gap-2">
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTimerRunning(false);
+                    setActiveResultModalCase(null);
+                  }}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                >
+                  Vazgeç
+                </button>
+
+                {drawerStatus === 'FAILED' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleOpenCreateDefect(activeResultModalCase.testCase, activeResultModalCase.currentResult);
+                    }}
+                    className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-700 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all cursor-pointer shadow-xs"
+                    title="Bu başarısız sonuç için Defect formu aç"
+                  >
+                    <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    <span>Defect Oluştur</span>
+                  </button>
+                )}
+              </div>
 
               <button
                 type="button"
@@ -2548,6 +2692,23 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
           reloadRun();
         }}
       />
+
+      {/* Yeni Defect / Hata Oluşturma Modalı */}
+      {project && (
+        <NewDefectModal
+          isOpen={isNewDefectModalOpen}
+          onClose={() => {
+            setIsNewDefectModalOpen(false);
+            setDefectModalInitialData(null);
+          }}
+          projectId={project.id}
+          projectName={project.name}
+          projectKey={project.key}
+          allCases={allCases}
+          initialData={defectModalInitialData || undefined}
+          onSubmit={handleCreateDefectSubmit}
+        />
+      )}
     </div>
   );
 };

@@ -863,7 +863,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 disabled:opacity-50 transition-all shadow-md shadow-[var(--accent-dark)]/20 active:scale-98 cursor-pointer"
+              className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 disabled:opacity-50 transition-all shadow-md shadow-[var(--accent-dark)]/20 active:scale-98 cursor-pointer"
             >
               <Check className="w-4 h-4" />
               <span>{isSubmitting ? 'Kaydediliyor...' : 'Koşum Sonucunu ve Etiketleri Kaydet'}</span>

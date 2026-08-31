@@ -177,6 +177,13 @@ export interface TestResult {
   jiraBugKey?: string;
   jiraBugUrl?: string;
   screenshotUrl?: string;
+  defects?: {
+    id: string;
+    key: string;
+    title: string;
+    status: DefectStatus;
+    severity: DefectSeverity;
+  }[];
   executedAt?: string;
 }
 

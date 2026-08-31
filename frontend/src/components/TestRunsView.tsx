@@ -427,7 +427,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#d0d8e4] dark:border-[#2e3748]">
         <div className="space-y-1">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--accent-gradient)] text-white flex items-center justify-center shadow-md shadow-[var(--accent-dark)]/25">
+            <div className="w-10 h-10 rounded-xl bg-accent-gradient text-white flex items-center justify-center shadow-md shadow-[var(--accent-dark)]/25">
               <Play className="w-5 h-5 fill-current" />
             </div>
             <div>
@@ -525,7 +525,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           <button
             type="button"
             onClick={() => onOpenManualRun(null)}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white transition-all duration-200 rounded-[10px] bg-[var(--accent-gradient)] hover:brightness-110 shadow-sm hover:shadow-[0_4px_12px_var(--accent-glow)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white transition-all duration-200 rounded-[10px] bg-accent-gradient hover:brightness-110 shadow-sm hover:shadow-[0_4px_12px_var(--accent-glow)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
             title="Bir test planı veya çoklu senaryo seçerek kapsamlı koşum başlatın"
           >
             <ClipboardList className="w-4 h-4" />
@@ -799,7 +799,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onOpenManualRun(null)}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white rounded-[10px] bg-[var(--accent-gradient)] hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white rounded-[10px] bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             <span>Test Planından Koşum Başlat</span>
@@ -1109,7 +1109,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-[#d0d8e4] dark:border-[#2e3748] flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80 shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-[var(--accent-gradient)] text-white flex items-center justify-center shadow-md">
+                <div className="w-10 h-10 rounded-xl bg-accent-gradient text-white flex items-center justify-center shadow-md">
                   <Play className="w-5 h-5 fill-current" />
                 </div>
                 <div>
@@ -1151,7 +1151,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleUpdateRunStatus(selectedRunDetails.id, 'COMPLETED')}
-                    className="px-3 py-1.5 bg-[var(--accent-gradient)] hover:brightness-110 text-white rounded-[8px] text-xs font-bold shadow-xs transition-all"
+                    className="px-3 py-1.5 bg-accent-gradient hover:brightness-110 text-white rounded-[8px] text-xs font-bold shadow-xs transition-all"
                   >
                     Koşuyu Tamamla
                   </button>

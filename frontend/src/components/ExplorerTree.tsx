@@ -552,7 +552,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
             onClick={() => setStatusFilter('ALL')}
             className={`px-2 py-0.5 rounded-full border transition-colors ${
               statusFilter === 'ALL'
-                ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-dark)] font-bold'
+                ? 'bg-accent-gradient text-white border-[var(--accent-dark)] font-bold'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
             }`}
             style={statusFilter === 'ALL' ? { background: 'var(--accent-gradient)' } : undefined}

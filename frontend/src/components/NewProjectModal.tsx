@@ -150,7 +150,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || !name.trim() || !key.trim()}
-              className="flex items-center space-x-2 px-5 py-2 bg-[var(--accent-gradient)] hover:brightness-110 text-white text-xs font-semibold rounded-xl shadow-md shadow-[var(--accent-dark)]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+              className="flex items-center space-x-2 px-5 py-2 bg-accent-gradient hover:brightness-110 text-white text-xs font-semibold rounded-xl shadow-md shadow-[var(--accent-dark)]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>{isSubmitting ? 'Oluşturuluyor...' : 'Test Planı Oluştur'}</span>

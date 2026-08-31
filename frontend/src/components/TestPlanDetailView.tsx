@@ -682,7 +682,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                       type="button"
                       disabled={isSavingMetadata}
                       onClick={handleSaveMetadata}
-                      className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 disabled:opacity-50 transition-all shadow-xs cursor-pointer"
+                      className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 disabled:opacity-50 transition-all shadow-xs cursor-pointer"
                     >
                       {isSavingMetadata ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -944,7 +944,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                       setCandidateCaseIdsToAdd([]);
                       setIsAddCasesModalOpen(true);
                     }}
-                    className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 transition-all shadow-xs cursor-pointer active:scale-98"
+                    className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 transition-all shadow-xs cursor-pointer active:scale-98"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Test Senaryosu Ekle</span>
@@ -992,7 +992,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                               setCandidateCaseIdsToAdd([]);
                               setIsAddCasesModalOpen(true);
                             }}
-                            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 shadow-xs cursor-pointer transition-all active:scale-98"
+                            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 shadow-xs cursor-pointer transition-all active:scale-98"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             <span>Test Senaryosu Ekle</span>
@@ -1403,7 +1403,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                   type="button"
                   disabled={candidateCaseIdsToAdd.length === 0}
                   onClick={handleConfirmAddCases}
-                  className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 disabled:opacity-50 transition-all shadow-xs cursor-pointer"
+                  className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl font-bold text-white bg-accent-gradient hover:brightness-110 disabled:opacity-50 transition-all shadow-xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Seçilenleri Plana Ekle ({candidateCaseIdsToAdd.length})</span>

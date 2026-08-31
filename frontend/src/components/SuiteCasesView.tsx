@@ -310,7 +310,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
               <button
                 type="button"
                 onClick={() => onAddCaseInSuite(suite.id === '__root_cases__' ? '' : suite.id)}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-[var(--accent-gradient)] hover:brightness-110 text-white text-xs font-semibold rounded-xl shadow-md shadow-[var(--accent-dark)]/20 transition-all active:scale-95 cursor-pointer"
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-accent-gradient hover:brightness-110 text-white text-xs font-semibold rounded-xl shadow-md shadow-[var(--accent-dark)]/20 transition-all active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Yeni Case</span>

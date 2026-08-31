@@ -65,7 +65,7 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
   const [stats, setStats] = useState<DefectStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [syncMessage, setSyncMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('LIST');
 
   // Filter States
@@ -134,14 +134,24 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
       setSyncMessage(null);
       const result = await DefectsService.syncFromFailed(selectedProject.id);
       if (result.syncedCount > 0) {
-        setSyncMessage(`Başarılı: Koşumlardan ${result.syncedCount} adet yeni hata kaydı merkezi listeye aktarıldı.`);
+        setSyncMessage({
+          text: `Başarılı: Koşumlardan ${result.syncedCount} adet yeni hata kaydı merkezi listeye aktarıldı.`,
+          type: 'success',
+        });
       } else {
-        setSyncMessage('Aktarılacak yeni başarısız test sonucu bulunamadı (Tüm hatalar zaten kayıtlı veya hata yok).');
+        setSyncMessage({
+          text: 'Aktarılacak yeni başarısız test sonucu bulunamadı (Tüm başarısız sonuçlar zaten aktarılmış veya başarısız test yok).',
+          type: 'info',
+        });
       }
       await fetchDefects();
     } catch (err: any) {
       console.error('Failed to sync failed results:', err);
-      setSyncMessage('Senkronizasyon sırasında bir hata oluştu.');
+      const errorMsg = err?.response?.data?.message || err?.message || 'Senkronizasyon sırasında bir hata oluştu.';
+      setSyncMessage({
+        text: `Senkronizasyon hatası: ${errorMsg}`,
+        type: 'error',
+      });
     } finally {
       setIsSyncing(false);
       setTimeout(() => setSyncMessage(null), 6000);
@@ -401,15 +411,29 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
 
         {/* Sync Notification Banner */}
         {syncMessage && (
-          <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-semibold flex items-center justify-between animate-in fade-in duration-150">
+          <div
+            className={`mt-3 p-3 rounded-xl border text-xs font-semibold flex items-center justify-between animate-in fade-in duration-150 ${
+              syncMessage.type === 'success'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
+                : syncMessage.type === 'error'
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-300'
+                : 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300'
+            }`}
+          >
             <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>{syncMessage}</span>
+              {syncMessage.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              ) : syncMessage.type === 'error' ? (
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              )}
+              <span>{syncMessage.text}</span>
             </div>
             <button
               type="button"
               onClick={() => setSyncMessage(null)}
-              className="text-slate-400 hover:text-slate-600 text-xs"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs p-1"
             >
               ✕
             </button>
