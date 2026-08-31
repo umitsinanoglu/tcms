@@ -35,74 +35,88 @@ export class TestRunsService {
   async saveResults(projectId: string, runId: string, dto: SaveExecutionResultsDto) {
     const run = await this.findOne(runId);
 
-    // Upsert or replace results for each testCase in the run
-    for (const item of dto.results) {
-      const bugUrl = item.jiraBugUrl || (item.jiraBugKey ? `https://company.atlassian.net/browse/${item.jiraBugKey}` : null);
-
-      // Check if result already exists for this testCase in this run
-      const existing = await this.prisma.testResult.findFirst({
-        where: {
-          testRunId: runId,
-          testCaseId: item.testCaseId,
-        },
-      });
-
-      if (existing) {
-        await this.prisma.testResult.update({
-          where: { id: existing.id },
-          data: {
-            status: item.status,
-            executionMs: item.executionMs ?? null,
-            errorMessage: item.errorMessage ?? null,
-            jiraBugKey: item.jiraBugKey ?? null,
-            jiraBugUrl: bugUrl,
-            screenshotUrl: item.screenshotUrl ?? existing.screenshotUrl ?? null,
-            environment: item.environment ?? run.environment ?? existing.environment ?? null,
-            platform: item.platform ?? existing.platform ?? null,
-            appVersion: item.appVersion ?? run.version ?? existing.appVersion ?? null,
-            device: item.device ?? existing.device ?? null,
-            userProfile: item.userProfile ?? existing.userProfile ?? null,
-            customerType: item.customerType ?? existing.customerType ?? null,
-            flakyStatus: item.flakyStatus ?? existing.flakyStatus ?? null,
-            retries: item.retries ?? existing.retries ?? 0,
-            executedBy: run.executedBy,
-            testerEmail: run.testerEmail,
-            executedAt: new Date(),
-          },
-        });
-      } else {
-        await this.prisma.testResult.create({
-          data: {
-            testRunId: runId,
-            testCaseId: item.testCaseId,
-            status: item.status,
-            executionMs: item.executionMs ?? null,
-            errorMessage: item.errorMessage ?? null,
-            jiraBugKey: item.jiraBugKey ?? null,
-            jiraBugUrl: bugUrl,
-            screenshotUrl: item.screenshotUrl ?? null,
-            environment: item.environment ?? run.environment ?? null,
-            platform: item.platform ?? null,
-            appVersion: item.appVersion ?? run.version ?? null,
-            device: item.device ?? null,
-            userProfile: item.userProfile ?? null,
-            customerType: item.customerType ?? null,
-            flakyStatus: item.flakyStatus ?? null,
-            retries: item.retries ?? 0,
-            executedBy: run.executedBy,
-            testerEmail: run.testerEmail,
-          },
-        });
-      }
-
-      // Sync screenshotUrl to TestCase if provided
-      if (item.screenshotUrl !== undefined) {
-        await this.prisma.testCase.update({
-          where: { id: item.testCaseId },
-          data: { screenshotUrl: item.screenshotUrl || null },
-        });
-      }
+    if (!dto.results || dto.results.length === 0) {
+      return run;
     }
+
+    const testCaseIds = dto.results.map((r) => r.testCaseId);
+
+    // 1 single batch query to get all existing results for these cases in this run
+    const existingResults = await this.prisma.testResult.findMany({
+      where: {
+        testRunId: runId,
+        testCaseId: { in: testCaseIds },
+      },
+    });
+
+    const existingMap = new Map<string, (typeof existingResults)[0]>();
+    existingResults.forEach((res) => {
+      existingMap.set(res.testCaseId, res);
+    });
+
+    // Execute batch writes in single transaction
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of dto.results) {
+        const bugUrl = item.jiraBugUrl || (item.jiraBugKey ? `https://company.atlassian.net/browse/${item.jiraBugKey}` : null);
+        const existing = existingMap.get(item.testCaseId);
+
+        if (existing) {
+          await tx.testResult.update({
+            where: { id: existing.id },
+            data: {
+              status: item.status,
+              executionMs: item.executionMs ?? null,
+              errorMessage: item.errorMessage ?? null,
+              jiraBugKey: item.jiraBugKey ?? null,
+              jiraBugUrl: bugUrl,
+              screenshotUrl: item.screenshotUrl ?? existing.screenshotUrl ?? null,
+              environment: item.environment ?? run.environment ?? existing.environment ?? null,
+              platform: item.platform ?? existing.platform ?? null,
+              appVersion: item.appVersion ?? run.version ?? existing.appVersion ?? null,
+              device: item.device ?? existing.device ?? null,
+              userProfile: item.userProfile ?? existing.userProfile ?? null,
+              customerType: item.customerType ?? existing.customerType ?? null,
+              flakyStatus: item.flakyStatus ?? existing.flakyStatus ?? null,
+              retries: item.retries ?? existing.retries ?? 0,
+              executedBy: run.executedBy,
+              testerEmail: run.testerEmail,
+              executedAt: new Date(),
+            },
+          });
+        } else {
+          await tx.testResult.create({
+            data: {
+              testRunId: runId,
+              testCaseId: item.testCaseId,
+              status: item.status,
+              executionMs: item.executionMs ?? null,
+              errorMessage: item.errorMessage ?? null,
+              jiraBugKey: item.jiraBugKey ?? null,
+              jiraBugUrl: bugUrl,
+              screenshotUrl: item.screenshotUrl ?? null,
+              environment: item.environment ?? run.environment ?? null,
+              platform: item.platform ?? null,
+              appVersion: item.appVersion ?? run.version ?? null,
+              device: item.device ?? null,
+              userProfile: item.userProfile ?? null,
+              customerType: item.customerType ?? null,
+              flakyStatus: item.flakyStatus ?? null,
+              retries: item.retries ?? 0,
+              executedBy: run.executedBy,
+              testerEmail: run.testerEmail,
+            },
+          });
+        }
+
+        // Sync screenshotUrl to TestCase if provided
+        if (item.screenshotUrl !== undefined) {
+          await tx.testCase.update({
+            where: { id: item.testCaseId },
+            data: { screenshotUrl: item.screenshotUrl || null },
+          });
+        }
+      }
+    });
 
     return this.findOne(runId);
   }
@@ -118,6 +132,7 @@ export class TestRunsService {
   async createAutomationRun(projectId: string, dto: CreateAutomationRunDto) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
+      select: { id: true, name: true, key: true },
     });
     if (!project) {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
@@ -125,57 +140,132 @@ export class TestRunsService {
 
     const title = dto.title || `Test Run - ${new Date().toISOString().substring(0, 19).replace('T', ' ')}`;
 
-    // Resolve case codes to testCaseId
-    const caseCodes = dto.results.map((r) => r.caseCode);
+    // Resolve case codes to testCaseId in single batch query
+    const caseCodes = (dto.results || []).map((r) => r.caseCode);
     const existingCases = await this.prisma.testCase.findMany({
       where: {
         code: { in: caseCodes },
-        suite: { projectId },
+        OR: [{ projectId }, { suite: { projectId } }],
       },
+      select: { id: true, code: true },
     });
 
     const caseMap = new Map(existingCases.map((c) => [c.code, c.id]));
 
-    // Create TestRun record
-    const testRun = await this.prisma.testRun.create({
-      data: {
-        projectId,
-        title,
-        version: dto.version || 'v1.0.0',
-        environment: dto.environment || 'STAGING',
-        executedBy: dto.executedBy || 'QA Tester',
-        testerEmail: dto.testerEmail || 'tester@company.com',
-        status: RunStatus.COMPLETED,
-      },
-    });
+    let targetRunId = dto.testRunId;
 
-    // Create TestResult records with Jira Bug details
-    const resultsData = dto.results
-      .filter((r) => caseMap.has(r.caseCode))
-      .map((r) => {
-        const bugUrl = r.jiraBugUrl || (r.jiraBugKey ? `https://company.atlassian.net/browse/${r.jiraBugKey}` : null);
-        return {
-          testRunId: testRun.id,
-          testCaseId: caseMap.get(r.caseCode)!,
-          status: r.status,
-          executionMs: r.durationMs ?? null,
-          errorMessage: r.errorMessage ?? null,
-          executedBy: dto.executedBy || null,
-          testerEmail: dto.testerEmail || null,
-          jiraBugKey: r.jiraBugKey || null,
-          jiraBugUrl: bugUrl,
-          screenshotUrl: r.screenshotUrl || null,
-        };
-      });
-
-    if (resultsData.length > 0) {
-      await this.prisma.testResult.createMany({
-        data: resultsData,
-      });
+    if (targetRunId) {
+      // Check if testRun already exists
+      const existingRun = await this.prisma.testRun.findUnique({ where: { id: targetRunId } });
+      if (existingRun) {
+        await this.prisma.testRun.update({
+          where: { id: targetRunId },
+          data: {
+            status: RunStatus.COMPLETED,
+            version: dto.version || existingRun.version,
+            environment: dto.environment || existingRun.environment,
+            executedBy: dto.executedBy || existingRun.executedBy,
+          },
+        });
+      } else {
+        targetRunId = undefined;
+      }
     }
 
-    return this.findOne(testRun.id);
+    if (!targetRunId) {
+      // Create TestRun record
+      const testRun = await this.prisma.testRun.create({
+        data: {
+          projectId,
+          title,
+          version: dto.version || 'v1.0.0',
+          environment: dto.environment || 'STAGING',
+          executedBy: dto.executedBy || 'TAC Automation Engine',
+          testerEmail: dto.testerEmail || 'automation@ttb.com.tr',
+          status: RunStatus.COMPLETED,
+        },
+      });
+      targetRunId = testRun.id;
+    }
+
+    // Pre-fetch all existing results for targetRunId and matched cases
+    const targetCaseIds = Array.from(caseMap.values());
+    const existingResults = await this.prisma.testResult.findMany({
+      where: {
+        testRunId: targetRunId,
+        testCaseId: { in: targetCaseIds },
+      },
+    });
+    const existingResMap = new Map(existingResults.map((r) => [r.testCaseId, r]));
+
+    // Batch process in transaction
+    await this.prisma.$transaction(async (tx) => {
+      for (const r of (dto.results || [])) {
+        const caseId = caseMap.get(r.caseCode);
+        if (!caseId) continue;
+
+        const bugUrl = r.jiraBugUrl || (r.jiraBugKey ? `https://company.atlassian.net/browse/${r.jiraBugKey}` : null);
+        const platform = r.platform || dto.platform || 'iOS';
+        const device = r.device || dto.deviceAlias || 'iphone15';
+
+        const existingRes = existingResMap.get(caseId);
+
+        if (existingRes) {
+          await tx.testResult.update({
+            where: { id: existingRes.id },
+            data: {
+              status: r.status,
+              executionMs: r.durationMs ?? existingRes.executionMs,
+              errorMessage: r.errorMessage ?? existingRes.errorMessage,
+              platform,
+              device,
+              environment: r.environment || dto.environment || existingRes.environment,
+              appVersion: r.appVersion || dto.version || existingRes.appVersion,
+              userProfile: r.userProfile ?? existingRes.userProfile,
+              customerType: r.customerType ?? existingRes.customerType,
+              flakyStatus: r.flakyStatus ?? existingRes.flakyStatus,
+              jiraBugKey: r.jiraBugKey ?? existingRes.jiraBugKey,
+              jiraBugUrl: bugUrl ?? existingRes.jiraBugUrl,
+              screenshotUrl: r.screenshotUrl ?? existingRes.screenshotUrl,
+              executedAt: new Date(),
+            },
+          });
+        } else {
+          await tx.testResult.create({
+            data: {
+              testRunId: targetRunId,
+              testCaseId: caseId,
+              status: r.status,
+              executionMs: r.durationMs ?? null,
+              errorMessage: r.errorMessage ?? null,
+              platform,
+              device,
+              environment: r.environment || dto.environment || 'STAGING',
+              appVersion: r.appVersion || dto.version || 'v1.0.0',
+              userProfile: r.userProfile || null,
+              customerType: r.customerType || null,
+              flakyStatus: r.flakyStatus || null,
+              executedBy: dto.executedBy || 'TAC Automation Engine',
+              testerEmail: dto.testerEmail || 'automation@ttb.com.tr',
+              jiraBugKey: r.jiraBugKey || null,
+              jiraBugUrl: bugUrl,
+              screenshotUrl: r.screenshotUrl || null,
+            },
+          });
+        }
+
+        if (r.screenshotUrl) {
+          await tx.testCase.update({
+            where: { id: caseId },
+            data: { screenshotUrl: r.screenshotUrl },
+          });
+        }
+      }
+    });
+
+    return this.findOne(targetRunId);
   }
+
 
   async findAllByProject(projectId: string) {
     return this.prisma.testRun.findMany({

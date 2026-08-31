@@ -15,6 +15,7 @@ import {
   LdapTestResult,
   LdapSyncResult,
   WebhooksService,
+  TACService,
   CreateUserInput,
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
@@ -1547,6 +1548,55 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {/* ========================================================================= */}
           {activeTab === 'WEBHOOKS' && (
             <div className="space-y-6 animate-in fade-in duration-150 max-w-5xl">
+              {/* Test Automation Center (TAC) Entegrasyon Kartı */}
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-950/20 via-slate-900 to-indigo-950/20 border border-purple-800/40 shadow-sm space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-purple-900/30">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-sm font-bold text-white">
+                          Test Automation Center (TAC) Entegrasyonu
+                        </h2>
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                          Port 8000
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Mobil otomasyon (Appium / XCUITest / UiAutomator2) ve canlı WebSocket log akışı yönetimi
+                      </p>
+                    </div>
+                  </div>
+
+                  <a
+                    href="http://localhost:8000"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-xs font-semibold border border-purple-500/30 transition-all"
+                  >
+                    <span>TAC Dashboard Aç</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+                    <span className="text-slate-400 font-medium">TAC API URL:</span>
+                    <p className="font-mono text-purple-300">http://localhost:8000/api</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+                    <span className="text-slate-400 font-medium">Canlı WebSocket Akışı:</span>
+                    <p className="font-mono text-emerald-300">ws://localhost:8000/ws/logs</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+                    <span className="text-slate-400 font-medium">Otomasyon Ingestion URL:</span>
+                    <p className="font-mono text-sky-300 truncate">http://localhost:3001/api/v1/projects/:id/runs/automation</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="p-5 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center space-x-3">

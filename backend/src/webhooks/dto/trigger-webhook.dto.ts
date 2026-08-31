@@ -74,6 +74,33 @@ export class TriggerAutomationWebhookDto {
   caseCodes?: string[];
 
   @ApiProperty({
+    example: 'iOS',
+    description: 'Test Platformu (iOS / Android)',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  platform?: 'iOS' | 'Android' = 'iOS';
+
+  @ApiProperty({
+    example: 'iphone15',
+    description: 'Hedef cihaz takma adı (iphone15, s24, emulator-5554 vb.)',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  deviceAlias?: string;
+
+  @ApiProperty({
+    example: ['src/specs/pre_login/pre_login.spec.ts'],
+    description: 'Doğrudan çalıştırılacak spec yolları',
+    required: false,
+  })
+  @IsArray()
+  @IsOptional()
+  specs?: string[];
+
+  @ApiProperty({
     example: 'secret-token-xyz',
     description: 'Test Otomasyon Merkezi doğrulama için Bearer token veya Secret (Opsiyonel)',
     required: false,

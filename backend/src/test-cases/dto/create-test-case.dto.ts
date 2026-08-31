@@ -5,6 +5,11 @@ import { TestType, Priority } from '@prisma/client';
 import { CreateTestStepDto } from './test-step.dto';
 
 export class CreateTestCaseDto {
+  @ApiProperty({ example: 'TCMS-TC-101', description: 'Özel test case kodu (opsiyonel)', required: false })
+  @IsString()
+  @IsOptional()
+  code?: string;
+
   @ApiProperty({ example: 'Geçerli kullanıcı adı ve şifre ile giriş yapma', description: 'Test Case başlığı' })
   @IsString()
   @IsNotEmpty()
@@ -14,6 +19,7 @@ export class CreateTestCaseDto {
   @IsString()
   @IsOptional()
   description?: string;
+
 
   @ApiProperty({ example: 'MANUAL', description: 'Test yöntemi (MANUAL veya AUTOMATION)', required: false })
   @IsString()

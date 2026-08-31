@@ -35,9 +35,19 @@ import { QuickRunModal } from '@/components/QuickRunModal';
 import { UserManagementModal } from '@/components/UserManagementModal';
 import { useNavigation, NavigationState } from '@/context/NavigationContext';
 import { useAuth } from '@/context/AuthContext';
+import { useSessionPersistence } from '@/hooks/useSessionPersistence';
+import {
+  getAllCasesInTree,
+  findSuiteInTree,
+  updateCaseInTreeNodes,
+  addCaseToTreeNodes,
+  removeCaseFromTreeNodes,
+} from '@/utils/tree.utils';
 import { LoginView } from '@/components/LoginView';
 import { ReportsView } from '@/components/ReportsView';
 import { SettingsView } from '@/components/SettingsView';
+
+
 
 export default function Home() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -73,121 +83,10 @@ export default function Home() {
   const testPlansRef = useRef<TestPlan[]>([]);
   testPlansRef.current = testPlans;
 
-  // Flatten all cases helper
-  const getAllCasesInTree = (nodes: SuiteTreeNode[]): TestCase[] => {
-    let cases: TestCase[] = [];
-    nodes.forEach((node) => {
-      if (node.testCases) cases = cases.concat(node.testCases);
-      if (node.children) cases = cases.concat(getAllCasesInTree(node.children));
-    });
-    return cases;
-  };
+  const { saveSessionState, getSavedSessionState } = useSessionPersistence();
 
   const allCases = [...rootCases, ...getAllCasesInTree(tree)];
 
-  // Helper to find a suite node inside the tree recursively
-  const findSuiteInTree = (nodes: SuiteTreeNode[], suiteId: string): SuiteTreeNode | null => {
-    for (const node of nodes) {
-      if (node.id === suiteId) return node;
-      if (node.children && node.children.length > 0) {
-        const found = findSuiteInTree(node.children, suiteId);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-
-  // Helper to update a test case in tree nodes recursively
-  const updateCaseInTreeNodes = (nodes: SuiteTreeNode[], updated: TestCase): SuiteTreeNode[] => {
-    return nodes.map((node) => {
-      const hasCase = node.testCases?.some((tc) => tc.id === updated.id);
-      const newCases = hasCase
-        ? node.testCases.map((tc) => (tc.id === updated.id ? { ...tc, ...updated } : tc))
-        : node.testCases || [];
-      const newChildren = node.children && node.children.length > 0
-        ? updateCaseInTreeNodes(node.children, updated)
-        : node.children;
-      return {
-        ...node,
-        testCases: newCases,
-        children: newChildren,
-      };
-    });
-  };
-
-  // Helper to add a test case into tree nodes recursively
-  const addCaseToTreeNodes = (nodes: SuiteTreeNode[], newCase: TestCase): SuiteTreeNode[] => {
-    return nodes.map((node) => {
-      if (node.id === newCase.suiteId) {
-        return {
-          ...node,
-          testCases: [...(node.testCases || []), newCase],
-        };
-      }
-      if (node.children && node.children.length > 0) {
-        return {
-          ...node,
-          children: addCaseToTreeNodes(node.children, newCase),
-        };
-      }
-      return node;
-    });
-  };
-
-  // Helper to remove a test case from tree nodes recursively
-  const removeCaseFromTreeNodes = (nodes: SuiteTreeNode[], caseId: string): SuiteTreeNode[] => {
-    return nodes.map((node) => {
-      const newCases = (node.testCases || []).filter((tc) => tc.id !== caseId);
-      const newChildren = node.children && node.children.length > 0
-        ? removeCaseFromTreeNodes(node.children, caseId)
-        : node.children;
-      return {
-        ...node,
-        testCases: newCases,
-        children: newChildren,
-      };
-    });
-  };
-
-  // Helper for Session State Persistence
-  interface SavedSessionState {
-    projectId: string | null;
-    tab: SidebarTab;
-    suiteId: string | null;
-    caseId: string | null;
-    runId?: string | null;
-    planId?: string | null;
-  }
-
-  const saveSessionState = (state: Partial<SavedSessionState>) => {
-    try {
-      const existingRaw = localStorage.getItem('tcms_session_state');
-      const existing: SavedSessionState = existingRaw
-        ? JSON.parse(existingRaw)
-        : { projectId: null, tab: 'DASHBOARD', suiteId: null, caseId: null, runId: null, planId: null };
-
-      const merged: SavedSessionState = {
-        ...existing,
-        ...state,
-      };
-      localStorage.setItem('tcms_session_state', JSON.stringify(merged));
-      if (merged.tab) {
-        localStorage.setItem('tcms_active_tab', merged.tab);
-      }
-    } catch {
-      // Ignore
-    }
-  };
-
-  const getSavedSessionState = (): SavedSessionState | null => {
-    try {
-      const raw = localStorage.getItem('tcms_session_state');
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  };
 
   // Modals state
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);

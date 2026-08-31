@@ -37,9 +37,49 @@ export class TestCaseResultItemDto {
   @IsString()
   @IsOptional()
   screenshotUrl?: string;
+
+  @ApiProperty({ example: 'iOS', description: 'Test Platformu', required: false })
+  @IsString()
+  @IsOptional()
+  platform?: string;
+
+  @ApiProperty({ example: 'iphone15', description: 'Cihaz takma adı veya modeli', required: false })
+  @IsString()
+  @IsOptional()
+  device?: string;
+
+  @ApiProperty({ example: 'v2.4.0', description: 'Uygulama versiyonu', required: false })
+  @IsString()
+  @IsOptional()
+  appVersion?: string;
+
+  @ApiProperty({ example: 'UAT', description: 'Test ortamı', required: false })
+  @IsString()
+  @IsOptional()
+  environment?: string;
+
+  @ApiProperty({ example: 'UMIT', description: 'Kullanıcı Profili', required: false })
+  @IsString()
+  @IsOptional()
+  userProfile?: string;
+
+  @ApiProperty({ example: 'BIREYSEL', description: 'Müşteri Tipi', required: false })
+  @IsString()
+  @IsOptional()
+  customerType?: string;
+
+  @ApiProperty({ example: 'STABLE', description: 'Flaky durumu', required: false })
+  @IsString()
+  @IsOptional()
+  flakyStatus?: string;
 }
 
 export class CreateAutomationRunDto {
+  @ApiProperty({ example: 'tcms-run-uuid-1234', description: 'Mevcut TestRun ID (varsa güncellenir)', required: false })
+  @IsString()
+  @IsOptional()
+  testRunId?: string;
+
   @ApiProperty({ example: 'Sprint 24 Regresyon Koşusu', description: 'Test Koşusu Başlığı', required: false })
   @IsString()
   @IsOptional()
@@ -54,6 +94,16 @@ export class CreateAutomationRunDto {
   @IsString()
   @IsOptional()
   environment?: string = 'STAGING';
+
+  @ApiProperty({ example: 'iOS', description: 'Platform (iOS / Android)', required: false })
+  @IsString()
+  @IsOptional()
+  platform?: string;
+
+  @ApiProperty({ example: 'iphone15', description: 'Cihaz Takma Adı', required: false })
+  @IsString()
+  @IsOptional()
+  deviceAlias?: string;
 
   @ApiProperty({ example: 'Ahmet Yılmaz (QA)', description: 'ISTQB: Test Yürüten Kişi / Bot', required: false })
   @IsString()

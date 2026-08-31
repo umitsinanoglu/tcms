@@ -731,6 +731,9 @@ export interface TriggerAutomationWebhookDto {
   scope?: TriggerTargetScope;
   suiteId?: string;
   caseCodes?: string[];
+  platform?: 'iOS' | 'Android';
+  deviceAlias?: string;
+  specs?: string[];
   secretToken?: string;
   triggeredBy?: string;
 }
@@ -757,6 +760,136 @@ export const WebhooksService = {
       { webhookUrl, secretToken },
     ).then((res) => res.data),
 };
+
+// TAC (Test Automation Center) Interfaces & Service
+export interface TACDevice {
+  udid: string;
+  name: string;
+  platform: 'iOS' | 'Android';
+  state: string;
+  isConfigured: boolean;
+  alias: string;
+  appiumPort?: number;
+  wdaPort?: number;
+  mjpegPort?: number;
+}
+
+export interface TACSpecCase {
+  title: string;
+  code: string;
+  line: number;
+}
+
+export interface TACSpecItem {
+  name: string;
+  relativePath: string;
+  category: string;
+  suites: string[];
+  cases: TACSpecCase[];
+}
+
+export interface TACRunDetails {
+  id: string;
+  title: string;
+  platform: 'iOS' | 'Android';
+  deviceAlias: string;
+  environment: string;
+  status: 'RUNNING' | 'PASSED' | 'FAILED' | 'STOPPED';
+  startTime: string;
+  endTime?: string;
+  durationMs?: number;
+  summary: {
+    total: number;
+    passed: number;
+    failed: number;
+    skipped: number;
+  };
+  results: {
+    caseCode: string;
+    status: 'PASSED' | 'FAILED' | 'SKIPPED';
+    durationMs?: number;
+    errorMessage?: string;
+  }[];
+  tcmsSynced?: boolean;
+  tcmsRunId?: string;
+}
+
+export const TACService = {
+  checkHealth: () =>
+    api.get<{ online: boolean; data?: any; error?: string }>('/tac/health').then((res) => res.data),
+  getDevices: () =>
+    api.get<{ success: boolean; data: TACDevice[]; error?: string }>('/tac/devices').then((res) => res.data),
+  scanDevices: () =>
+    api.get<{ success: boolean; scannedCount: number; data: TACDevice[]; error?: string }>('/tac/devices/scan').then((res) => res.data),
+  getSpecs: () =>
+    api.get<{ success: boolean; count: number; data: TACSpecItem[]; error?: string }>('/tac/specs').then((res) => res.data),
+  getPlans: () =>
+    api.get<{ success: boolean; data: any[]; error?: string }>('/tac/specs/plans').then((res) => res.data),
+  getRuns: () =>
+    api.get<{ success: boolean; data: any[]; error?: string }>('/tac/runs').then((res) => res.data),
+  getRunDetails: (runId: string) =>
+    api.get<{ success: boolean; data: TACRunDetails; error?: string }>(`/tac/runs/${runId}`).then((res) => res.data),
+  stopRun: (runId: string) =>
+    api.post<{ success: boolean; message: string; error?: string }>(`/tac/runs/${runId}/stop`, {}).then((res) => res.data),
+  checkAppiumHealth: (port?: number, url?: string) =>
+    api.post<{ success: boolean; error?: string }>('/tac/devices/health', { port, url }).then((res) => res.data),
+};
+
+export function subscribeToTACLogs(
+  wsUrl: string = 'ws://localhost:8000/ws/logs',
+  onLog: (logText: string, isError?: boolean, runId?: string) => void,
+  onStatusChange?: (data: any) => void,
+  onConnected?: () => void,
+  onDisconnected?: () => void,
+): { close: () => void } {
+  let ws: WebSocket | null = null;
+  let isClosedManually = false;
+
+  try {
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      if (onConnected) onConnected();
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'LOG' && msg.text) {
+          onLog(msg.text, msg.isError, msg.runId);
+        } else if (msg.type === 'RUN_STARTED' || msg.type === 'RUN_FINISHED' || msg.type === 'RUN_UPDATED') {
+          if (onStatusChange) onStatusChange(msg);
+        } else if (msg.type === 'CONNECTED') {
+          onLog(`⚡ [TAC] ${msg.message || 'Connected to Live Test Logs Stream'}\n`);
+        }
+      } catch {
+        onLog(event.data);
+      }
+    };
+
+    ws.onerror = (err) => {
+      onLog(`⚠️ [TAC WS ERROR] Canlı log sunucusuna ulaşılamadı (${wsUrl})\n`, true);
+      if (onDisconnected) onDisconnected();
+    };
+
+    ws.onclose = () => {
+      if (!isClosedManually && onDisconnected) {
+        onDisconnected();
+      }
+    };
+  } catch (err: any) {
+    onLog(`⚠️ [TAC WS INIT ERROR] ${err.message}\n`, true);
+  }
+
+  return {
+    close: () => {
+      isClosedManually = true;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    },
+  };
+}
 
 export interface SystemSettings {
   systemTitle: string;
