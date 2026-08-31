@@ -102,6 +102,7 @@ export default function Home() {
   const [activeQuickRunEnvironment, setActiveQuickRunEnvironment] = useState<string>('STAGING');
   const [activeSuiteRunCases, setActiveSuiteRunCases] = useState<TestCase[] | null>(null);
   const [activeParentSuiteId, setActiveParentSuiteId] = useState<string | null>(null);
+  const [runsRefreshKey, setRunsRefreshKey] = useState<number>(0);
 
   // Load Tree & Plans & Runs count & Defects when selected project changes
   const loadProjectData = useCallback(async (projectId: string) => {
@@ -796,6 +797,7 @@ export default function Home() {
     if (selectedProject) {
       await loadProjectData(selectedProject.id);
     }
+    setRunsRefreshKey((prev) => prev + 1);
     const targetCaseId = activeQuickRunCase?.id || selectedCase?.id;
     if (targetCaseId) {
       try {
@@ -803,6 +805,21 @@ export default function Home() {
         if (selectedCase && selectedCase.id === targetCaseId) {
           setSelectedCase(updatedCase);
         }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleManualRunSuccess = async () => {
+    if (selectedProject) {
+      await loadProjectData(selectedProject.id);
+    }
+    setRunsRefreshKey((prev) => prev + 1);
+    if (selectedCase) {
+      try {
+        const updatedCase = await TestCasesService.getOne(selectedCase.id);
+        setSelectedCase(updatedCase);
       } catch (err) {
         console.error(err);
       }
@@ -1052,6 +1069,7 @@ export default function Home() {
                 projectId={selectedProject?.id || ''}
                 testPlans={testPlans}
                 allCases={allCases}
+                refreshKey={runsRefreshKey}
                 onOpenManualRun={(plan) => {
                   setActiveRunTestPlan(plan || null);
                   setActiveSuiteRunCases(null);
@@ -1197,7 +1215,10 @@ export default function Home() {
           setIsManualRunOpen(false);
           setActiveSuiteRunCases(null);
           setActiveRunTestPlan(null);
-          if (selectedProject) await loadProjectData(selectedProject.id);
+          if (selectedProject) {
+            await loadProjectData(selectedProject.id);
+            setRunsRefreshKey((prev) => prev + 1);
+          }
           if (selectedCase) {
             try {
               const updatedCase = await TestCasesService.getOne(selectedCase.id);
@@ -1210,6 +1231,7 @@ export default function Home() {
         projectId={selectedProject?.id || ''}
         testCases={activeSuiteRunCases || allCases}
         initialTestPlan={activeRunTestPlan}
+        onSuccess={handleManualRunSuccess}
       />
 
       <UserManagementModal

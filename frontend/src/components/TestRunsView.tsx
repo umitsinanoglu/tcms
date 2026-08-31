@@ -64,6 +64,7 @@ interface TestRunsViewProps {
   projectId: string;
   testPlans?: TestPlan[];
   allCases?: TestCase[];
+  refreshKey?: number;
   onOpenManualRun: (initialPlan?: TestPlan | null) => void;
   onOpenQuickRun?: (testCase?: TestCase | null) => void;
   onSelectCase?: (testCase: TestCase) => void;
@@ -75,6 +76,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
   projectId,
   testPlans = [],
   allCases = [],
+  refreshKey = 0,
   onOpenManualRun,
   onOpenQuickRun,
   onSelectCase,
@@ -158,7 +160,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
 
   useEffect(() => {
     loadRuns();
-  }, [loadRuns]);
+  }, [loadRuns, refreshKey]);
 
   // Open detailed run view (navigate to dedicated view if available, or fallback to modal)
   const handleOpenDetail = async (runId: string) => {

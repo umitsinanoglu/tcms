@@ -10,11 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Removed
+- Defects modulunden artik islevsiz olan Kosumlardan Aktar butonu kaldirildi.
 - Test Planı detay sayfasındaki 'Test Senaryoları Ekle' butonları kaldırıldı
 - Test Senaryoları / Test Case detay sayfasındaki test koşum geçmişi ve ilgili bileşenler kaldırıldı
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- Test kosumu tamamlandiginda Test Kosumlari sayfasinin otomatik ve aninda guncellenmesi saglandi.
+- Kosum detay sayfasinda kosum sirasinda defect olusturulan senaryolara (Defect Edildi) rozeti ve defect detay tiklama destegi eklendi.
+- Manuel coklu senaryo kosumunda adim seviyesinde fail isaretlendiginde de Defect Olustur butonunun aninda tetiklenmesi saglandi.
 - Hot Module Replacement (HMR) watch options and clean socket shutdown for seamless dev updates
 - Fixed active menu items, top-right user avatar and gradient buttons contrast by ensuring CSS linear-gradient and solid color fallbacks
 - DefectsView re-render ve sonsuz döngü sorunu giderildi (useRef ve callback stabilizasyonu)
@@ -29,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Tekli ve coklu kosum modallarinda defect olusturuldugunda olusturulan Defect Key ve basari durum rozetinin aninda gosterilmesi saglandi.
+- Test kosumu FAILED durumunda Jira alani yanina Defect Olusturma butonu ve otomatik form doldurma destegi eklendi.
 - Azure Mavisi (Jira/Atlassian style single dominant color scheme) theme and dynamic accent variable refactoring across all views
 - Mimari Altyapı, OOP & Concurrency Refactor: Atomic Sequence Pattern, DB composite indexes, N+1 query elimination, Facade/Strategy exporters, DRY UI tokens
 - Test Automation Center (TAC) cift yonlu entegrasyonu: TACService, canli WebSocket log terminali, cihaz taramasi ve otomasyon tetikleme paneli eklendi
@@ -55,6 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Test kosum ekranlarinda PASSED secildiginde tum adimlarin otomatik passed isaretlenmesi, baslangicta hicbir sonucun on secili gelmemesi ve genel sayfa scroll duzenlemesi
+- Test kosumu silindiginde kosumla ve test sonuclariyla iliskili defectlerin de veritabanindan otomatik olarak silinmesi (Cascade Delete) saglandi.
 - Ana Sayfa 'Yeni Test Suite' butonu kaldırıldı, Suite modalları sistemden temizlendi ve Dashboard ID kolonu wrap text sorunu düzeltildi.
 - Test Planları ve Test Senaryoları sayfalarındaki grid kolonları wrap-text yapmadan esnek sığdırıldı, plan başlığı ve kapsam kolonları daraltıldı
 - Test koşumu detay sayfası modernleştirildi ve yeni UI tasarımına uyarlandı

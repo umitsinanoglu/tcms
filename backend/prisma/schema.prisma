@@ -292,10 +292,10 @@ model Defect {
   testCase        TestCase?      @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
 
   testRunId       String?
-  testRun         TestRun?       @relation(fields: [testRunId], references: [id], onDelete: SetNull)
+  testRun         TestRun?       @relation(fields: [testRunId], references: [id], onDelete: Cascade)
 
   testResultId    String?
-  testResult      TestResult?    @relation(fields: [testResultId], references: [id], onDelete: SetNull)
+  testResult      TestResult?    @relation(fields: [testResultId], references: [id], onDelete: Cascade)
 
   assignedTo      String?
   reportedBy      String?

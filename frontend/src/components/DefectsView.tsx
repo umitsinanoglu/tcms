@@ -378,17 +378,6 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
           <div className="flex items-center space-x-2 flex-wrap">
             <button
               type="button"
-              onClick={handleSyncFailed}
-              disabled={isSyncing}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer disabled:opacity-50"
-              title="Koşumlarda başarısız olan testlerden otomatik defect oluştur"
-            >
-              <RotateCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Senkronize Ediliyor...' : 'Koşumlardan Aktar'}</span>
-            </button>
-
-            <button
-              type="button"
               onClick={exportToCsv}
               disabled={filteredDefects.length === 0}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer disabled:opacity-40"
@@ -637,7 +626,7 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-4">
               {defects.length === 0
-                ? 'Bu projede henüz bir hata kaydı açılmamış. Yeni bir kayıt açabilir veya test koşumlarından otomatik aktarabilirsiniz.'
+                ? 'Bu projede henüz bir hata kaydı açılmamış. Yeni bir kayıt açabilirsiniz.'
                 : 'Arama veya filtre kriterlerinizi değiştirerek tekrar deneyiniz.'}
             </p>
             {defects.length === 0 && (
@@ -648,13 +637,6 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
                   className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-900/20 cursor-pointer"
                 >
                   Yeni Defect Aç
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSyncFailed}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer"
-                >
-                  Koşumlardan Aktar
                 </button>
               </div>
             )}

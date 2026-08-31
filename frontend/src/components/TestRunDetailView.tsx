@@ -13,12 +13,16 @@ import {
   ReportsService,
   DefectsService,
   CreateDefectDto,
+  UpdateDefectDto,
+  Defect,
+  DefectStatus,
   SuiteTreeNode,
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { parseScreenshots } from './QuickRunModal';
 import { LiveRunTerminalModal } from './LiveRunTerminalModal';
 import { NewDefectModal } from './NewDefectModal';
+import { DefectDetailModal } from './DefectDetailModal';
 import {
   Terminal,
   ArrowLeft,
@@ -58,6 +62,7 @@ import {
   Globe,
   Tag,
   LayoutGrid,
+  AlertCircle,
   List,
   Timer,
   Ban,
@@ -125,7 +130,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   } | null>(null);
 
   // Drawer Form State
-  const [drawerStatus, setDrawerStatus] = useState<ResultStatus>('PASSED');
+  const [drawerStatus, setDrawerStatus] = useState<ResultStatus | ''>('');
   const [drawerComment, setDrawerComment] = useState('');
   const [drawerExecutionMs, setDrawerExecutionMs] = useState<number>(0);
   const [drawerJiraBugKey, setDrawerJiraBugKey] = useState('');
@@ -158,6 +163,25 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   // New Defect Modal State
   const [isNewDefectModalOpen, setIsNewDefectModalOpen] = useState<boolean>(false);
   const [defectModalInitialData, setDefectModalInitialData] = useState<Partial<CreateDefectDto> | null>(null);
+
+  // Project Defects State & Detail Modal State
+  const [projectDefects, setProjectDefects] = useState<Defect[]>([]);
+  const [selectedDetailDefect, setSelectedDetailDefect] = useState<Defect | null>(null);
+
+  // Load all project defects to accurately display existing defect badges
+  const loadProjectDefects = useCallback(async () => {
+    if (!project?.id) return;
+    try {
+      const defs = await DefectsService.getAllByProject(project.id);
+      setProjectDefects(defs || []);
+    } catch (err) {
+      console.error('Failed to load project defects in run view:', err);
+    }
+  }, [project?.id]);
+
+  useEffect(() => {
+    loadProjectDefects();
+  }, [loadProjectDefects]);
 
   // Show toast notification helper
   const showToast = (text: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -212,10 +236,85 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
       await DefectsService.create(data);
       showToast('Defect başarıyla oluşturuldu ve test senaryosuna bağlandı.', 'success');
       await reloadRun();
+      await loadProjectDefects();
     } catch (err: any) {
       console.error('Failed to create defect:', err);
       showToast('Defect oluşturulurken hata oluştu: ' + (err?.response?.data?.message || err?.message || 'Hata'), 'error');
     }
+  };
+
+  // Defect Detail Modal Actions
+  const handleUpdateDefectStatus = async (id: string, status: DefectStatus, resolutionNotes?: string) => {
+    try {
+      const updated = await DefectsService.updateStatus(id, status, resolutionNotes);
+      setProjectDefects((prev) => prev.map((d) => (d.id === id ? updated : d)));
+      if (selectedDetailDefect?.id === id) {
+        setSelectedDetailDefect(updated);
+      }
+      showToast('Defect durumu güncellendi.', 'success');
+    } catch (err: any) {
+      console.error(err);
+      showToast('Defect durumu güncellenemedi.', 'error');
+    }
+  };
+
+  const handleUpdateDefectDetails = async (id: string, data: UpdateDefectDto) => {
+    try {
+      const updated = await DefectsService.update(id, data);
+      setProjectDefects((prev) => prev.map((d) => (d.id === id ? updated : d)));
+      if (selectedDetailDefect?.id === id) {
+        setSelectedDetailDefect(updated);
+      }
+      showToast('Defect detayları kaydedildi.', 'success');
+    } catch (err: any) {
+      console.error(err);
+      showToast('Defect detayları kaydedilemedi.', 'error');
+    }
+  };
+
+  const handleDeleteDefect = async (id: string) => {
+    try {
+      await DefectsService.delete(id);
+      setProjectDefects((prev) => prev.filter((d) => d.id !== id));
+      setSelectedDetailDefect(null);
+      showToast('Defect silindi.', 'success');
+      await reloadRun();
+    } catch (err: any) {
+      console.error(err);
+      showToast('Defect silinemedi.', 'error');
+    }
+  };
+
+  // Helper to find linked defect for a test case/result
+  const getLinkedDefect = (testCase: TestCase, result?: TestResult): Defect | null => {
+    if (result?.defects && result.defects.length > 0) {
+      const dFromRel = result.defects[0];
+      const fullDefect = projectDefects.find((d) => d.id === dFromRel.id);
+      return fullDefect || (dFromRel as unknown as Defect);
+    }
+    // Check in projectDefects by testRunId & testCaseId
+    const matchRunCase = projectDefects.find(
+      (d) => d.testCaseId === testCase.id && d.testRunId === run.id
+    );
+    if (matchRunCase) return matchRunCase;
+
+    // Check in projectDefects by testCaseId only
+    const matchCase = projectDefects.find((d) => d.testCaseId === testCase.id);
+    if (matchCase) return matchCase;
+
+    // Check if result has jiraBugKey
+    if (result?.jiraBugKey) {
+      return {
+        id: '',
+        key: result.jiraBugKey,
+        title: `Jira: ${result.jiraBugKey}`,
+        severity: 'MAJOR',
+        status: 'OPEN',
+        jiraBugKey: result.jiraBugKey,
+        jiraBugUrl: result.jiraBugUrl,
+      } as unknown as Defect;
+    }
+    return null;
   };
 
   // Sync when initialRun changes
@@ -247,6 +346,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
         setRun(fresh);
         if (onUpdateRunSuccess) onUpdateRunSuccess(fresh);
       }
+      await loadProjectDefects();
     } catch (err) {
       console.error('Failed to reload test run:', err);
       showToast('Koşum verileri yenilenirken hata oluştu.', 'error');
@@ -415,7 +515,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   // Open Drawer / Modal for Editing Result Details & Live Stopwatch
   const handleOpenResultDrawer = (testCase: TestCase, currentResult?: TestResult) => {
     setActiveResultModalCase({ testCase, currentResult });
-    setDrawerStatus(currentResult?.status || 'PASSED');
+    setDrawerStatus(currentResult?.status || '');
     setDrawerComment(currentResult?.errorMessage || '');
     setDrawerExecutionMs(currentResult?.executionMs || 0);
     setDrawerJiraBugKey(currentResult?.jiraBugKey || '');
@@ -544,6 +644,10 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   // Save Drawer Result
   const handleSaveDrawerResult = async () => {
     if (!project?.id || !activeResultModalCase) return;
+    if (!drawerStatus) {
+      showToast('Lütfen bir test koşum sonucu seçiniz (PASSED, FAILED, BLOCKED, SKIPPED).', 'error');
+      return;
+    }
     setIsSavingDrawer(true);
     setIsTimerRunning(false);
     try {
@@ -558,7 +662,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
         results: [
           {
             testCaseId,
-            status: drawerStatus,
+            status: drawerStatus as ResultStatus,
             executionMs: drawerExecutionMs > 0 ? drawerExecutionMs : 1200,
             errorMessage: drawerComment.trim() || undefined,
             jiraBugKey: drawerJiraBugKey.trim() || undefined,
@@ -1418,7 +1522,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
 
           {/* VIEW MODE 1: VISUAL CARDS (Matching Screenshot Exactly) */}
           {viewMode === 'CARDS' && (
-            <div className="space-y-3 overflow-y-auto flex-1 pr-0.5">
+            <div className="space-y-3 flex-1 pr-0.5">
               {paginatedCases.length === 0 ? (
                 <div className="py-16 text-center rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200/80 dark:border-slate-800 p-6 text-slate-400">
                   <Filter className="w-8 h-8 mx-auto opacity-30 mb-2" />
@@ -1545,25 +1649,37 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
 
                             {/* Defect Badge or Button for FAILED tests */}
                             {isFailed && (
-                              result?.defects && result.defects.length > 0 ? (
-                                <span
-                                  className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-mono font-bold"
-                                  title={`Bağlı Defect: ${result.defects[0].title}`}
-                                >
-                                  <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                                  <span>{result.defects[0].key}</span>
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenCreateDefect(testCase, result)}
-                                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-bold text-xs shadow-2xs transition-colors cursor-pointer"
-                                  title="Bu FAILED sonuç için Defect oluştur"
-                                >
-                                  <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                                  <span className="hidden sm:inline">Defect Oluştur</span>
-                                </button>
-                              )
+                              (() => {
+                                const linkedDefect = getLinkedDefect(testCase, result);
+                                return linkedDefect ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (linkedDefect.id) {
+                                        setSelectedDetailDefect(linkedDefect);
+                                      } else if (linkedDefect.jiraBugUrl) {
+                                        window.open(linkedDefect.jiraBugUrl, '_blank');
+                                      }
+                                    }}
+                                    className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-mono font-bold hover:bg-rose-500/25 transition-colors cursor-pointer shadow-2xs"
+                                    title={`Bağlı Defect: ${linkedDefect.key} - ${linkedDefect.title || ''} (Detayları görmek için tıklayın)`}
+                                  >
+                                    <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                                    <span>{linkedDefect.key}</span>
+                                    <span className="text-[10px] font-sans font-semibold text-rose-600 dark:text-rose-400 opacity-90 hidden sm:inline">(Defect Edildi)</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenCreateDefect(testCase, result)}
+                                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-bold text-xs shadow-2xs transition-colors cursor-pointer"
+                                    title="Bu FAILED sonuç için Defect oluştur"
+                                  >
+                                    <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                                    <span className="hidden sm:inline">Defect Oluştur</span>
+                                  </button>
+                                );
+                              })()
                             )}
 
                             {/* Eye Action Button */}
@@ -1828,23 +1944,35 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                           <td className="py-3 px-3 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end space-x-1">
                               {currentStatus === 'FAILED' && (
-                                result?.defects && result.defects.length > 0 ? (
-                                  <span
-                                    className="font-mono font-bold text-[10px] text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/25 px-2 py-1 rounded-md"
-                                    title={`Bağlı Defect: ${result.defects[0].title}`}
-                                  >
-                                    {result.defects[0].key}
-                                  </span>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenCreateDefect(testCase, result)}
-                                    className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 transition-colors cursor-pointer"
-                                    title="Bu FAILED sonuç için Defect oluştur"
-                                  >
-                                    <Bug className="w-3.5 h-3.5" />
-                                  </button>
-                                )
+                                (() => {
+                                  const linkedDefect = getLinkedDefect(testCase, result);
+                                  return linkedDefect ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (linkedDefect.id) {
+                                          setSelectedDetailDefect(linkedDefect);
+                                        } else if (linkedDefect.jiraBugUrl) {
+                                          window.open(linkedDefect.jiraBugUrl, '_blank');
+                                        }
+                                      }}
+                                      className="inline-flex items-center gap-1 font-mono font-bold text-[10px] text-rose-600 dark:text-rose-400 bg-rose-500/15 border border-rose-500/30 px-2 py-1 rounded-md hover:bg-rose-500/25 transition-colors cursor-pointer"
+                                      title={`Bağlı Defect: ${linkedDefect.key} (Detaylar için tıklayın)`}
+                                    >
+                                      <Bug className="w-3 h-3" />
+                                      <span>{linkedDefect.key}</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenCreateDefect(testCase, result)}
+                                      className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 transition-colors cursor-pointer"
+                                      title="Bu FAILED sonuç için Defect oluştur"
+                                    >
+                                      <Bug className="w-3.5 h-3.5" />
+                                    </button>
+                                  );
+                                })()
                               )}
                               <button
                                 type="button"
@@ -1971,7 +2099,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
               {defectCases.map(({ testCase, result }) => {
                 const screenList = parseScreenshots(result?.screenshotUrl || testCase.screenshotUrl);
 
@@ -2053,25 +2181,42 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                       </span>
 
                       <div className="flex items-center space-x-2">
-                        {result?.defects && result.defects.length > 0 ? (
-                          <span
-                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-mono font-bold"
-                            title={`Bağlı Defect: ${result.defects[0].title}`}
-                          >
-                            <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                            <span>{result.defects[0].key}</span>
-                          </span>
-                        ) : result?.status === 'FAILED' ? (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenCreateDefect(testCase, result)}
-                            className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-bold text-xs shadow-2xs transition-colors cursor-pointer"
-                            title="Bu FAILED sonuç için Defect oluştur"
-                          >
-                            <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                            <span>Defect Oluştur</span>
-                          </button>
-                        ) : null}
+                        {(() => {
+                          const linkedDefect = getLinkedDefect(testCase, result);
+                          if (linkedDefect) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (linkedDefect.id) {
+                                    setSelectedDetailDefect(linkedDefect);
+                                  } else if (linkedDefect.jiraBugUrl) {
+                                    window.open(linkedDefect.jiraBugUrl, '_blank');
+                                  }
+                                }}
+                                className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-mono font-bold hover:bg-rose-500/25 transition-colors cursor-pointer"
+                                title={`Bağlı Defect: ${linkedDefect.key} - ${linkedDefect.title || ''} (Detaylar için tıklayın)`}
+                              >
+                                <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                                <span>{linkedDefect.key}</span>
+                              </button>
+                            );
+                          }
+                          if (result?.status === 'FAILED') {
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCreateDefect(testCase, result)}
+                                className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-bold text-xs shadow-2xs transition-colors cursor-pointer"
+                                title="Bu FAILED sonuç için Defect oluştur"
+                              >
+                                <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                                <span>Defect Oluştur</span>
+                              </button>
+                            );
+                          }
+                          return null;
+                        })()}
 
                         <button
                           type="button"
@@ -2093,7 +2238,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
 
       {/* 7. Tab Content: OVERVIEW */}
       {activeTab === 'OVERVIEW' && (
-        <div className="space-y-4 overflow-y-auto flex-1">
+        <div className="space-y-4 flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-6 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
@@ -2247,6 +2392,12 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     onClick={() => {
                       setDrawerStatus('PASSED');
                       setIsTimerRunning(false);
+                      if (activeResultModalCase?.testCase.steps && activeResultModalCase.testCase.steps.length > 0) {
+                        const allStepNos = new Set<number>(
+                          activeResultModalCase.testCase.steps.map((st, idx) => st.stepNumber || idx + 1)
+                        );
+                        setCompletedStepNumbers(allStepNos);
+                      }
                     }}
                     className={`py-2.5 px-3 rounded-xl font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
                       drawerStatus === 'PASSED'
@@ -2522,20 +2673,60 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                 />
               </div>
 
-              {/* Jira Bug Key */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-                  <Bug className="w-3.5 h-3.5 text-rose-500" />
-                  <span>Jira Bug Key (Opsiyonel)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Örn: ECOMM-124"
-                  value={drawerJiraBugKey}
-                  onChange={(e) => setDrawerJiraBugKey(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-[#141821] border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100"
-                />
-              </div>
+              {/* Jira Bug Key & Defect Creation */}
+              {drawerStatus === 'FAILED' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
+                      <Bug className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Jira Bug Key (Opsiyonel)</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Örn: ECOMM-124"
+                      value={drawerJiraBugKey}
+                      onChange={(e) => setDrawerJiraBugKey(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-[#141821] border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 dark:text-slate-100"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        Defect Yönetimi
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-normal">(Opsiyonel)</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeResultModalCase) {
+                          handleOpenCreateDefect(activeResultModalCase.testCase, activeResultModalCase.currentResult);
+                        }
+                      }}
+                      className="w-full h-[38px] inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 active:scale-[0.99] border border-rose-500/40 shadow-sm shadow-rose-900/20 transition-all cursor-pointer"
+                    >
+                      <Bug className="w-4 h-4" />
+                      <span>Defect Oluştur</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
+                    <Bug className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Jira Bug Key (Opsiyonel)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Örn: ECOMM-124"
+                    value={drawerJiraBugKey}
+                    onChange={(e) => setDrawerJiraBugKey(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-[#141821] border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+              )}
 
               {/* Ekran Görüntüsü Yöneticisi */}
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 dark:bg-[#141821] border border-slate-200 dark:border-slate-800">
@@ -2629,17 +2820,39 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                 </button>
 
                 {drawerStatus === 'FAILED' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleOpenCreateDefect(activeResultModalCase.testCase, activeResultModalCase.currentResult);
-                    }}
-                    className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-700 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all cursor-pointer shadow-xs"
-                    title="Bu başarısız sonuç için Defect formu aç"
-                  >
-                    <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                    <span>Defect Oluştur</span>
-                  </button>
+                  (() => {
+                    const activeDefect = getLinkedDefect(activeResultModalCase.testCase, activeResultModalCase.currentResult);
+                    if (activeDefect) {
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (activeDefect.id) {
+                              setSelectedDetailDefect(activeDefect);
+                            }
+                          }}
+                          className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 transition-all cursor-pointer shadow-xs"
+                          title={`Bağlı Defect: ${activeDefect.key} (Detaylar için tıklayın)`}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>{activeDefect.key} (Defect Edildi)</span>
+                        </button>
+                      );
+                    }
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleOpenCreateDefect(activeResultModalCase.testCase, activeResultModalCase.currentResult);
+                        }}
+                        className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-700 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all cursor-pointer shadow-xs"
+                        title="Bu başarısız sonuç için Defect formu aç"
+                      >
+                        <Bug className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                        <span>Defect Oluştur</span>
+                      </button>
+                    );
+                  })()
                 )}
               </div>
 
@@ -2709,6 +2922,16 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
           onSubmit={handleCreateDefectSubmit}
         />
       )}
+
+      {/* Mevcut Defect Detay ve Durum Yönetimi Modalı */}
+      <DefectDetailModal
+        isOpen={!!selectedDetailDefect}
+        onClose={() => setSelectedDetailDefect(null)}
+        defect={selectedDetailDefect}
+        onUpdateStatus={handleUpdateDefectStatus}
+        onUpdateDetails={handleUpdateDefectDetails}
+        onDelete={handleDeleteDefect}
+      />
     </div>
   );
 };
