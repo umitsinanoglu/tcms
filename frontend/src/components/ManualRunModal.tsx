@@ -812,7 +812,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               <button
                 type="button"
                 onClick={() => setWizardStep('CASE_SELECT')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
               >
                 <span>Senaryo Seçimine İlerle ({selectedCaseIds.length} Senaryo)</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -1469,7 +1469,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                   type="button"
                   disabled={isSubmitting}
                   onClick={handleSubmitRun}
-                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 disabled:opacity-50 transition-all shadow-md shadow-[var(--accent-dark)]/20 active:scale-98 cursor-pointer"
+                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 disabled:opacity-50 transition-all shadow-md shadow-[var(--accent-dark)]/20 active:scale-98 cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
                   <span>
@@ -1530,7 +1530,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-8 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
+                className="px-8 py-2.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
               >
                 Kapat ve Koşum Geçmişine Dön
               </button>

@@ -418,7 +418,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2 text-xs font-bold text-white transition-all duration-200 rounded-xl bg-[var(--accent-gradient)] hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 active:scale-98 disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2 text-xs font-bold text-white transition-all duration-200 rounded-xl bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 active:scale-98 disabled:opacity-50"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>{isSubmitting ? 'Kaydediliyor...' : 'Kullanıcıyı Oluştur'}</span>

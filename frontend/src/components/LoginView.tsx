@@ -148,7 +148,7 @@ export const LoginView: React.FC = () => {
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.15]">
                 Kurumsal Kalite Güvence ve{' '}
-                <span className="bg-[var(--accent-gradient)] bg-clip-text text-transparent">
+                <span className="bg-accent-gradient bg-clip-text text-transparent">
                   Test Yönetim
                 </span>{' '}
                 Platformu
@@ -319,7 +319,7 @@ export const LoginView: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoggingIn || isLoading}
-                  className="w-full py-2.5 px-4 bg-[var(--accent-gradient)] hover:brightness-110 text-white text-xs font-bold rounded-xl transition-all duration-200 shadow-md shadow-[var(--accent-dark)]/25 flex items-center justify-center space-x-2 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                  className="w-full py-2.5 px-4 bg-accent-gradient hover:brightness-110 text-white text-xs font-bold rounded-xl transition-all duration-200 shadow-md shadow-[var(--accent-dark)]/25 flex items-center justify-center space-x-2 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                 >
                   {isLoggingIn ? (
                     <span>Giriş Yapılıyor...</span>

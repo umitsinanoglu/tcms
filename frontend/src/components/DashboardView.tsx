@@ -536,7 +536,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {onOpenNewPlan && (
                   <button
                     onClick={onOpenNewPlan}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--accent-gradient)] text-white transition-all shadow-sm hover:brightness-110 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-accent-gradient text-white transition-all shadow-sm hover:brightness-110 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Test Planı Oluştur</span>
@@ -659,7 +659,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <p className="font-medium text-xs">Henüz test senaryosu bulunmuyor.</p>
                 <button
                   onClick={onOpenNewCase}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--accent-gradient)] text-white transition-all shadow-sm hover:brightness-110 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-accent-gradient text-white transition-all shadow-sm hover:brightness-110 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Yeni Senaryo Ekle</span>

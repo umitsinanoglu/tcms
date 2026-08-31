@@ -441,26 +441,26 @@ export class DefectsService {
         const res = failedResults[i];
         const key = reservedKeys[i];
 
-        const severity = res.testCase.priority === 'BLOCKER'
+        const severity = res.testCase?.priority === 'BLOCKER'
           ? DefectSeverity.BLOCKER
-          : res.testCase.priority === 'CRITICAL'
+          : res.testCase?.priority === 'CRITICAL'
           ? DefectSeverity.CRITICAL
           : DefectSeverity.MAJOR;
 
         const defect = await tx.defect.create({
           data: {
             key,
-            title: `[Test Hatası] ${res.testCase.title}`,
-            description: res.errorMessage || `Test senaryosu (${res.testCase.code}) "${res.testRun.title}" koşumunda başarısız oldu.`,
+            title: `[Test Hatası] ${res.testCase?.title || 'Başarısız Test'}`,
+            description: res.errorMessage || `Test senaryosu (${res.testCase?.code || 'Senaryo'}) "${res.testRun?.title || 'Koşum'}" koşumunda başarısız oldu.`,
             severity,
             status: DefectStatus.OPEN,
             projectId,
             testCaseId: res.testCaseId,
             testRunId: res.testRunId,
             testResultId: res.id,
-            environment: res.environment || res.testRun.environment || 'STAGING',
-            channel: res.testCase.type || 'WEB',
-            reportedBy: res.executedBy || res.testRun.executedBy || 'Sistem',
+            environment: res.environment || res.testRun?.environment || 'STAGING',
+            channel: (res.testCase?.type as any) || 'WEB',
+            reportedBy: res.executedBy || res.testRun?.executedBy || 'Sistem',
             jiraBugKey: res.jiraBugKey || null,
             jiraBugUrl: res.jiraBugUrl || null,
           },

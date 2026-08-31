@@ -461,7 +461,7 @@ export const NewCaseModal: React.FC<NewCaseModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || !title.trim()}
-              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[var(--accent-gradient)] hover:brightness-110 disabled:opacity-50 transition-all shadow-md shadow-[var(--accent-dark)]/20 cursor-pointer"
+              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 disabled:opacity-50 transition-all shadow-md shadow-[var(--accent-dark)]/20 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{isSubmitting ? 'Oluşturuluyor...' : 'Senaryoyu Oluştur'}</span>

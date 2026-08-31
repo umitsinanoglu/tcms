@@ -284,6 +284,15 @@ export class TestRunsService {
         },
         results: {
           include: {
+            defects: {
+              select: {
+                id: true,
+                key: true,
+                title: true,
+                status: true,
+                severity: true,
+              },
+            },
             testCase: {
               select: {
                 id: true,
@@ -395,6 +404,15 @@ export class TestRunsService {
         },
         results: {
           include: {
+            defects: {
+              select: {
+                id: true,
+                key: true,
+                title: true,
+                status: true,
+                severity: true,
+              },
+            },
             testCase: {
               select: {
                 id: true,

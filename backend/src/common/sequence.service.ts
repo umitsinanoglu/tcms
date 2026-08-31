@@ -22,14 +22,13 @@ export class SequenceService {
 
     let currentVal = existingSeq?.lastValue;
 
-    // If sequence does not exist yet in DB, bootstrap it from current max in DB
     if (currentVal === undefined) {
+      let maxNum = 0;
       if (entityType === 'TC') {
         const cases = await this.prisma.testCase.findMany({
           where: { projectId },
           select: { code: true },
         });
-        let maxNum = 0;
         const prefix = `${projectKey}-TC-`;
         for (const tc of cases) {
           if (tc.code?.startsWith(prefix)) {
@@ -39,12 +38,24 @@ export class SequenceService {
             }
           }
         }
-        currentVal = maxNum;
       } else if (entityType === 'DEF') {
-        currentVal = await this.prisma.defect.count({ where: { projectId } });
+        const defects = await this.prisma.defect.findMany({
+          where: { projectId },
+          select: { key: true },
+        });
+        const prefix = `${projectKey}-DEF-`;
+        for (const d of defects) {
+          if (d.key?.startsWith(prefix)) {
+            const num = parseInt(d.key.substring(prefix.length), 10);
+            if (!isNaN(num) && num > maxNum) {
+              maxNum = num;
+            }
+          }
+        }
       } else {
-        currentVal = await this.prisma.testRun.count({ where: { projectId } });
+        maxNum = await this.prisma.testRun.count({ where: { projectId } });
       }
+      currentVal = maxNum;
     }
 
     const updated = await this.prisma.projectSequence.upsert({
@@ -85,12 +96,12 @@ export class SequenceService {
     let currentVal = existingSeq?.lastValue;
 
     if (currentVal === undefined) {
+      let maxNum = 0;
       if (entityType === 'TC') {
         const cases = await this.prisma.testCase.findMany({
           where: { projectId },
           select: { code: true },
         });
-        let maxNum = 0;
         const prefix = `${projectKey}-TC-`;
         for (const tc of cases) {
           if (tc.code?.startsWith(prefix)) {
@@ -100,12 +111,24 @@ export class SequenceService {
             }
           }
         }
-        currentVal = maxNum;
       } else if (entityType === 'DEF') {
-        currentVal = await this.prisma.defect.count({ where: { projectId } });
+        const defects = await this.prisma.defect.findMany({
+          where: { projectId },
+          select: { key: true },
+        });
+        const prefix = `${projectKey}-DEF-`;
+        for (const d of defects) {
+          if (d.key?.startsWith(prefix)) {
+            const num = parseInt(d.key.substring(prefix.length), 10);
+            if (!isNaN(num) && num > maxNum) {
+              maxNum = num;
+            }
+          }
+        }
       } else {
-        currentVal = await this.prisma.testRun.count({ where: { projectId } });
+        maxNum = await this.prisma.testRun.count({ where: { projectId } });
       }
+      currentVal = maxNum;
     }
 
     const updated = await this.prisma.projectSequence.upsert({

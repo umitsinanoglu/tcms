@@ -255,7 +255,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <div className="flex items-center flex-wrap gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-[var(--accent-gradient)] hover:brightness-110 text-white shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-accent-gradient hover:brightness-110 text-white shadow-sm transition-all active:scale-95 cursor-pointer"
               title="Resmi Yönetici Raporunu Yazdır veya PDF Olarak Kaydet"
             >
               <Printer className="w-3.5 h-3.5" />

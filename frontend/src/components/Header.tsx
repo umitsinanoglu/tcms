@@ -765,7 +765,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={() => setIsUserDropdownOpen((prev) => !prev)}
-            className={`w-8 h-8 rounded-full bg-[var(--accent-primary)] text-white font-bold text-xs sm:text-sm flex items-center justify-center shadow-xs transition-all duration-200 cursor-pointer hover:brightness-110 hover:ring-2 hover:ring-[var(--accent-primary)]/40 ${
+            className={`w-8 h-8 rounded-full bg-accent-gradient text-white font-bold text-xs sm:text-sm flex items-center justify-center shadow-xs transition-all duration-200 cursor-pointer hover:brightness-110 hover:ring-2 hover:ring-[var(--accent-primary)]/40 ${
               isUserDropdownOpen ? 'ring-2 ring-[var(--accent-primary)] scale-105' : ''
             }`}
             style={{ background: 'var(--accent-gradient)' }}
@@ -781,7 +781,7 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Profile Card Header */}
               <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex items-center space-x-3">
                 <div
-                  className="w-10 h-10 rounded-full bg-[var(--accent-primary)] text-white font-bold text-base flex items-center justify-center shrink-0 shadow-sm"
+                  className="w-10 h-10 rounded-full bg-accent-gradient text-white font-bold text-base flex items-center justify-center shrink-0 shadow-sm"
                   style={{ background: 'var(--accent-gradient)' }}
                 >
                   {userInitial}
