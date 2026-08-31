@@ -62,7 +62,7 @@ export class WebhooksService {
     const baseUrl = process.env.BASE_URL || `http://localhost:${serverPort}`;
     const callbackUrl = `${baseUrl}/api/v1/projects/${project.id}/runs/automation`;
 
-    const outboundPayload = {
+    const outboundPayload: Record<string, any> = {
       event: 'AUTOMATION_TRIGGER',
       project: {
         id: project.id,
@@ -76,12 +76,21 @@ export class WebhooksService {
         version: testRun.version,
         status: testRun.status,
       },
-      scope: dto.scope,
+      scope: dto.scope || (dto.specs?.length ? 'SPECIFIC' : targetCaseCodes.length ? 'SPECIFIC' : 'ALL'),
       caseCodes: targetCaseCodes,
+      platform: dto.platform || 'iOS',
       triggeredBy: dto.triggeredBy || user?.name || 'TCMS Trigger',
       callbackUrl,
       timestamp: new Date().toISOString(),
     };
+
+    if (dto.deviceAlias) {
+      outboundPayload.deviceAlias = dto.deviceAlias;
+    }
+
+    if (dto.specs && dto.specs.length > 0) {
+      outboundPayload.specs = dto.specs;
+    }
 
     // 3. Dispatch Webhook to External Automation Project
     const headers: Record<string, string> = {

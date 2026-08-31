@@ -14,6 +14,8 @@ import {
 } from '@/services/api';
 import { parseScreenshots } from './QuickRunModal';
 import { exportTestRunsToExcel } from '@/utils/excelUtils';
+import { AutomationTriggerModal } from './AutomationTriggerModal';
+import { LiveRunTerminalModal } from './LiveRunTerminalModal';
 import {
   Play,
   Send,
@@ -99,6 +101,12 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
 
   // Webhook Trigger Modal State
   const [isWebhookModalOpen, setIsWebhookModalOpen] = useState(false);
+  const [isTACModalOpen, setIsTACModalOpen] = useState(false);
+  const [isLiveTerminalOpen, setIsLiveTerminalOpen] = useState(false);
+  const [activeTerminalRunId, setActiveTerminalRunId] = useState<string | undefined>();
+  const [activeTerminalRunTitle, setActiveTerminalRunTitle] = useState<string | undefined>();
+  const [activeTerminalPlatform, setActiveTerminalPlatform] = useState<string>('iOS');
+  const [activeTerminalDevice, setActiveTerminalDevice] = useState<string>('iphone15');
   const [webhookUrl, setWebhookUrl] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('tcms_automation_webhook_url') || 'http://localhost:8000/api/webhook/trigger';
@@ -466,6 +474,30 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
 
           <button
             type="button"
+            onClick={() => setIsTACModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-bold bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-800 transition-all cursor-pointer shadow-xs"
+            title="Test Automation Center (TAC) üzerinden mobil testleri çalıştırın"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-purple-500" />
+            <span>⚡ Mobil Otomasyonu Koş (TAC)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTerminalRunId(undefined);
+              setActiveTerminalRunTitle('Test Automation Canlı Terminal');
+              setIsLiveTerminalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748] transition-all cursor-pointer shadow-xs"
+            title="TAC WebSocket canlı log akışını izleyin"
+          >
+            <Terminal className="w-3.5 h-3.5 text-slate-500" />
+            <span>Canlı Log Terminali</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => {
               setWebhookResponse(null);
               setWebhookPingResult(null);
@@ -475,7 +507,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             title="Dış Test Otomasyon Merkezini Webhook ile anında tetikleyin"
           >
             <Send className="w-3.5 h-3.5 text-indigo-500" />
-            <span>⚡ Otomasyonu Tetikle (Webhook)</span>
+            <span>Webhook Tetikle</span>
           </button>
 
           {/* Yöntem 1: Hızlı Test Koşumu (Tekil Senaryo) */}
@@ -1578,6 +1610,36 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* TAC Mobil Otomasyon Başlatma Modalı */}
+      <AutomationTriggerModal
+        isOpen={isTACModalOpen}
+        onClose={() => setIsTACModalOpen(false)}
+        projectId={projectId}
+        suites={testPlans.map((p) => ({ id: p.id, name: p.title }))}
+        caseCodes={allCases.map((c) => c.code)}
+        onTriggerSuccess={(testRun, plat, dev) => {
+          loadRuns();
+          setActiveTerminalRunId(testRun?.id);
+          setActiveTerminalRunTitle(testRun?.title || 'Mobil Otomasyon Koşusu');
+          setActiveTerminalPlatform(plat);
+          setActiveTerminalDevice(dev);
+          setIsLiveTerminalOpen(true);
+        }}
+      />
+
+      {/* TAC Canlı Log Terminal Modalı */}
+      <LiveRunTerminalModal
+        isOpen={isLiveTerminalOpen}
+        onClose={() => setIsLiveTerminalOpen(false)}
+        runId={activeTerminalRunId}
+        runTitle={activeTerminalRunTitle}
+        platform={activeTerminalPlatform}
+        deviceAlias={activeTerminalDevice}
+        onRunFinished={() => {
+          loadRuns();
+        }}
+      />
     </div>
   );
 };

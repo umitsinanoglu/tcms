@@ -99,8 +99,22 @@ model Project {
   testCases      TestCase[]
   testRuns       TestRun[]
   defects        Defect[]
+  sequences      ProjectSequence[]
 
   @@map("projects")
+}
+
+model ProjectSequence {
+  id         String   @id @default(uuid())
+  projectId  String
+  entityType String   // "TC" | "DEF" | "RUN"
+  lastValue  Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, entityType])
+  @@map("project_sequences")
 }
 
 model TestPlan {
@@ -121,6 +135,7 @@ model TestPlan {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  @@index([projectId, status])
   @@map("test_plans")
 }
 
@@ -137,6 +152,7 @@ model Suite {
   cases      TestCase[]
   orderIndex Int        @default(0)
 
+  @@index([projectId, parentId, orderIndex])
   @@map("suites")
 }
 
@@ -169,6 +185,10 @@ model TestCase {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
+  @@index([projectId, suiteId])
+  @@index([projectId, type])
+  @@index([projectId, priority])
+  @@index([createdAt])
   @@map("test_cases")
 }
 
@@ -182,6 +202,7 @@ model TestStep {
   testCaseId     String
   testCase       TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
 
+  @@index([testCaseId, stepNumber])
   @@map("test_steps")
 }
 
@@ -206,6 +227,9 @@ model TestRun {
 
   createdAt   DateTime   @default(now())
 
+  @@index([projectId, createdAt])
+  @@index([projectId, status])
+  @@index([testPlanId])
   @@map("test_runs")
 }
 
@@ -246,6 +270,10 @@ model TestResult {
 
   executedAt   DateTime     @default(now())
 
+  @@index([testRunId, status])
+  @@index([testCaseId, executedAt])
+  @@index([status])
+  @@index([executedAt])
   @@map("test_results")
 }
 
@@ -283,7 +311,13 @@ model Defect {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
+  @@index([projectId, status, severity])
+  @@index([testCaseId])
+  @@index([testRunId])
+  @@index([testResultId])
+  @@index([createdAt])
   @@map("defects")
 }
+
 
 

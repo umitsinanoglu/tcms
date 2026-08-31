@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SequenceService } from '../common/sequence.service';
 import { CreateDefectDto } from './dto/create-defect.dto';
 import { UpdateDefectDto } from './dto/update-defect.dto';
 import { UpdateDefectStatusDto } from './dto/update-defect-status.dto';
@@ -7,7 +8,10 @@ import { DefectStatus, DefectSeverity, Prisma } from '@prisma/client';
 
 @Injectable()
 export class DefectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sequenceService: SequenceService,
+  ) {}
 
   /**
    * 1. Create a new defect with auto-incremented project key (e.g. TCMS-DEF-1)
@@ -15,18 +19,15 @@ export class DefectsService {
   async create(dto: CreateDefectDto) {
     const project = await this.prisma.project.findUnique({
       where: { id: dto.projectId },
+      select: { id: true, name: true, key: true },
     });
 
     if (!project) {
       throw new NotFoundException(`Project with ID ${dto.projectId} not found`);
     }
 
-    // Generate unique defect key
-    const count = await this.prisma.defect.count({
-      where: { projectId: dto.projectId },
-    });
-    const prefix = project.key || 'DEF';
-    const key = `${prefix}-DEF-${count + 1}`;
+    // Atomic, race-condition-safe defect code generation
+    const key = await this.sequenceService.getNextCode(project.id, project.key, 'DEF');
 
     const defect = await this.prisma.defect.create({
       data: {
@@ -58,6 +59,7 @@ export class DefectsService {
 
     return defect;
   }
+
 
   /**
    * 2. Find all defects for a project with optional filters and search
@@ -249,39 +251,74 @@ export class DefectsService {
   }
 
   /**
-   * 7. Comprehensive Defect Statistics for Dashboard & Analytics
+   * 7. Comprehensive Defect Statistics for Dashboard & Analytics (Optimized with DB groupBy)
    */
   async getStatsByProject(projectId: string) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
+      select: { id: true, name: true, key: true },
     });
 
     if (!project) {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
     }
 
-    const defects = await this.prisma.defect.findMany({
-      where: { projectId },
-      include: {
-        testCase: { select: { id: true, code: true, title: true, priority: true } },
-      },
-    });
-
-    const total = defects.length;
-    let open = 0;
-    let inProgress = 0;
-    let resolved = 0;
-    let closed = 0;
-    let reopened = 0;
-    let wontFix = 0;
-
-    const bySeverity: Record<string, number> = {
-      BLOCKER: 0,
-      CRITICAL: 0,
-      MAJOR: 0,
-      MINOR: 0,
-      TRIVIAL: 0,
-    };
+    // Parallel DB aggregations instead of loading thousands of full records into Node.js memory
+    const [
+      totalCount,
+      statusGroups,
+      severityGroups,
+      envGroups,
+      channelGroups,
+      assigneeGroups,
+      activeBlockerCriticalCount,
+      recentDefects,
+    ] = await Promise.all([
+      this.prisma.defect.count({ where: { projectId } }),
+      this.prisma.defect.groupBy({
+        by: ['status'],
+        where: { projectId },
+        _count: { status: true },
+      }),
+      this.prisma.defect.groupBy({
+        by: ['severity'],
+        where: { projectId },
+        _count: { severity: true },
+      }),
+      this.prisma.defect.groupBy({
+        by: ['environment'],
+        where: { projectId },
+        _count: { environment: true },
+      }),
+      this.prisma.defect.groupBy({
+        by: ['channel'],
+        where: { projectId },
+        _count: { channel: true },
+      }),
+      this.prisma.defect.groupBy({
+        by: ['assignedTo'],
+        where: { projectId },
+        _count: { assignedTo: true },
+      }),
+      this.prisma.defect.count({
+        where: {
+          projectId,
+          status: { in: [DefectStatus.OPEN, DefectStatus.IN_PROGRESS, DefectStatus.REOPENED] },
+          severity: { in: [DefectSeverity.BLOCKER, DefectSeverity.CRITICAL] },
+        },
+      }),
+      this.prisma.defect.findMany({
+        where: { projectId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: {
+          project: { select: { id: true, name: true, key: true } },
+          testCase: { select: { id: true, code: true, title: true, priority: true, type: true } },
+          testRun: { select: { id: true, title: true, version: true, environment: true } },
+          testResult: { select: { id: true, status: true, errorMessage: true, screenshotUrl: true } },
+        },
+      }),
+    ]);
 
     const byStatus: Record<string, number> = {
       OPEN: 0,
@@ -291,61 +328,45 @@ export class DefectsService {
       REOPENED: 0,
       WONT_FIX: 0,
     };
-
-    const byEnvironment: Record<string, number> = {};
-    const byChannel: Record<string, number> = {};
-    const byAssignee: Record<string, number> = {};
-
-    let activeBlockerCritical = 0;
-
-    defects.forEach((d) => {
-      // Status breakdown
-      byStatus[d.status] = (byStatus[d.status] || 0) + 1;
-      switch (d.status) {
-        case DefectStatus.OPEN:
-          open++;
-          break;
-        case DefectStatus.IN_PROGRESS:
-          inProgress++;
-          break;
-        case DefectStatus.RESOLVED:
-          resolved++;
-          break;
-        case DefectStatus.CLOSED:
-          closed++;
-          break;
-        case DefectStatus.REOPENED:
-          reopened++;
-          break;
-        case DefectStatus.WONT_FIX:
-          wontFix++;
-          break;
-      }
-
-      // Severity breakdown
-      bySeverity[d.severity] = (bySeverity[d.severity] || 0) + 1;
-
-      // Active critical/blocker count
-      const isClosed = d.status === DefectStatus.RESOLVED || d.status === DefectStatus.CLOSED || d.status === DefectStatus.WONT_FIX;
-      if (!isClosed && (d.severity === DefectSeverity.BLOCKER || d.severity === DefectSeverity.CRITICAL)) {
-        activeBlockerCritical++;
-      }
-
-      // Environment breakdown
-      const env = d.environment || 'STAGING';
-      byEnvironment[env] = (byEnvironment[env] || 0) + 1;
-
-      // Channel breakdown
-      const ch = d.channel || 'WEB';
-      byChannel[ch] = (byChannel[ch] || 0) + 1;
-
-      // Assignee breakdown
-      const assignee = d.assignedTo || 'Atanmamış';
-      byAssignee[assignee] = (byAssignee[assignee] || 0) + 1;
+    statusGroups.forEach((g) => {
+      byStatus[g.status] = g._count.status;
     });
 
+    const bySeverity: Record<string, number> = {
+      BLOCKER: 0,
+      CRITICAL: 0,
+      MAJOR: 0,
+      MINOR: 0,
+      TRIVIAL: 0,
+    };
+    severityGroups.forEach((g) => {
+      bySeverity[g.severity] = g._count.severity;
+    });
+
+    const byEnvironment: Record<string, number> = {};
+    envGroups.forEach((g) => {
+      byEnvironment[g.environment || 'STAGING'] = g._count.environment;
+    });
+
+    const byChannel: Record<string, number> = {};
+    channelGroups.forEach((g) => {
+      byChannel[g.channel || 'WEB'] = g._count.channel;
+    });
+
+    const byAssignee: Record<string, number> = {};
+    assigneeGroups.forEach((g) => {
+      byAssignee[g.assignedTo || 'Atanmamış'] = g._count.assignedTo;
+    });
+
+    const open = byStatus.OPEN || 0;
+    const inProgress = byStatus.IN_PROGRESS || 0;
+    const resolved = byStatus.RESOLVED || 0;
+    const closed = byStatus.CLOSED || 0;
+    const reopened = byStatus.REOPENED || 0;
+    const wontFix = byStatus.WONT_FIX || 0;
+
     const resolvedOrClosed = resolved + closed;
-    const resolutionRate = total > 0 ? Math.round((resolvedOrClosed / total) * 100) : 0;
+    const resolutionRate = totalCount > 0 ? Math.round((resolvedOrClosed / totalCount) * 100) : 0;
     const activeDefects = open + inProgress + reopened;
 
     return {
@@ -353,7 +374,7 @@ export class DefectsService {
       projectName: project.name,
       projectKey: project.key,
       metrics: {
-        total,
+        total: totalCount,
         active: activeDefects,
         open,
         inProgress,
@@ -361,7 +382,7 @@ export class DefectsService {
         closed,
         reopened,
         wontFix,
-        activeBlockerCritical,
+        activeBlockerCritical: activeBlockerCriticalCount,
         resolutionRate,
       },
       distributions: {
@@ -371,14 +392,23 @@ export class DefectsService {
         byChannel,
         byAssignee,
       },
-      recentDefects: defects.slice(0, 5),
+      recentDefects,
     };
   }
 
   /**
-   * 8. Auto-sync failed test results into defects for the project
+   * 8. Auto-sync failed test results into defects for the project (Optimized with Batch Transaction)
    */
   async syncFromFailedResults(projectId: string) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true, key: true },
+    });
+
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+
     // Find all failed test results in this project that are not yet linked to any defect
     const failedResults = await this.prisma.testResult.findMany({
       where: {
@@ -392,41 +422,53 @@ export class DefectsService {
       },
     });
 
+    if (failedResults.length === 0) {
+      return { syncedCount: 0, createdDefects: [] };
+    }
+
+    // Reserve block of keys atomically in 1 operation
+    const reservedKeys = await this.sequenceService.getNextCodesBatch(
+      project.id,
+      project.key,
+      'DEF',
+      failedResults.length,
+    );
+
     const createdDefects: any[] = [];
 
-    for (const res of failedResults) {
-      const count = await this.prisma.defect.count({ where: { projectId } });
-      const project = await this.prisma.project.findUnique({ where: { id: projectId } });
-      const prefix = project?.key || 'DEF';
-      const key = `${prefix}-DEF-${count + 1}`;
+    await this.prisma.$transaction(async (tx) => {
+      for (let i = 0; i < failedResults.length; i++) {
+        const res = failedResults[i];
+        const key = reservedKeys[i];
 
-      const severity = res.testCase.priority === 'BLOCKER' 
-        ? DefectSeverity.BLOCKER 
-        : res.testCase.priority === 'CRITICAL' 
-        ? DefectSeverity.CRITICAL 
-        : DefectSeverity.MAJOR;
+        const severity = res.testCase.priority === 'BLOCKER'
+          ? DefectSeverity.BLOCKER
+          : res.testCase.priority === 'CRITICAL'
+          ? DefectSeverity.CRITICAL
+          : DefectSeverity.MAJOR;
 
-      const defect = await this.prisma.defect.create({
-        data: {
-          key,
-          title: `[Test Hatası] ${res.testCase.title}`,
-          description: res.errorMessage || `Test senaryosu (${res.testCase.code}) "${res.testRun.title}" koşumunda başarısız oldu.`,
-          severity,
-          status: DefectStatus.OPEN,
-          projectId,
-          testCaseId: res.testCaseId,
-          testRunId: res.testRunId,
-          testResultId: res.id,
-          environment: res.environment || res.testRun.environment || 'STAGING',
-          channel: res.testCase.type || 'WEB',
-          reportedBy: res.executedBy || res.testRun.executedBy || 'Sistem',
-          jiraBugKey: res.jiraBugKey || null,
-          jiraBugUrl: res.jiraBugUrl || null,
-        },
-      });
+        const defect = await tx.defect.create({
+          data: {
+            key,
+            title: `[Test Hatası] ${res.testCase.title}`,
+            description: res.errorMessage || `Test senaryosu (${res.testCase.code}) "${res.testRun.title}" koşumunda başarısız oldu.`,
+            severity,
+            status: DefectStatus.OPEN,
+            projectId,
+            testCaseId: res.testCaseId,
+            testRunId: res.testRunId,
+            testResultId: res.id,
+            environment: res.environment || res.testRun.environment || 'STAGING',
+            channel: res.testCase.type || 'WEB',
+            reportedBy: res.executedBy || res.testRun.executedBy || 'Sistem',
+            jiraBugKey: res.jiraBugKey || null,
+            jiraBugUrl: res.jiraBugUrl || null,
+          },
+        });
 
-      createdDefects.push(defect);
-    }
+        createdDefects.push(defect);
+      }
+    });
 
     return {
       syncedCount: createdDefects.length,
@@ -434,3 +476,4 @@ export class DefectsService {
     };
   }
 }
+
