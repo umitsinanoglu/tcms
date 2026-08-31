@@ -137,9 +137,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   onClick={() => onTabChange(item.id)}
                   className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
                     isActive
-                      ? 'bg-[var(--accent-gradient)] text-white shadow-md shadow-[var(--accent-dark)]/30 scale-105 font-bold'
+                      ? 'bg-[var(--accent-primary)] text-white shadow-md shadow-[var(--accent-dark)]/30 scale-105 font-bold'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100'
                   }`}
+                  style={isActive ? { background: 'var(--accent-gradient)' } : undefined}
                   title={item.label}
                 >
                   <Icon className="w-4.5 h-4.5" />
@@ -160,9 +161,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               onClick={() => onTabChange('SETTINGS')}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
                 activeTab === 'SETTINGS'
-                  ? 'bg-[var(--accent-gradient)] text-white shadow-sm shadow-[var(--accent-dark)]/30'
+                  ? 'bg-[var(--accent-primary)] text-white shadow-sm shadow-[var(--accent-dark)]/30'
                   : 'text-slate-500 hover:text-[var(--accent-primary)] dark:text-slate-400 dark:hover:text-[var(--accent-primary)] hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
+              style={activeTab === 'SETTINGS' ? { background: 'var(--accent-gradient)' } : undefined}
               title="Sistem & Yönetim Ayarları"
               aria-label="Yönetim Ayarları"
             >
@@ -214,9 +216,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 onClick={() => onTabChange(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
                   isActive
-                    ? 'bg-[var(--accent-gradient)] text-white shadow-sm shadow-[var(--accent-dark)]/25 font-bold'
+                    ? 'bg-[var(--accent-primary)] text-white shadow-sm shadow-[var(--accent-dark)]/25 font-bold'
                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
                 }`}
+                style={isActive ? { background: 'var(--accent-gradient)' } : undefined}
               >
                 <div className="flex items-center space-x-2.5">
                   <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />

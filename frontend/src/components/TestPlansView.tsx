@@ -832,9 +832,10 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                     onClick={() => setCurrentPage(i + 1)}
                     className={`w-6 h-6 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
                       currentPage === i + 1
-                        ? 'bg-[var(--accent-gradient)] text-white'
+                        ? 'bg-[var(--accent-primary)] text-white shadow-xs'
                         : 'bg-white dark:bg-[#161f30] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
+                    style={currentPage === i + 1 ? { background: 'var(--accent-gradient)' } : undefined}
                   >
                     {i + 1}
                   </button>
