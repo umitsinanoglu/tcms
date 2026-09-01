@@ -432,7 +432,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       id: 'wh-' + Date.now(),
       name: newWebhookData.name.trim(),
       url: newWebhookData.url.trim(),
-      secretToken: newWebhookData.secretToken.trim() || 'tcms_wh_' + Math.random().toString(36).substring(2, 10),
+      secretToken: newWebhookData.secretToken.trim(),
       events: newWebhookData.events,
       isActive: true,
       lastTriggeredAt: 'Henüz tetiklenmedi',

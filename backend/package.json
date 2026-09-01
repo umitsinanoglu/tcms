@@ -18,6 +18,7 @@
     "prisma:migrate": "node prisma/run-prisma.js migrate dev",
     "prisma:studio": "node prisma/run-prisma.js studio",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:clean": "ts-node prisma/clean-dummy-data.ts",
     "sync:supabase": "ts-node prisma/sync-to-supabase.ts"
   },
   "prisma": {
