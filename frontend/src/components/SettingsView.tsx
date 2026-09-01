@@ -140,6 +140,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       { ldapGroup: 'TCMS_Admins', tcmsRole: 'ADMIN' },
       { ldapGroup: 'TCMS_TestLeads', tcmsRole: 'TEST_LEAD' },
       { ldapGroup: 'TCMS_QA_Engineers', tcmsRole: 'TESTER' },
+      { ldapGroup: 'TCMS_AutomationEngineers', tcmsRole: 'AUTOMATION_ENGINEER' },
       { ldapGroup: 'TCMS_Stakeholders', tcmsRole: 'VIEWER' },
     ],
   });
@@ -925,6 +926,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               <option value="ADMIN">ADMIN</option>
                               <option value="TEST_LEAD">TEST_LEAD</option>
                               <option value="TESTER">TESTER</option>
+                              <option value="AUTOMATION_ENGINEER">AUTOMATION_ENGINEER</option>
                               <option value="VIEWER">VIEWER</option>
                             </select>
                           ) : (
@@ -1146,24 +1148,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <th className="py-2.5 px-3 font-bold text-center">ADMIN</th>
                         <th className="py-2.5 px-3 font-bold text-center">TEST_LEAD</th>
                         <th className="py-2.5 px-3 font-bold text-center">TESTER</th>
+                        <th className="py-2.5 px-3 font-bold text-center text-purple-600 dark:text-purple-400">OTOMASYON</th>
                         <th className="py-2.5 px-3 font-bold text-center">VIEWER</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                       {[
-                        { action: 'Proje Oluşturma / Düzenleme', admin: true, lead: true, tester: false, viewer: false },
-                        { action: 'Proje Silme', admin: true, lead: true, tester: false, viewer: false },
-                        { action: 'Test Planı Oluşturma / Düzenleme', admin: true, lead: true, tester: true, viewer: false },
-                        { action: 'Test Planı Silme', admin: true, lead: true, tester: false, viewer: false },
-                        { action: 'Test Senaryosu (Case) Ekleme / Güncelleme', admin: true, lead: true, tester: true, viewer: false },
-                        { action: 'Test Senaryosu Silme', admin: true, lead: true, tester: true, viewer: false },
-                        { action: 'Manuel & Quick Run Koşumu Başlatma', admin: true, lead: true, tester: true, viewer: false },
-                        { action: 'Defect (Hata) Açma ve Güncelleme', admin: true, lead: true, tester: true, viewer: false },
-                        { action: 'Yönetici & Kalite Raporlarını Dışa Aktarma (PDF/CSV/HTML)', admin: true, lead: true, tester: true, viewer: true },
-                        { action: 'Kullanıcı Ekleme / Rol Değiştirme (RBAC)', admin: true, lead: false, tester: false, viewer: false },
-                        { action: 'LDAP / SSO Entegrasyon Yapılandırması', admin: true, lead: false, tester: false, viewer: false },
-                        { action: 'API Anahtarları (Tokens) Üretme & İptal Etme', admin: true, lead: false, tester: false, viewer: false },
-                        { action: 'Webhook Fırlatma & Otomasyon Tetikleme', admin: true, lead: true, tester: true, viewer: false },
+                        { action: 'Proje Oluşturma / Düzenleme', admin: true, lead: true, tester: false, auto: false, viewer: false },
+                        { action: 'Proje Silme', admin: true, lead: true, tester: false, auto: false, viewer: false },
+                        { action: 'Test Planı Oluşturma / Düzenleme', admin: true, lead: true, tester: true, auto: true, viewer: false },
+                        { action: 'Test Planı Silme', admin: true, lead: true, tester: false, auto: false, viewer: false },
+                        { action: 'Test Senaryosu (Case) Ekleme / Güncelleme', admin: true, lead: true, tester: true, auto: true, viewer: false },
+                        { action: 'Test Senaryosu Silme', admin: true, lead: true, tester: true, auto: true, viewer: false },
+                        { action: 'Manuel & Quick Run Koşumu Başlatma', admin: true, lead: true, tester: true, auto: true, viewer: false },
+                        { action: 'Defect (Hata) Açma ve Güncelleme', admin: true, lead: true, tester: true, auto: true, viewer: false },
+                        { action: 'Yönetici & Kalite Raporlarını Dışa Aktarma (PDF/CSV/HTML)', admin: true, lead: true, tester: true, auto: true, viewer: true },
+                        { action: 'Kullanıcı Ekleme / Rol Değiştirme (RBAC)', admin: true, lead: false, tester: false, auto: false, viewer: false },
+                        { action: 'LDAP / SSO Entegrasyon Yapılandırması', admin: true, lead: false, tester: false, auto: false, viewer: false },
+                        { action: 'API Anahtarları (Tokens) Üretme & İptal Etme', admin: true, lead: false, tester: false, auto: false, viewer: false },
+                        { action: '⚡ TAC Mobil Otomasyonu Koş & Canlı Terminal', admin: true, lead: false, tester: false, auto: true, viewer: false },
+                        { action: '🚀 Webhook Tetikleme & Otomasyon API (CI/CD)', admin: true, lead: false, tester: false, auto: true, viewer: false },
                       ].map((row, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
                           <td className="py-2 px-3 font-medium text-slate-800 dark:text-slate-200">{row.action}</td>
@@ -1184,6 +1188,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           <td className="py-2 px-3 text-center">
                             {row.tester ? (
                               <Check className="w-4 h-4 text-emerald-500 mx-auto" />
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 text-center">
+                            {row.auto ? (
+                              <Check className="w-4 h-4 text-purple-500 mx-auto font-bold" />
                             ) : (
                               <span className="text-slate-400">—</span>
                             )}
@@ -1385,6 +1396,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex justify-between">
                       <span>CN=TCMS_QA_Engineers</span>
                       <strong className="text-emerald-500">TESTER</strong>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex justify-between">
+                      <span>CN=TCMS_AutomationEngineers</span>
+                      <strong className="text-purple-500">AUTOMATION_ENGINEER</strong>
                     </div>
                     <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex justify-between">
                       <span>CN=TCMS_Stakeholders</span>
@@ -1761,6 +1776,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <option value="ADMIN">ADMIN</option>
                     <option value="TEST_LEAD">TEST_LEAD</option>
                     <option value="TESTER">TESTER</option>
+                    <option value="AUTOMATION_ENGINEER">AUTOMATION_ENGINEER</option>
                     <option value="VIEWER">VIEWER</option>
                   </select>
                 </div>

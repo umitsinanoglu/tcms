@@ -140,6 +140,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
         return 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30';
       case 'TESTER':
         return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+      case 'AUTOMATION_ENGINEER':
+        return 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30';
       case 'VIEWER':
         return 'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30';
       default:
@@ -285,6 +287,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           <option value="ADMIN">ADMIN</option>
                           <option value="TEST_LEAD">TEST_LEAD</option>
                           <option value="TESTER">TESTER</option>
+                          <option value="AUTOMATION_ENGINEER">AUTOMATION_ENGINEER</option>
                           <option value="VIEWER">VIEWER</option>
                         </select>
                       </div>
@@ -370,6 +373,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     <option value="ADMIN">ADMIN (Tam Yetki)</option>
                     <option value="TEST_LEAD">TEST_LEAD (Yönetici)</option>
                     <option value="TESTER">TESTER (Yazma/Koşum)</option>
+                    <option value="AUTOMATION_ENGINEER">AUTOMATION_ENGINEER (Otomasyon Uzmanı)</option>
                     <option value="VIEWER">VIEWER (Gözlemci)</option>
                   </select>
                 </div>
@@ -440,6 +444,9 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
             </span>
             <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px]">
               TESTER: Case Ekleme & Koşma
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 font-mono font-bold text-[10px]">
+              AUTOMATION_ENGINEER: Test Otomasyon & TAC & Webhook
             </span>
             <span className="px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-600 dark:text-slate-400 font-mono font-bold text-[10px]">
               VIEWER: Salt Okunur

@@ -9,6 +9,7 @@ import { Role } from '@prisma/client';
 @ApiTags('Test Automation Center (TAC)')
 @Controller('api/v1/tac')
 @UseGuards(RolesGuard)
+@Roles(Role.ADMIN, Role.AUTOMATION_ENGINEER)
 export class TACController {
   constructor(private readonly tacService: TACService) {}
 
@@ -31,7 +32,7 @@ export class TACController {
   }
 
   @Post('devices/health')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Appium Sunucu Sağlık Kontrolü' })
   checkAppiumHealth(@Body() dto: AppiumHealthDto) {
     return this.tacService.checkAppiumHealth(dto);
@@ -62,7 +63,7 @@ export class TACController {
   }
 
   @Post('runs/:runId/stop')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'TAC Üzerinde Çalışan Koşuyu Durdur (Abort)' })
   stopRun(@Param('runId') runId: string) {
     return this.tacService.stopRun(runId);

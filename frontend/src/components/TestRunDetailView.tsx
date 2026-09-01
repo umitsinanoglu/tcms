@@ -98,7 +98,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   onUpdateRunSuccess,
   onDeleteRunSuccess,
 }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, can } = useAuth();
   const [run, setRun] = useState<TestRun>(initialRun);
   const [activeTab, setActiveTab] = useState<DetailTab>('SCENARIOS');
   const [viewMode, setViewMode] = useState<ViewMode>('CARDS');
@@ -962,15 +962,17 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
             <span className="hidden sm:inline">Tümünü PASSED Yap</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setIsLiveTerminalOpen(true)}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-300 dark:border-purple-800 transition-all cursor-pointer shadow-2xs"
-            title="TAC Canlı Terminalini Aç"
-          >
-            <Terminal className="w-3.5 h-3.5" />
-            <span>Canlı Terminal</span>
-          </button>
+          {can('AUTOMATION_ACCESS') && (
+            <button
+              type="button"
+              onClick={() => setIsLiveTerminalOpen(true)}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-300 dark:border-purple-800 transition-all cursor-pointer shadow-2xs"
+              title="TAC Canlı Terminalini Aç"
+            >
+              <Terminal className="w-3.5 h-3.5" />
+              <span>Canlı Terminal</span>
+            </button>
+          )}
 
           <button
             type="button"

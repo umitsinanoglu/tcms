@@ -27,8 +27,16 @@ export async function seedUsers() {
       name: 'Burak Demir',
       email: 'burak.demir@ttb.com.tr',
       role: Role.TESTER,
-      department: 'Otomasyon & Manuel Test',
+      department: 'Manuel Test & QA',
       avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+      isActive: true,
+    },
+    {
+      name: 'Caner Tekin',
+      email: 'otomasyon@ttb.com.tr',
+      role: Role.AUTOMATION_ENGINEER,
+      department: 'Test Otomasyon & TAC',
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
       isActive: true,
     },
     {

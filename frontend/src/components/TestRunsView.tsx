@@ -16,6 +16,7 @@ import { parseScreenshots } from './QuickRunModal';
 import { exportTestRunsToExcel } from '@/utils/excelUtils';
 import { AutomationTriggerModal } from './AutomationTriggerModal';
 import { LiveRunTerminalModal } from './LiveRunTerminalModal';
+import { useAuth } from '@/context/AuthContext';
 import {
   Play,
   Send,
@@ -83,6 +84,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
   onSelectPlan,
   onSelectRun,
 }) => {
+  const { can } = useAuth();
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -465,52 +467,56 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             <span>Excel'e Aktar</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setIsAutomationModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] border border-[#d0d8e4] dark:border-[#2e3748] transition-all cursor-pointer shadow-xs"
-          >
-            <Code className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-            <span>Otomasyon API (CI/CD)</span>
-          </button>
+          {can('AUTOMATION_ACCESS') && (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsAutomationModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] border border-[#d0d8e4] dark:border-[#2e3748] transition-all cursor-pointer shadow-xs"
+              >
+                <Code className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                <span>Otomasyon API (CI/CD)</span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setIsTACModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-bold bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-800 transition-all cursor-pointer shadow-xs"
-            title="Test Automation Center (TAC) üzerinden mobil testleri çalıştırın"
-          >
-            <Smartphone className="w-3.5 h-3.5 text-purple-500" />
-            <span>⚡ Mobil Otomasyonu Koş (TAC)</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => setIsTACModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-bold bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-800 transition-all cursor-pointer shadow-xs"
+                title="Test Automation Center (TAC) üzerinden mobil testleri çalıştırın"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-purple-500" />
+                <span>⚡ Mobil Otomasyonu Koş (TAC)</span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTerminalRunId(undefined);
-              setActiveTerminalRunTitle('Test Automation Canlı Terminal');
-              setIsLiveTerminalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748] transition-all cursor-pointer shadow-xs"
-            title="TAC WebSocket canlı log akışını izleyin"
-          >
-            <Terminal className="w-3.5 h-3.5 text-slate-500" />
-            <span>Canlı Log Terminali</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTerminalRunId(undefined);
+                  setActiveTerminalRunTitle('Test Automation Canlı Terminal');
+                  setIsLiveTerminalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748] transition-all cursor-pointer shadow-xs"
+                title="TAC WebSocket canlı log akışını izleyin"
+              >
+                <Terminal className="w-3.5 h-3.5 text-slate-500" />
+                <span>Canlı Log Terminali</span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setWebhookResponse(null);
-              setWebhookPingResult(null);
-              setIsWebhookModalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50 hover:border-indigo-400 transition-all cursor-pointer shadow-xs"
-            title="Dış Test Otomasyon Merkezini Webhook ile anında tetikleyin"
-          >
-            <Send className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Webhook Tetikle</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setWebhookResponse(null);
+                  setWebhookPingResult(null);
+                  setIsWebhookModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50 hover:border-indigo-400 transition-all cursor-pointer shadow-xs"
+                title="Dış Test Otomasyon Merkezini Webhook ile anında tetikleyin"
+              >
+                <Send className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Webhook Tetikle</span>
+              </button>
+            </>
+          )}
 
           {/* Yöntem 1: Hızlı Test Koşumu (Tekil Senaryo) */}
           <button

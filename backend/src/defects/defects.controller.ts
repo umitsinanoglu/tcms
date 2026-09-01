@@ -26,7 +26,7 @@ export class DefectsController {
   constructor(private readonly defectsService: DefectsService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Yeni defect / hata kaydı oluştur' })
   @ApiResponse({ status: 201, description: 'Defect başarıyla oluşturuldu' })
   create(@Body() createDefectDto: CreateDefectDto) {
@@ -66,7 +66,7 @@ export class DefectsController {
   }
 
   @Post('sync-failed/project/:projectId')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Başarısız test sonuçlarından otomatik defect oluştur / senkronize et' })
   @ApiParam({ name: 'projectId', description: 'Proje UUID' })
   syncFromFailedResults(@Param('projectId') projectId: string) {
@@ -81,7 +81,7 @@ export class DefectsController {
   }
 
   @Put(':id')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Defect bilgilerini güncelle' })
   @ApiParam({ name: 'id', description: 'Defect UUID' })
   update(@Param('id') id: string, @Body() updateDefectDto: UpdateDefectDto) {
@@ -89,7 +89,7 @@ export class DefectsController {
   }
 
   @Patch(':id/status')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Defect durumunu hızlıca güncelle (Açık, İnceleniyor, Çözüldü, Kapatıldı vb.)' })
   @ApiParam({ name: 'id', description: 'Defect UUID' })
   updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateDefectStatusDto) {

@@ -15,7 +15,7 @@ export class TestPlansController {
   constructor(private readonly testPlansService: TestPlansService) {}
 
   @Post('test-plans/bulk')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Excel / CSV ile toplu test planlarını içeri aktar' })
   @ApiResponse({ status: 201, description: 'Test planları toplu olarak oluşturuldu' })
   createBulk(@Body() bulkDto: BulkCreateTestPlansDto) {
@@ -23,7 +23,7 @@ export class TestPlansController {
   }
 
   @Post('test-plans')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Yeni test planı oluştur' })
   @ApiResponse({ status: 201, description: 'Test planı başarıyla oluşturuldu' })
   create(@Body() createTestPlanDto: CreateTestPlanDto) {
@@ -45,7 +45,7 @@ export class TestPlansController {
   }
 
   @Patch('test-plans/:id')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Test planı bilgilerini güncelle' })
   @ApiParam({ name: 'id', description: 'Test Planı UUID' })
   update(@Param('id') id: string, @Body() updateTestPlanDto: UpdateTestPlanDto) {

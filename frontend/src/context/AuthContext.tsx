@@ -18,7 +18,8 @@ export type PermissionAction =
   | 'EDIT_PLAN'
   | 'DELETE_PLAN'
   | 'EXECUTE_RUN'
-  | 'VIEW_REPORTS';
+  | 'VIEW_REPORTS'
+  | 'AUTOMATION_ACCESS';
 
 interface AuthSessionData {
   userId: string;
@@ -48,6 +49,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isTestLead: boolean;
   isTester: boolean;
+  isAutomationEngineer: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -211,7 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         case 'CREATE_SUITE':
         case 'EDIT_SUITE':
-          return effectiveRole === 'ADMIN' || effectiveRole === 'TEST_LEAD' || effectiveRole === 'TESTER';
+          return effectiveRole === 'ADMIN' || effectiveRole === 'TEST_LEAD' || effectiveRole === 'TESTER' || effectiveRole === 'AUTOMATION_ENGINEER';
 
         case 'DELETE_SUITE':
           return effectiveRole === 'ADMIN' || effectiveRole === 'TEST_LEAD';
@@ -222,10 +224,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         case 'CREATE_PLAN':
         case 'EDIT_PLAN':
         case 'EXECUTE_RUN':
-          return effectiveRole === 'ADMIN' || effectiveRole === 'TEST_LEAD' || effectiveRole === 'TESTER';
+          return effectiveRole === 'ADMIN' || effectiveRole === 'TEST_LEAD' || effectiveRole === 'TESTER' || effectiveRole === 'AUTOMATION_ENGINEER';
 
         case 'DELETE_PLAN':
           return effectiveRole === 'ADMIN' || effectiveRole === 'TEST_LEAD';
+
+        case 'AUTOMATION_ACCESS':
+          return effectiveRole === 'ADMIN' || effectiveRole === 'AUTOMATION_ENGINEER';
 
         case 'VIEW_REPORTS':
           return true; // All authenticated roles can view reports
@@ -240,6 +245,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = effectiveRole === 'ADMIN';
   const isTestLead = effectiveRole === 'TEST_LEAD';
   const isTester = effectiveRole === 'TESTER';
+  const isAutomationEngineer = effectiveRole === 'AUTOMATION_ENGINEER' || effectiveRole === 'ADMIN';
   const isViewer = effectiveRole === 'VIEWER';
 
   return (
@@ -259,6 +265,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAdmin,
         isTestLead,
         isTester,
+        isAutomationEngineer,
       }}
     >
       {children}
