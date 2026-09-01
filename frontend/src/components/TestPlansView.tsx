@@ -342,7 +342,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
       <div className="flex-1 flex items-center justify-center p-6 text-slate-400">
         <div className="text-center space-y-3">
           <FolderKanban className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600" />
-          <p className="text-sm font-medium">Lütfen sol menüden çalışılacak bir Test Projesi seçin.</p>
+          <p className="text-sm font-medium">Lütfen üst menüden çalışılacak bir Test Projesi seçin.</p>
         </div>
       </div>
     );

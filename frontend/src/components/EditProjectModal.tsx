@@ -57,7 +57,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error(err);
-      const message = err?.response?.data?.message || err?.message || 'Test Planı güncellenirken bir hata oluştu.';
+      const message = err?.response?.data?.message || err?.message || 'Test Projesi güncellenirken bir hata oluştu.';
       setErrorMsg(Array.isArray(message) ? message.join(', ') : message);
     } finally {
       setIsSubmitting(false);
@@ -72,7 +72,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error(err);
-      const message = err?.response?.data?.message || err?.message || 'Test Planı silinirken bir hata oluştu.';
+      const message = err?.response?.data?.message || err?.message || 'Test Projesi silinirken bir hata oluştu.';
       setErrorMsg(Array.isArray(message) ? message.join(', ') : message);
     } finally {
       setIsDeleting(false);
@@ -87,7 +87,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
           <div className="flex items-center space-x-2.5">
             <FolderKanban className="w-5 h-5 text-[var(--accent-primary)]" />
             <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Test Planını Düzenle</h3>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Test Projesini Düzenle</h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">[{project.key}] {project.name}</p>
             </div>
           </div>
@@ -110,10 +110,10 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
             <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl space-y-2">
               <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 font-bold text-xs">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
-                <span>Test Planı Silme Onayı</span>
+                <span>Test Projesi Silme Onayı</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                <strong>"{project.name}"</strong> test planını ve altındaki tüm Modül, Test Case ve Test Koşusu kayıtlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz!
+                <strong>"{project.name}"</strong> test projesini ve altındaki tüm Test Planları, Modül, Test Case ve Test Koşusu kayıtlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz!
               </p>
             </div>
 
@@ -133,14 +133,14 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 className="flex items-center space-x-1.5 px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-red-600/20 disabled:opacity-50"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>{isDeleting ? 'Siliniyor...' : 'Evet, Planı Tamamen Sil'}</span>
+                <span>{isDeleting ? 'Siliniyor...' : 'Evet, Projeyi Tamamen Sil'}</span>
               </button>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Test Planı Adı</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Test Projesi Adı</label>
               <input
                 type="text"
                 required
@@ -153,7 +153,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Plan Kodu / Key
+                  Proje Kodu / Key
                 </label>
                 <input
                   type="text"
@@ -184,7 +184,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Açıklama</label>
               <textarea
                 rows={3}
-                placeholder="Test Planı hedefi ve detayları..."
+                placeholder="Test projesi hedefi ve detayları..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none shadow-sm"
@@ -198,7 +198,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 className="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>Planı Sil</span>
+                <span>Projeyi Sil</span>
               </button>
 
               <div className="flex items-center space-x-2">

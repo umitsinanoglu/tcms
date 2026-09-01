@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Hiyerarsi en tepesine Test Projesi yerlestirildi, veri olmadiginda ilk islem olarak yeni proje olusturma akisi ve sifir veri karsilama ekrani duzenlendi
 - Local veritabanındaki dummy veriler temizlendi, kullanıcı ve sistem konfigürasyonları korundu
 - Test kosum ekranlarinda PASSED secildiginde tum adimlarin otomatik passed isaretlenmesi, baslangicta hicbir sonucun on secili gelmemesi ve genel sayfa scroll duzenlemesi
 - Test kosumu silindiginde kosumla ve test sonuclariyla iliskili defectlerin de veritabanindan otomatik olarak silinmesi (Cascade Delete) saglandi.

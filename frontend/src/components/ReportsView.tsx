@@ -150,8 +150,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-400 dark:text-slate-500">
         <FileText className="w-16 h-16 mb-4 opacity-30 animate-pulse" />
-        <p className="text-lg font-medium">Lütfen bir Test Planı seçin</p>
-        <p className="text-sm text-slate-500 mt-1">Raporları ve analitik dökümleri görüntülemek için soldan bir test planı seçin.</p>
+        <p className="text-lg font-medium">Lütfen bir Test Projesi seçin</p>
+        <p className="text-sm text-slate-500 mt-1">Raporları ve analitik dökümleri görüntülemek için üst menüden bir test projesi seçin.</p>
       </div>
     );
   }

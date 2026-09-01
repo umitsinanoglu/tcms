@@ -460,7 +460,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
 
   return (
     <aside className="w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 flex flex-col h-[calc(100vh-4rem)] select-none transition-colors duration-200">
-      {/* Active Test Plan Info & Actions */}
+      {/* Active Test Project Info & Actions */}
       {selectedProject && (
         <div className="p-3.5 bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 space-y-2.5">
           <div className="flex items-center justify-between">
@@ -473,12 +473,12 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
               </h2>
             </div>
             <div className="flex items-center space-x-1.5 shrink-0">
-              <span className="text-[10px] text-slate-400 font-mono">Test Planı</span>
+              <span className="text-[10px] text-slate-400 font-mono">Test Projesi</span>
               {onEditProject && (
                 <button
                   onClick={() => onEditProject(selectedProject)}
                   className="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
-                  title="Test Planını Düzenle / Sil"
+                  title="Test Projesini Düzenle / Sil"
                 >
                   <Pencil className="w-3 h-3" />
                 </button>
@@ -486,12 +486,12 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
             </div>
           </div>
 
-          {/* Plan-level Buttons: Yeni Suite & Yeni Case */}
+          {/* Project-level Buttons: Yeni Suite & Yeni Case */}
           <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               onClick={() => onOpenNewSuite ? onOpenNewSuite() : onAddSubSuite('')}
               className="flex items-center justify-center space-x-1.5 px-2.5 py-1.5 text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-lg transition-all shadow-sm active:scale-95 cursor-pointer"
-              title="Plan Altında Yeni Suite Oluştur"
+              title="Proje Altında Yeni Suite Oluştur"
             >
               <FolderPlus className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <span>+ Yeni Suite</span>
@@ -500,7 +500,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
             <button
               onClick={() => onOpenNewCase ? onOpenNewCase() : onAddCaseInSuite('')}
               className="flex items-center justify-center space-x-1.5 px-2.5 py-1.5 text-xs font-semibold bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30 rounded-lg transition-all shadow-sm active:scale-95 cursor-pointer"
-              title="Plan Altında Yeni Case Oluştur"
+              title="Proje Altında Yeni Case Oluştur"
             >
               <FilePlus className="w-3.5 h-3.5 text-[var(--accent-primary)] shrink-0" />
               <span>+ Yeni Case</span>

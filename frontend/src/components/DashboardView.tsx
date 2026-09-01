@@ -52,6 +52,7 @@ interface DashboardViewProps {
   onOpenManualRun: () => void;
   onOpenNewCase: () => void;
   onOpenNewPlan?: () => void;
+  onOpenNewProject?: () => void;
   onSelectCase?: (testCase: TestCase) => void;
   onSelectPlan?: (plan: TestPlan) => void;
   onSelectRun?: (run: TestRun) => void;
@@ -72,6 +73,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenManualRun,
   onOpenNewCase,
   onOpenNewPlan,
+  onOpenNewProject,
   onSelectCase,
   onSelectPlan,
   onSelectRun,
@@ -185,13 +187,36 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Project fallback - Placed after all hook definitions
   if (!project) {
+    const hasProjects = projects.length > 0;
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-400 dark:text-slate-500">
-        <Layers className="w-16 h-16 mb-4 opacity-30 animate-pulse" />
-        <p className="text-xl font-semibold text-slate-700 dark:text-slate-300">Lütfen bir Test Projesi seçin</p>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-          Dashboard metriklerini ve test süreçlerini görüntülemek için üst menüden bir proje seçebilirsiniz.
-        </p>
+      <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center select-none bg-[#f8fafc] dark:bg-[#0b111e] min-h-0">
+        <div className="max-w-md w-full bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-800 rounded-3xl p-8 shadow-xl space-y-6 animate-scaleUp">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--accent-primary)]/10 dark:bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] flex items-center justify-center mx-auto shadow-inner">
+            <FolderKanban className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+              {hasProjects ? 'Lütfen Bir Test Projesi Seçin' : 'Sistemde Henüz Test Projesi Bulunmuyor'}
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              {hasProjects
+                ? 'Dashboard metriklerini, test senaryolarını ve koşum sonuçlarını görüntülemek için üst menüden bir proje seçebilir veya yeni bir test projesi oluşturabilirsiniz.'
+                : 'TCMS hiyerarşisinin en tepesinde Test Projesi yer alır. Test senaryolarınızı, test planlarınızı ve koşumlarınızı organize etmek için önce yeni bir Test Projesi oluşturmalısınız.'}
+            </p>
+          </div>
+
+          {onOpenNewProject && (
+            <button
+              type="button"
+              onClick={onOpenNewProject}
+              className="inline-flex items-center justify-center space-x-2 w-full py-3 px-5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 shadow-lg shadow-[var(--accent-dark)]/25 active:scale-98 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{hasProjects ? '+ Yeni Test Projesi Oluştur' : '+ İlk Test Projesini Oluştur'}</span>
+            </button>
+          )}
+        </div>
       </div>
     );
   }

@@ -907,6 +907,9 @@ export default function Home() {
               onOpenNewPlan={() => {
                 setIsNewTestPlanOpen(true);
               }}
+              onOpenNewProject={() => {
+                setIsNewProjectOpen(true);
+              }}
               onOpenNewCase={() => {
                 setActiveParentSuiteId(selectedSuite?.id || null);
                 setIsNewCaseOpen(true);

@@ -44,7 +44,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error(err);
-      const message = err?.response?.data?.message || err?.message || 'Test Planı oluşturulurken bir hata oluştu.';
+      const message = err?.response?.data?.message || err?.message || 'Test Projesi oluşturulurken bir hata oluştu.';
       setErrorMsg(Array.isArray(message) ? message.join(', ') : message);
     } finally {
       setIsSubmitting(false);
@@ -57,7 +57,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
           <div className="flex items-center space-x-2.5">
             <FolderKanban className="w-5 h-5 text-[var(--accent-primary)]" />
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Yeni Test Planı Oluştur</h3>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Yeni Test Projesi Oluştur</h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg">
             <X className="w-4 h-4" />
@@ -72,11 +72,11 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Test Planı Adı</label>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Test Projesi Adı</label>
             <input
               type="text"
               required
-              placeholder="Örn: E-Commerce Web & Mobile Test Planı"
+              placeholder="Örn: E-Commerce Web & Mobil"
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -95,13 +95,13 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Plan Kodu / Key (Ön Ek)
+                Proje Kodu / Key (Ön Ek)
               </label>
               <input
                 type="text"
                 required
                 maxLength={10}
-                placeholder="Örn: PLAN"
+                placeholder="Örn: PRJ"
                 value={key}
                 onChange={(e) => setKey(e.target.value.toUpperCase())}
                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-[var(--accent-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] uppercase shadow-sm"
@@ -131,7 +131,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Açıklama</label>
             <textarea
               rows={3}
-              placeholder="Test Planı hedefi, kapsamı ve detayları..."
+              placeholder="Test projesi hedefi, kapsamı ve detayları..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none shadow-sm"
@@ -153,7 +153,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
               className="flex items-center space-x-2 px-5 py-2 bg-accent-gradient hover:brightness-110 text-white text-xs font-semibold rounded-xl shadow-md shadow-[var(--accent-dark)]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>{isSubmitting ? 'Oluşturuluyor...' : 'Test Planı Oluştur'}</span>
+              <span>{isSubmitting ? 'Oluşturuluyor...' : 'Test Projesi Oluştur'}</span>
             </button>
           </div>
         </form>
