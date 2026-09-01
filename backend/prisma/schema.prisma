@@ -69,6 +69,7 @@ enum Role {
   ADMIN
   TEST_LEAD
   TESTER
+  AUTOMATION_ENGINEER
   VIEWER
 }
 

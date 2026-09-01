@@ -13,7 +13,7 @@ export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}
 
   @Post('projects/:projectId/webhooks/trigger')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.AUTOMATION_ENGINEER)
   @ApiOperation({
     summary: 'Dış Otomasyon Merkezine Webhook Fırlat (Test Koşusunu Otomatik Başlat)',
     description:
@@ -30,7 +30,7 @@ export class WebhooksController {
   }
 
   @Post('projects/:projectId/webhooks/ping')
-  @Roles(Role.ADMIN, Role.TEST_LEAD)
+  @Roles(Role.ADMIN, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Webhook Uç Noktası Bağlantı Testi (Ping)' })
   @ApiParam({ name: 'projectId', description: 'Proje UUID' })
   @ApiBody({

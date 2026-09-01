@@ -546,7 +546,7 @@ export const ReportsService = {
   },
 };
 
-export type UserRole = 'ADMIN' | 'TEST_LEAD' | 'TESTER' | 'VIEWER';
+export type UserRole = 'ADMIN' | 'TEST_LEAD' | 'TESTER' | 'AUTOMATION_ENGINEER' | 'VIEWER';
 
 export interface User {
   id: string;

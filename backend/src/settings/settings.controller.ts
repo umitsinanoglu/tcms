@@ -63,7 +63,7 @@ export class SettingsController {
 
   // 3. API Keys
   @Get('api-keys')
-  @Roles(Role.ADMIN, Role.TEST_LEAD)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Sistemdeki API anahtarlarını listele' })
   getApiKeys() {
     return this.settingsService.getApiKeys();

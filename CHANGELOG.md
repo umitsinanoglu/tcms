@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Test Otomasyon ve entegrasyonlar için Otomasyon Uzmanı (AUTOMATION_ENGINEER) rolü ve yetkilendirmesi eklendi; yetkisiz rollerde otomasyon butonları gizlendi.
 - Tekli ve coklu kosum modallarinda defect olusturuldugunda olusturulan Defect Key ve basari durum rozetinin aninda gosterilmesi saglandi.
 - Test kosumu FAILED durumunda Jira alani yanina Defect Olusturma butonu ve otomatik form doldurma destegi eklendi.
 - Azure Mavisi (Jira/Atlassian style single dominant color scheme) theme and dynamic accent variable refactoring across all views
