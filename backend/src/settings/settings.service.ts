@@ -309,4 +309,119 @@ export class SettingsService {
       message: 'Mevcut oturumunuz haricindeki tüm aktif oturumlar kapatıldı.',
     };
   }
+
+  // 5. Field & Grid Customizations
+  private getDefaultFieldCustomizations() {
+    return {
+      modules: {
+        'test-plans': {
+          moduleId: 'test-plans',
+          moduleName: 'Test Planları',
+          density: 'normal' as const,
+          defaultSortBy: 'createdAt',
+          defaultSortOrder: 'desc' as const,
+          columns: [
+            { id: 'title', label: 'Test Planı', defaultLabel: 'Test Planı', visible: true, order: 0, width: '28%', align: 'left' as const, sortable: true, isSticky: 'left' as const, isSystem: true, description: 'Test planı başlığı ve proje detayları' },
+            { id: 'type', label: 'Tür', defaultLabel: 'Tür', visible: true, order: 1, width: '90px', align: 'center' as const, sortable: true, description: 'Web / Mobil / API test kategorisi' },
+            { id: 'scope', label: 'Kapsam', defaultLabel: 'Kapsam', visible: true, order: 2, width: '18%', align: 'left' as const, sortable: true, description: 'Test kapsamı ve modül açıklaması' },
+            { id: 'scenariosCount', label: 'Senaryo', defaultLabel: 'Senaryo', visible: true, order: 3, width: '80px', align: 'center' as const, sortable: true, description: 'İçerdiği senaryo sayısı' },
+            { id: 'passRate', label: 'Başarı Oranı', defaultLabel: 'Başarı Oranı', visible: true, order: 4, width: '120px', align: 'left' as const, sortable: true, description: 'Test planı başarı yüzdesi grafiği' },
+            { id: 'status', label: 'Durum', defaultLabel: 'Durum', visible: true, order: 5, width: '100px', align: 'center' as const, sortable: true, description: 'Aktif / Tamamlandı / Pasif' },
+            { id: 'lastRun', label: 'Son Çalıştırma', defaultLabel: 'Son Çalıştırma', visible: true, order: 6, width: '130px', align: 'left' as const, sortable: true, description: 'En son koşum tarihi' },
+            { id: 'actions', label: 'İşlemler', defaultLabel: 'İşlemler', visible: true, order: 7, width: '90px', align: 'right' as const, sortable: false, isSticky: 'right' as const, isSystem: true, description: 'Koş, Düzenle, Sil aksiyonları' },
+          ],
+        },
+        'test-cases': {
+          moduleId: 'test-cases',
+          moduleName: 'Test Senaryoları',
+          density: 'normal' as const,
+          defaultSortBy: 'code',
+          defaultSortOrder: 'asc' as const,
+          columns: [
+            { id: 'code', label: 'Senaryo Kodu', defaultLabel: 'Senaryo Kodu', visible: true, order: 0, width: '110px', align: 'left' as const, sortable: true, isSticky: 'left' as const, isSystem: true, description: 'Tekil senaryo kodu (Örn: TC-101)' },
+            { id: 'title', label: 'Senaryo Başlığı', defaultLabel: 'Senaryo Başlığı', visible: true, order: 1, width: '30%', align: 'left' as const, sortable: true, isSystem: true, description: 'Test senaryosunun adı ve açıklaması' },
+            { id: 'type', label: 'Tip', defaultLabel: 'Tip', visible: true, order: 2, width: '85px', align: 'center' as const, sortable: true, description: 'Web, Mobile, API platformu' },
+            { id: 'executionType', label: 'Koşum Türü', defaultLabel: 'Koşum Türü', visible: true, order: 3, width: '95px', align: 'center' as const, sortable: true, description: 'MANUAL veya AUTOMATED' },
+            { id: 'priority', label: 'Öncelik', defaultLabel: 'Öncelik', visible: true, order: 4, width: '95px', align: 'center' as const, sortable: true, description: 'Kritik, Normal, Düşük seviyesi' },
+            { id: 'jiraStoryKey', label: 'Jira Story', defaultLabel: 'Jira Story', visible: true, order: 5, width: '110px', align: 'left' as const, sortable: true, description: 'İlişkili Jira issue anahtarı' },
+            { id: 'stepsCount', label: 'Adım Sayısı', defaultLabel: 'Adım Sayısı', visible: true, order: 6, width: '80px', align: 'center' as const, sortable: true, description: 'İçerdiği test adımı miktarı' },
+            { id: 'lastResult', label: 'Son Durum', defaultLabel: 'Son Durum', visible: true, order: 7, width: '100px', align: 'center' as const, sortable: true, description: 'En son test koşum sonucu' },
+            { id: 'updatedAt', label: 'Güncellenme', defaultLabel: 'Güncellenme', visible: false, order: 8, width: '120px', align: 'left' as const, sortable: true, description: 'Son değişiklik tarihi' },
+            { id: 'actions', label: 'İşlemler', defaultLabel: 'İşlemler', visible: true, order: 9, width: '100px', align: 'right' as const, sortable: false, isSticky: 'right' as const, isSystem: true, description: 'Koş, Düzenle, Sil butonları' },
+          ],
+        },
+        'test-runs': {
+          moduleId: 'test-runs',
+          moduleName: 'Test Koşumları',
+          density: 'normal' as const,
+          defaultSortBy: 'createdAt',
+          defaultSortOrder: 'desc' as const,
+          columns: [
+            { id: 'title', label: 'Koşum Adı', defaultLabel: 'Koşum Adı', visible: true, order: 0, width: '28%', align: 'left' as const, sortable: true, isSticky: 'left' as const, isSystem: true, description: 'Koşum başlığı ve ortam bilgisi' },
+            { id: 'status', label: 'Durum', defaultLabel: 'Durum', visible: true, order: 1, width: '110px', align: 'center' as const, sortable: true, description: 'Devam Ediyor / Tamamlandı' },
+            { id: 'environment', label: 'Ortam', defaultLabel: 'Ortam', visible: true, order: 2, width: '90px', align: 'center' as const, sortable: true, description: 'STAGING / PROD / DEV' },
+            { id: 'version', label: 'Sürüm', defaultLabel: 'Sürüm', visible: true, order: 3, width: '85px', align: 'center' as const, sortable: true, description: 'Uygulama release versiyonu' },
+            { id: 'executedBy', label: 'Koşan', defaultLabel: 'Koşan', visible: true, order: 4, width: '130px', align: 'left' as const, sortable: true, description: 'Testi başlatan uzman veya bot' },
+            { id: 'metrics', label: 'İlerleme & Sonuçlar', defaultLabel: 'İlerleme & Sonuçlar', visible: true, order: 5, width: '180px', align: 'left' as const, sortable: false, description: 'Passed / Failed / Skipped dağılım barı' },
+            { id: 'duration', label: 'Süre', defaultLabel: 'Süre', visible: false, order: 6, width: '80px', align: 'center' as const, sortable: true, description: 'Toplam koşum icra süresi' },
+            { id: 'createdAt', label: 'Tarih', defaultLabel: 'Tarih', visible: true, order: 7, width: '120px', align: 'left' as const, sortable: true, description: 'Koşum oluşturulma zamanı' },
+            { id: 'actions', label: 'İşlemler', defaultLabel: 'İşlemler', visible: true, order: 8, width: '110px', align: 'right' as const, sortable: false, isSticky: 'right' as const, isSystem: true, description: 'Detay, Yeniden Koş, Sil aksiyonları' },
+          ],
+        },
+        'defects': {
+          moduleId: 'defects',
+          moduleName: 'Defektler',
+          density: 'normal' as const,
+          defaultSortBy: 'createdAt',
+          defaultSortOrder: 'desc' as const,
+          columns: [
+            { id: 'key', label: 'Defekt No', defaultLabel: 'Defekt No', visible: true, order: 0, width: '95px', align: 'left' as const, sortable: true, isSticky: 'left' as const, isSystem: true, description: 'Tekil hata kodu (DEF-101)' },
+            { id: 'title', label: 'Defekt Başlığı', defaultLabel: 'Defekt Başlığı', visible: true, order: 1, width: '28%', align: 'left' as const, sortable: true, isSystem: true, description: 'Hata özeti ve açıklaması' },
+            { id: 'severity', label: 'Önem Derecesi', defaultLabel: 'Önem Derecesi', visible: true, order: 2, width: '110px', align: 'center' as const, sortable: true, description: 'Blocker, Critical, Major, Minor' },
+            { id: 'status', label: 'Durum', defaultLabel: 'Durum', visible: true, order: 3, width: '110px', align: 'center' as const, sortable: true, description: 'Open, In Progress, Resolved, Closed' },
+            { id: 'assignedTo', label: 'Atanan', defaultLabel: 'Atanan', visible: true, order: 4, width: '120px', align: 'left' as const, sortable: true, description: 'Sorumlu geliştirici / QA' },
+            { id: 'reportedBy', label: 'Bildiren', defaultLabel: 'Bildiren', visible: false, order: 5, width: '120px', align: 'left' as const, sortable: true, description: 'Hatayı açan kullanıcı' },
+            { id: 'environment', label: 'Ortam', defaultLabel: 'Ortam', visible: true, order: 6, width: '90px', align: 'center' as const, sortable: true, description: 'Hatanın görüldüğü ortam' },
+            { id: 'jiraBugKey', label: 'Jira Link', defaultLabel: 'Jira Link', visible: true, order: 7, width: '100px', align: 'left' as const, sortable: true, description: 'Jira Issue Referansı' },
+            { id: 'createdAt', label: 'Oluşturulma', defaultLabel: 'Oluşturulma', visible: true, order: 8, width: '120px', align: 'left' as const, sortable: true, description: 'Kayıt tarihi' },
+            { id: 'actions', label: 'İşlemler', defaultLabel: 'İşlemler', visible: true, order: 9, width: '90px', align: 'right' as const, sortable: false, isSticky: 'right' as const, isSystem: true, description: 'Görüntüle, Düzenle, Sil' },
+          ],
+        },
+      },
+      customTags: ['Regresyon', 'Smoke', 'Kritik', 'Ödeme', 'Mobil Bankacılık', 'Core Banking', 'Güvenlik', 'API'],
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  private fieldCustomizations = this.getDefaultFieldCustomizations();
+
+  getFieldCustomizations() {
+    return this.fieldCustomizations;
+  }
+
+  updateFieldCustomizations(dto: any) {
+    if (dto.modules) {
+      this.fieldCustomizations.modules = {
+        ...this.fieldCustomizations.modules,
+        ...dto.modules,
+      };
+    }
+    if (dto.customTags) {
+      this.fieldCustomizations.customTags = dto.customTags;
+    }
+    this.fieldCustomizations.updatedAt = new Date().toISOString();
+    return this.fieldCustomizations;
+  }
+
+  resetFieldCustomizations(moduleId?: string) {
+    const defaults = this.getDefaultFieldCustomizations();
+    if (moduleId && defaults.modules[moduleId]) {
+      this.fieldCustomizations.modules[moduleId] = defaults.modules[moduleId];
+    } else {
+      this.fieldCustomizations = defaults;
+    }
+    this.fieldCustomizations.updatedAt = new Date().toISOString();
+    return this.fieldCustomizations;
+  }
 }
+

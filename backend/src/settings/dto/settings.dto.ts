@@ -120,3 +120,96 @@ export class CreateApiKeyDto {
   @IsNumber()
   expiresInDays?: number;
 }
+
+export class GridColumnConfigDto {
+  @ApiProperty({ description: 'Kolon ID', example: 'title' })
+  @IsString()
+  id: string;
+
+  @ApiProperty({ description: 'Görünen Başlık', example: 'Test Planı Başlığı' })
+  @IsString()
+  label: string;
+
+  @ApiPropertyOptional({ description: 'Varsayılan Başlık', example: 'Test Planı' })
+  @IsOptional()
+  @IsString()
+  defaultLabel?: string;
+
+  @ApiProperty({ description: 'Görünürlük', example: true })
+  @IsBoolean()
+  visible: boolean;
+
+  @ApiProperty({ description: 'Sıralama İndeksi', example: 0 })
+  @IsNumber()
+  order: number;
+
+  @ApiPropertyOptional({ description: 'Kolon Genişliği', example: '220px' })
+  @IsOptional()
+  @IsString()
+  width?: string;
+
+  @ApiPropertyOptional({ description: 'Metin Hizalama', example: 'left', enum: ['left', 'center', 'right'] })
+  @IsOptional()
+  @IsString()
+  align?: 'left' | 'center' | 'right';
+
+  @ApiPropertyOptional({ description: 'Sıralanabilir mi?', example: true })
+  @IsOptional()
+  @IsBoolean()
+  sortable?: boolean;
+
+  @ApiPropertyOptional({ description: 'Sabit Kolon mu?', example: 'none', enum: ['left', 'right', 'none'] })
+  @IsOptional()
+  @IsString()
+  isSticky?: 'left' | 'right' | 'none';
+
+  @ApiPropertyOptional({ description: 'Sistem Kolonu mu?', example: false })
+  @IsOptional()
+  @IsBoolean()
+  isSystem?: boolean;
+
+  @ApiPropertyOptional({ description: 'Alan Açıklaması' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+
+export class ModuleGridConfigDto {
+  @ApiProperty({ description: 'Modül ID', example: 'test-plans' })
+  @IsString()
+  moduleId: string;
+
+  @ApiProperty({ description: 'Modül Adı', example: 'Test Planları' })
+  @IsString()
+  moduleName: string;
+
+  @ApiProperty({ description: 'Tablo Yoğunluğu', example: 'normal', enum: ['comfortable', 'normal', 'compact'] })
+  @IsString()
+  density: 'comfortable' | 'normal' | 'compact';
+
+  @ApiPropertyOptional({ description: 'Varsayılan Sıralama Kolonu', example: 'createdAt' })
+  @IsOptional()
+  @IsString()
+  defaultSortBy?: string;
+
+  @ApiPropertyOptional({ description: 'Varsayılan Sıralama Yönü', example: 'desc', enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsString()
+  defaultSortOrder?: 'asc' | 'desc';
+
+  @ApiProperty({ description: 'Kolon Yapılandırmaları', type: [GridColumnConfigDto] })
+  @IsArray()
+  columns: GridColumnConfigDto[];
+}
+
+export class UpdateFieldCustomizationDto {
+  @ApiProperty({ description: 'Modül bazlı grid ayarları' })
+  @IsOptional()
+  modules?: Record<string, ModuleGridConfigDto>;
+
+  @ApiPropertyOptional({ description: 'Özel Tanımlı Etiketler', example: ['Regresyon', 'Smoke', 'Kritik'] })
+  @IsOptional()
+  @IsArray()
+  customTags?: string[];
+}
+

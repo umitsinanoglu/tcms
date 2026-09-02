@@ -48,8 +48,30 @@ interface ManualRunModalProps {
   projectId: string;
   testCases: TestCase[];
   initialTestPlan?: TestPlan | null;
+  initialSelectedCaseIds?: string[];
   onSuccess?: (run?: TestRun) => void;
+  onNavigateToRuns?: () => void;
 }
+
+export const getPlanScenarioIds = (plan: TestPlan | null | undefined): string[] => {
+  if (!plan) return [];
+  if (plan.cases && Array.isArray(plan.cases) && plan.cases.length > 0) {
+    const ids = plan.cases.map((c: any) => c.testCaseId || c.id).filter(Boolean);
+    if (ids.length > 0) return ids;
+  }
+  if (typeof window !== 'undefined' && plan.id) {
+    try {
+      const stored = localStorage.getItem(`tcms_plan_cases_${plan.id}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+  }
+  return [];
+};
 
 type WizardStep = 'PLAN_SELECT' | 'CASE_SELECT' | 'EXECUTION' | 'SUMMARY';
 type StepStatus = 'PASSED' | 'FAILED' | 'BLOCKED' | 'NONE';
@@ -78,10 +100,12 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
   projectId,
   testCases,
   initialTestPlan = null,
+  initialSelectedCaseIds,
   onSuccess,
+  onNavigateToRuns,
 }) => {
   const { currentUser } = useAuth();
-  const [wizardStep, setWizardStep] = useState<WizardStep>('PLAN_SELECT');
+  const [wizardStep, setWizardStep] = useState<WizardStep>('CASE_SELECT');
   const wasOpenRef = useRef(false);
 
   // Test Plans State
@@ -102,6 +126,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
   // Case Selection State
   const [selectedCaseIds, setSelectedCaseIds] = useState<string[]>([]);
   const [caseFilterSearch, setCaseFilterSearch] = useState('');
+  const [caseFilterTab, setCaseFilterTab] = useState<'ALL' | 'SELECTED' | 'UNSELECTED'>('ALL');
 
   // Execution Runner State
   const [runCases, setRunCases] = useState<TestCase[]>([]);
@@ -176,23 +201,63 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
   useEffect(() => {
     if (isOpen && !wasOpenRef.current && projectId) {
       wasOpenRef.current = true;
+
+      // Immediate prefill if initialTestPlan or initialSelectedCaseIds are provided
+      if (initialSelectedCaseIds && initialSelectedCaseIds.length > 0) {
+        setSelectedCaseIds(initialSelectedCaseIds);
+      } else if (initialTestPlan) {
+        const pIds = getPlanScenarioIds(initialTestPlan);
+        const validIds = pIds.length > 0 ? pIds.filter((id) => testCases.some((tc) => tc.id === id)) : [];
+        setSelectedCaseIds(validIds);
+      } else {
+        setSelectedCaseIds([]);
+      }
+
+      if (initialTestPlan) {
+        setSelectedPlanId(initialTestPlan.id);
+        setTitle(`${initialTestPlan.title} - Koşum`);
+        setVersion(initialTestPlan.version || 'v1.2.0 (106)');
+        setEnvironment(initialTestPlan.environment || 'UAT');
+        setIsCreatingNewPlan(false);
+      }
+
       TestPlansService.getAllByProject(projectId)
         .then((data) => {
-          setPlans(data || []);
+          const planList = data || [];
+          setPlans(planList);
+
           if (initialTestPlan) {
-            setSelectedPlanId(initialTestPlan.id);
-            setTitle(`${initialTestPlan.title} - Koşum`);
-            setVersion(initialTestPlan.version || 'v1.2.0 (106)');
-            setEnvironment(initialTestPlan.environment || 'UAT');
-          } else if (data && data.length > 0) {
-            const firstActive = data.find((p) => p.status === 'ACTIVE') || data[0];
+            const found = planList.find((p) => p.id === initialTestPlan.id) || initialTestPlan;
+            setSelectedPlanId(found.id);
+            setTitle(`${found.title} - Koşum`);
+            setVersion(found.version || 'v1.2.0 (106)');
+            setEnvironment(found.environment || 'UAT');
+            setIsCreatingNewPlan(false);
+
+            if (!initialSelectedCaseIds || initialSelectedCaseIds.length === 0) {
+              const pIds = getPlanScenarioIds(found);
+              const validIds = pIds.length > 0 ? pIds.filter((id) => testCases.some((tc) => tc.id === id)) : [];
+              setSelectedCaseIds(validIds);
+            }
+          } else if (planList.length > 0) {
+            const firstActive = planList.find((p) => p.status === 'ACTIVE') || planList[0];
             setSelectedPlanId(firstActive.id);
             setTitle(`${firstActive.title} - Koşum`);
             setVersion(firstActive.version || 'v1.2.0 (106)');
             setEnvironment(firstActive.environment || 'UAT');
+            setIsCreatingNewPlan(false);
+
+            if (!initialSelectedCaseIds || initialSelectedCaseIds.length === 0) {
+              const pIds = getPlanScenarioIds(firstActive);
+              const validIds = pIds.length > 0 ? pIds.filter((id) => testCases.some((tc) => tc.id === id)) : [];
+              setSelectedCaseIds(validIds);
+            }
           } else {
             setIsCreatingNewPlan(true);
             setTitle('Sprint 1 - Kapsamlı Test Koşumu');
+            if (!initialSelectedCaseIds || initialSelectedCaseIds.length === 0) {
+              setSelectedCaseIds(testCases.map((c) => c.id));
+            }
           }
         })
         .catch(() => {});
@@ -201,9 +266,9 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       if (currentUser?.name) setExecutedBy(currentUser.name);
       if (currentUser?.email) setTesterEmail(currentUser.email);
 
-      // Select all provided cases by default
-      setSelectedCaseIds(testCases.map((c) => c.id));
-      setWizardStep('PLAN_SELECT');
+      setWizardStep('CASE_SELECT');
+      setCaseFilterTab('ALL');
+      setCaseFilterSearch('');
       setCaseStates({});
       setSummaryData(null);
       setActiveRun(null);
@@ -213,9 +278,9 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     } else if (!isOpen) {
       wasOpenRef.current = false;
     }
-  }, [isOpen, projectId, initialTestPlan, currentUser, testCases]);
+  }, [isOpen, projectId, initialTestPlan, initialSelectedCaseIds, currentUser, testCases]);
 
-  // When selected plan changes, sync version and environment
+  // When selected plan changes, sync version, environment, and plan scenarios
   const handleSelectPlan = (planId: string) => {
     setSelectedPlanId(planId);
     setIsCreatingNewPlan(false);
@@ -224,6 +289,9 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       setTitle(`${found.title} - Koşum`);
       setVersion(found.version || 'v1.2.0 (106)');
       setEnvironment(found.environment || 'UAT');
+      const pIds = getPlanScenarioIds(found);
+      const validIds = pIds.length > 0 ? pIds.filter((id) => testCases.some((tc) => tc.id === id)) : [];
+      setSelectedCaseIds(validIds);
     }
   };
 
@@ -797,7 +865,12 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                onClose();
+                if (wizardStep === 'SUMMARY' && onNavigateToRuns) {
+                  onNavigateToRuns();
+                }
+              }}
               className="text-slate-400 hover:text-slate-700 dark:hover:white p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title="Kapat"
             >
@@ -841,213 +914,174 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
           </div>
         )}
 
-        {/* STEP 1: TEST PLAN & SCOPE SELECTION */}
-        {wizardStep === 'PLAN_SELECT' && (
-          <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
-            <div className="space-y-3">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                Test Planı Belirleyin <span className="text-rose-500">*</span>
-              </label>
-
-              {/* Toggle Plan Source: Existing vs New */}
-              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800/60 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setIsCreatingNewPlan(false)}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                    !isCreatingNewPlan
-                      ? 'bg-white dark:bg-[#151b28] text-[var(--accent-primary)] shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                  }`}
-                >
-                  <ClipboardList className="w-3.5 h-3.5" />
-                  <span>Mevcut Test Planını Seç ({plans.length})</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsCreatingNewPlan(true)}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                    isCreatingNewPlan
-                      ? 'bg-white dark:bg-[#151b28] text-[var(--accent-primary)] shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                  }`}
-                >
-                  <span>+ Yeni Test Planı Tanımla</span>
-                </button>
-              </div>
-
-              {!isCreatingNewPlan ? (
-                plans.length > 0 ? (
-                  <div className="space-y-1.5">
-                    <label className="block text-[11px] font-semibold text-slate-500">
-                      Aktif Test Planı Listesi
-                    </label>
-                    <select
-                      value={selectedPlanId}
-                      onChange={(e) => handleSelectPlan(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30"
-                    >
-                      {plans.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.title} ({p.version || 'v1.0.0'} • {p.environment || 'STAGING'})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300">
-                    Henüz kayıtlı bir test planı bulunamadı. Yeni bir plan oluşturularak devam edilecektir.
-                  </div>
-                )
-              ) : (
-                <div className="space-y-3 p-4 rounded-xl border border-dashed border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/5">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Yeni Test Planı Başlığı <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={newPlanTitle}
-                      onChange={(e) => setNewPlanTitle(e.target.value)}
-                      placeholder="Örn: Sprint 24 Regression Planı"
-                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Açıklama & Notlar
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={newPlanScope}
-                      onChange={(e) => setNewPlanScope(e.target.value)}
-                      placeholder="Test planı kapsamı, hedefler..."
-                      className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Target Execution Environment & Parameters */}
-            <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                Hedef Koşum Parametreleri
-              </label>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                    🌐 Hedef Ortam
-                  </label>
-                  <select
-                    value={environment}
-                    onChange={(e) => setEnvironment(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
-                  >
-                    <option value="UAT">UAT</option>
-                    <option value="DEV">DEV</option>
-                    <option value="TEST">TEST</option>
-                    <option value="STAGING">STAGING</option>
-                    <option value="PROD">PROD</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                    📦 Koşum Versiyonu
-                  </label>
-                  <input
-                    type="text"
-                    value={version}
-                    onChange={(e) => setVersion(e.target.value)}
-                    placeholder="v1.0.0"
-                    className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                    👤 Yürüten Tester
-                  </label>
-                  <input
-                    type="text"
-                    value={executedBy}
-                    onChange={(e) => setExecutedBy(e.target.value)}
-                    placeholder="QA Lead"
-                    className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Step 1 Footer Action */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                Vazgeç
-              </button>
-              <button
-                type="button"
-                onClick={() => setWizardStep('CASE_SELECT')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
-              >
-                <span>Senaryo Seçimine İlerle ({selectedCaseIds.length} Senaryo)</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: TEST CASES SELECTION */}
+        {/* STEP 1 / SENARYO DÜZENLEME & KOŞUM BAŞLATMA MODU */}
         {wizardStep === 'CASE_SELECT' && (
           <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1 flex flex-col min-h-0">
-            <div className="flex items-center justify-between gap-3">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            {/* Top Compact Plan & Execution Parameters Strip */}
+            <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 items-center text-xs shrink-0">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                  📋 Test Planı
+                </label>
+                {plans.length > 0 ? (
+                  <select
+                    value={selectedPlanId}
+                    onChange={(e) => handleSelectPlan(e.target.value)}
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] truncate"
+                  >
+                    {plans.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.title}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Koşum Başlığı"
+                    className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 dark:text-slate-100"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                  🌐 Hedef Ortam
+                </label>
+                <select
+                  value={environment}
+                  onChange={(e) => setEnvironment(e.target.value)}
+                  className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                >
+                  <option value="UAT">UAT</option>
+                  <option value="DEV">DEV</option>
+                  <option value="TEST">TEST</option>
+                  <option value="STAGING">STAGING</option>
+                  <option value="PROD">PROD</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                  📦 Koşum Versiyonu
+                </label>
                 <input
                   type="text"
-                  placeholder="Senaryo ara..."
-                  value={caseFilterSearch}
-                  onChange={(e) => setCaseFilterSearch(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200"
+                  value={version}
+                  onChange={(e) => setVersion(e.target.value)}
+                  placeholder="v1.0.0"
+                  className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 font-mono font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 />
               </div>
 
-              <div className="flex items-center space-x-2 text-xs">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                  👤 Yürüten Tester
+                </label>
+                <input
+                  type="text"
+                  value={executedBy}
+                  onChange={(e) => setExecutedBy(e.target.value)}
+                  placeholder="Tester Adı"
+                  className="w-full bg-white dark:bg-[#151b28] border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] truncate"
+                />
+              </div>
+            </div>
+
+            {/* Filter Tabs & Search Bar */}
+            <div className="space-y-3 shrink-0">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="relative flex-1 min-w-[220px] max-w-sm">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Senaryo ara (kod, başlık, açıklama)..."
+                    value={caseFilterSearch}
+                    onChange={(e) => setCaseFilterSearch(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={handleSelectAllCases}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer"
+                  >
+                    Tümünü Seç
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeselectAllCases}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer"
+                  >
+                    Temizle
+                  </button>
+                  <span className="font-mono text-xs font-bold text-[var(--accent-primary)] px-2">
+                    {selectedCaseIds.length} / {testCases.length} Seçili
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Filter Tabs */}
+              <div className="flex items-center space-x-1.5 p-1 bg-slate-100 dark:bg-slate-800/60 rounded-xl w-fit text-xs">
                 <button
                   type="button"
-                  onClick={handleSelectAllCases}
-                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-semibold"
+                  onClick={() => setCaseFilterTab('ALL')}
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                    caseFilterTab === 'ALL'
+                      ? 'bg-white dark:bg-[#151b28] text-slate-900 dark:text-slate-100 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
                 >
-                  Tümünü Seç
+                  Tüm Senaryolar ({testCases.length})
                 </button>
                 <button
                   type="button"
-                  onClick={handleDeselectAllCases}
-                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-semibold"
+                  onClick={() => setCaseFilterTab('SELECTED')}
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                    caseFilterTab === 'SELECTED'
+                      ? 'bg-white dark:bg-[#151b28] text-emerald-600 dark:text-emerald-400 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
                 >
-                  Temizle
+                  <span>Seçili Olanlar</span>
+                  <span className="font-mono text-[11px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    {selectedCaseIds.length}
+                  </span>
                 </button>
-                <span className="font-mono text-xs font-bold text-[var(--accent-primary)] px-2">
-                  {selectedCaseIds.length} / {testCases.length} Seçili
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setCaseFilterTab('UNSELECTED')}
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                    caseFilterTab === 'UNSELECTED'
+                      ? 'bg-white dark:bg-[#151b28] text-slate-900 dark:text-slate-100 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Seçilmeyenler ({testCases.length - selectedCaseIds.length})
+                </button>
               </div>
             </div>
 
             {/* Test Cases Checkbox List */}
-            <div className="flex-1 overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-xl p-2 space-y-1 bg-slate-50/50 dark:bg-slate-900/30">
+            <div className="flex-1 overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-xl p-2 space-y-1 bg-slate-50/50 dark:bg-slate-900/30 min-h-[220px]">
               {testCases
-                .filter((tc) =>
-                  caseFilterSearch
-                    ? tc.title.toLowerCase().includes(caseFilterSearch.toLowerCase()) ||
-                      tc.code.toLowerCase().includes(caseFilterSearch.toLowerCase())
-                    : true
-                )
+                .filter((tc) => {
+                  const isChecked = selectedCaseIds.includes(tc.id);
+                  if (caseFilterTab === 'SELECTED' && !isChecked) return false;
+                  if (caseFilterTab === 'UNSELECTED' && isChecked) return false;
+                  if (caseFilterSearch) {
+                    const q = caseFilterSearch.toLowerCase();
+                    const matchTitle = tc.title.toLowerCase().includes(q);
+                    const matchCode = tc.code.toLowerCase().includes(q);
+                    const matchDesc = tc.description ? tc.description.toLowerCase().includes(q) : false;
+                    if (!matchTitle && !matchCode && !matchDesc) return false;
+                  }
+                  return true;
+                })
                 .map((tc) => {
                   const isChecked = selectedCaseIds.includes(tc.id);
                   return (
@@ -1082,15 +1116,14 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                 })}
             </div>
 
-            {/* Step 2 Footer Action */}
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            {/* Footer Action Bar */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
               <button
                 type="button"
-                onClick={() => setWizardStep('PLAN_SELECT')}
-                className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                <span>Geri: Plan Seçimi</span>
+                Vazgeç
               </button>
 
               <button
@@ -1100,7 +1133,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-600/25 active:scale-98 disabled:opacity-50 cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 fill-white" />
-                <span>{isSubmitting ? 'Başlatılıyor...' : `Koşumu Başlat (${selectedCaseIds.length} Case)`}</span>
+                <span>{isSubmitting ? 'Başlatılıyor...' : `Koşumu Başlat (${selectedCaseIds.length} Senaryo)`}</span>
               </button>
             </div>
           </div>
@@ -1783,7 +1816,12 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
             <div className="pt-4">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => {
+                  onClose();
+                  if (onNavigateToRuns) {
+                    onNavigateToRuns();
+                  }
+                }}
                 className="px-8 py-2.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
               >
                 Kapat ve Koşum Geçmişine Dön

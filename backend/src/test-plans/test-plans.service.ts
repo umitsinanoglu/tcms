@@ -30,6 +30,14 @@ export class TestPlansService {
           scope: item.scope,
           requirements: item.requirements,
           projectId: project.id,
+          cases: item.caseIds && item.caseIds.length > 0 ? {
+            create: item.caseIds.map((cId) => ({
+              testCaseId: cId,
+            })),
+          } : undefined,
+        },
+        include: {
+          cases: { select: { testCaseId: true } },
         },
       });
       createdPlans.push(plan);
@@ -50,20 +58,30 @@ export class TestPlansService {
       throw new NotFoundException(`Project with ID ${createTestPlanDto.projectId} not found`);
     }
 
+    const { caseIds, ...planData } = createTestPlanDto;
+
     return this.prisma.testPlan.create({
       data: {
-        title: createTestPlanDto.title,
-        description: createTestPlanDto.description,
-        version: createTestPlanDto.version || 'v1.0.0',
-        environment: createTestPlanDto.environment || 'STAGING',
-        status: createTestPlanDto.status || 'ACTIVE',
-        scope: createTestPlanDto.scope,
-        requirements: createTestPlanDto.requirements,
-        projectId: createTestPlanDto.projectId,
+        title: planData.title,
+        description: planData.description,
+        version: planData.version || 'v1.0.0',
+        environment: planData.environment || 'STAGING',
+        status: planData.status || 'ACTIVE',
+        scope: planData.scope,
+        requirements: planData.requirements,
+        projectId: planData.projectId,
+        cases: caseIds && caseIds.length > 0 ? {
+          create: caseIds.map((cId) => ({
+            testCaseId: cId,
+          })),
+        } : undefined,
       },
       include: {
+        cases: {
+          select: { testCaseId: true },
+        },
         _count: {
-          select: { testRuns: true },
+          select: { testRuns: true, cases: true },
         },
       },
     });
@@ -74,7 +92,10 @@ export class TestPlansService {
       where: { projectId },
       include: {
         _count: {
-          select: { testRuns: true },
+          select: { testRuns: true, cases: true },
+        },
+        cases: {
+          select: { testCaseId: true },
         },
         project: {
           select: {
@@ -116,6 +137,22 @@ export class TestPlansService {
             key: true,
           },
         },
+        cases: {
+          include: {
+            testCase: {
+              include: {
+                suite: true,
+                steps: {
+                  orderBy: { stepNumber: 'asc' },
+                },
+                results: {
+                  orderBy: { executedAt: 'desc' },
+                  take: 1,
+                },
+              },
+            },
+          },
+        },
         testRuns: {
           include: {
             _count: { select: { results: true } },
@@ -130,7 +167,7 @@ export class TestPlansService {
           orderBy: { createdAt: 'desc' },
         },
         _count: {
-          select: { testRuns: true },
+          select: { testRuns: true, cases: true },
         },
       },
     });
@@ -144,24 +181,104 @@ export class TestPlansService {
 
   async update(id: string, updateTestPlanDto: UpdateTestPlanDto) {
     await this.findOne(id);
+    const { caseIds, ...planData } = updateTestPlanDto;
 
-    return this.prisma.testPlan.update({
-      where: { id },
-      data: {
-        title: updateTestPlanDto.title,
-        description: updateTestPlanDto.description,
-        version: updateTestPlanDto.version,
-        environment: updateTestPlanDto.environment,
-        status: updateTestPlanDto.status,
-        scope: updateTestPlanDto.scope,
-        requirements: updateTestPlanDto.requirements,
-      },
-      include: {
-        _count: {
-          select: { testRuns: true },
+    return this.prisma.$transaction(async (tx) => {
+      if (caseIds !== undefined) {
+        // Replace existing cases with new ones
+        await tx.testPlanCase.deleteMany({
+          where: { testPlanId: id },
+        });
+
+        if (caseIds.length > 0) {
+          await tx.testPlanCase.createMany({
+            data: caseIds.map((cId) => ({
+              testPlanId: id,
+              testCaseId: cId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      return tx.testPlan.update({
+        where: { id },
+        data: {
+          title: planData.title,
+          description: planData.description,
+          version: planData.version,
+          environment: planData.environment,
+          status: planData.status,
+          scope: planData.scope,
+          requirements: planData.requirements,
         },
+        include: {
+          cases: {
+            select: { testCaseId: true },
+          },
+          _count: {
+            select: { testRuns: true, cases: true },
+          },
+        },
+      });
+    });
+  }
+
+  async syncCases(id: string, caseIds: string[]) {
+    await this.findOne(id);
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.testPlanCase.deleteMany({
+        where: { testPlanId: id },
+      });
+
+      if (caseIds.length > 0) {
+        await tx.testPlanCase.createMany({
+          data: caseIds.map((cId) => ({
+            testPlanId: id,
+            testCaseId: cId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      return tx.testPlan.findUnique({
+        where: { id },
+        include: {
+          cases: { select: { testCaseId: true } },
+          _count: { select: { cases: true, testRuns: true } },
+        },
+      });
+    });
+  }
+
+  async addCases(id: string, caseIds: string[]) {
+    await this.findOne(id);
+
+    if (caseIds.length > 0) {
+      await this.prisma.testPlanCase.createMany({
+        data: caseIds.map((cId) => ({
+          testPlanId: id,
+          testCaseId: cId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    return this.findOne(id);
+  }
+
+  async removeCase(id: string, caseId: string) {
+    await this.findOne(id);
+
+    await this.prisma.testPlanCase.deleteMany({
+      where: {
+        testPlanId: id,
+        testCaseId: caseId,
       },
     });
+
+    return { success: true };
   }
 
   async remove(id: string) {

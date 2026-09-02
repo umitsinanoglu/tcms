@@ -106,4 +106,26 @@ export class SettingsController {
   terminateAllOtherSessions(@CurrentUser() user: RequestUser) {
     return this.settingsService.terminateAllOtherSessions(user?.id);
   }
+
+  // 5. Field & Grid Customizations
+  @Get('field-customizations')
+  @ApiOperation({ summary: 'Tüm modüllerin alan ve kolon özelleştirme yapılandırmasını getir' })
+  getFieldCustomizations() {
+    return this.settingsService.getFieldCustomizations();
+  }
+
+  @Patch('field-customizations')
+  @Roles(Role.ADMIN, Role.TEST_LEAD)
+  @ApiOperation({ summary: 'Alan ve kolon özelleştirme yapılandırmasını güncelle' })
+  updateFieldCustomizations(@Body() dto: any) {
+    return this.settingsService.updateFieldCustomizations(dto);
+  }
+
+  @Post('field-customizations/reset')
+  @Roles(Role.ADMIN, Role.TEST_LEAD)
+  @ApiOperation({ summary: 'Alan özelleştirmelerini fabrika varsayılanlarına sıfırla' })
+  resetFieldCustomizations(@Body('moduleId') moduleId?: string) {
+    return this.settingsService.resetFieldCustomizations(moduleId);
+  }
 }
+

@@ -23,6 +23,9 @@ import {
 } from 'lucide-react';
 import { ExcelImportModal } from './ExcelImportModal';
 import { downloadTestCaseTemplate, exportTestCasesToExcel } from '@/utils/excelUtils';
+import { useCustomization } from '@/context/CustomizationContext';
+import { ColumnCustomizerMenu } from './ColumnCustomizerMenu';
+import { useNavigation } from '@/context/NavigationContext';
 
 interface TestScenariosViewProps {
   project: Project | null;
@@ -51,6 +54,12 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
   onCasesChange,
 }) => {
   const { can } = useAuth();
+  const { pushState } = useNavigation();
+  const { getVisibleColumns, getModuleConfig, getDensityClasses } = useCustomization();
+  const visibleCols = getVisibleColumns('test-cases');
+  const moduleConfig = getModuleConfig('test-cases');
+  const densityCls = getDensityClasses(moduleConfig.density);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
@@ -145,6 +154,20 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
               <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               <span className="hidden sm:inline">Excel'e Aktar</span>
             </button>
+            
+            {/* Column Customizer Dropdown */}
+            <ColumnCustomizerMenu
+              moduleId="test-cases"
+              onOpenAdvancedSettings={() =>
+                pushState({
+                  tab: 'SETTINGS',
+                  projectId: project?.id || null,
+                  suiteId: null,
+                  caseId: null,
+                  label: 'Alan Özelleştirme',
+                })
+              }
+            />
 
             {/* Import Cases */}
             <button
@@ -179,40 +202,38 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-              Toplam Test Senaryosu
+              Toplam Senaryo
             </span>
             <div className="flex items-baseline space-x-1.5">
               <span className="text-lg font-black text-slate-900 dark:text-slate-100 leading-none">
                 {metrics.total}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium">Havuzda</span>
+              <span className="text-[10px] text-slate-400 font-medium">Senaryo</span>
             </div>
           </div>
         </div>
 
-        {/* Card 2: Jira Bağlantılı Senaryolar */}
+        {/* Card 2: Jira Kapsamı */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
             <Sparkles className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-              Jira İzlenebilirlik
+              Jira Kapsamı
             </span>
             <div className="flex items-baseline space-x-1.5">
               <span className="text-lg font-black text-slate-900 dark:text-slate-100 leading-none">
                 %{metrics.jiraPercentage}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium">
-                {metrics.jiraLinkedCount} Bağlantılı
-              </span>
+              <span className="text-[10px] text-slate-400 font-medium">({metrics.jiraLinkedCount})</span>
             </div>
           </div>
         </div>
 
-        {/* Card 3: Toplam Tanımlı Adımlar */}
+        {/* Card 3: Toplam Adım */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
             <ListOrdered className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1">
@@ -272,18 +293,21 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
             <table className="w-full text-left text-xs border-collapse min-w-full">
               <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
                 <tr className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                  <th className="py-2.5 px-4 w-28 whitespace-nowrap">KOD</th>
-                  <th className="py-2.5 px-3 min-w-[220px] whitespace-nowrap">TEST SENARYOSU</th>
-                  <th className="py-2.5 px-3 w-36 whitespace-nowrap">MODÜL</th>
-                  <th className="py-2.5 px-3 w-32 whitespace-nowrap">JIRA BAĞLANTISI</th>
-                  <th className="py-2.5 px-3 w-28 whitespace-nowrap">ADIM SAYISI</th>
-                  <th className="py-2.5 px-4 text-right w-24 whitespace-nowrap">İŞLEMLER</th>
+                  {visibleCols.map((col) => (
+                    <th
+                      key={col.id}
+                      style={{ width: col.width || 'auto' }}
+                      className={`${densityCls.pyTh} px-4 whitespace-nowrap text-${col.align || 'left'}`}
+                    >
+                      {col.label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {paginatedCases.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-16 text-center text-slate-400">
+                    <td colSpan={visibleCols.length || 6} className="py-16 text-center text-slate-400">
                       <FileText className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
                       <p className="font-semibold text-slate-700 dark:text-slate-300">
                         Test senaryosu bulunamadı.
@@ -311,106 +335,198 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                         onClick={() => onSelectCase(tc)}
                         className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
                       >
-                        {/* Code Badge */}
-                        <td className="py-2.5 px-4 whitespace-nowrap">
-                          <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                            {tc.code}
-                          </span>
-                        </td>
+                        {visibleCols.map((col) => {
+                          const alignClass = `text-${col.align || 'left'}`;
 
-                        {/* Title & Description */}
-                        <td className="py-2.5 px-3 min-w-0 max-w-xl whitespace-nowrap">
-                          <div className="min-w-0">
-                            <p
-                              className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate text-xs"
-                              title={tc.description ? `${tc.title}\n\nAçıklama: ${tc.description}` : tc.title}
-                            >
-                              {tc.title}
-                            </p>
-                            {tc.description && (
-                              <p
-                                className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5"
-                                title={tc.description}
-                              >
-                                {tc.description}
-                              </p>
-                            )}
-                          </div>
-                        </td>
+                          if (col.id === 'code') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} px-4 whitespace-nowrap ${alignClass}`}>
+                                <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                                  {tc.code}
+                                </span>
+                              </td>
+                            );
+                          }
 
-                        {/* Module */}
-                        <td className="py-2.5 px-3 whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">
-                          <div className="flex items-center space-x-1.5 truncate max-w-[140px]" title={tc.suite?.name || 'Ana Modül'}>
-                            <Folder className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                            <span className="truncate">{tc.suite?.name || 'Ana Modül'}</span>
-                          </div>
-                        </td>
+                          if (col.id === 'title') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} px-3 min-w-0 max-w-xl whitespace-nowrap ${alignClass}`}>
+                                <div className="min-w-0">
+                                  <p
+                                    className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate text-xs"
+                                    title={tc.description ? `${tc.title}\n\nAçıklama: ${tc.description}` : tc.title}
+                                  >
+                                    {tc.title}
+                                  </p>
+                                  {tc.description && (
+                                    <p
+                                      className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5"
+                                      title={tc.description}
+                                    >
+                                      {tc.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          }
 
-                        {/* Jira Link */}
-                        <td className="py-2.5 px-3 whitespace-nowrap">
-                          {tc.jiraStoryKey ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-mono text-[10px] font-bold">
-                              {tc.jiraStoryKey}
-                            </span>
-                          ) : (
-                            <span className="text-slate-300 dark:text-slate-600 text-[11px] font-mono">
-                              -
-                            </span>
-                          )}
-                        </td>
+                          if (col.id === 'type') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                  {tc.type || 'WEB'}
+                                </span>
+                              </td>
+                            );
+                          }
 
-                        {/* Steps Count */}
-                        <td className="py-2.5 px-3 whitespace-nowrap text-slate-600 dark:text-slate-400 font-mono text-[11px]">
-                          {tc.steps?.length || 0} Adım
-                        </td>
+                          if (col.id === 'executionType') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
+                                <span
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                    tc.executionType === 'AUTOMATION' || (tc.executionType as string) === 'AUTOMATED'
+                                      ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+                                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                  }`}
+                                >
+                                  {tc.executionType || 'MANUAL'}
+                                </span>
+                              </td>
+                            );
+                          }
 
-                        {/* Actions (Quick Run, Edit, Delete) */}
-                        <td className="py-2.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end space-x-1">
-                            {/* Quick Run Scenario */}
-                            {(onOpenQuickRun || onRunSingleCase) && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (onOpenQuickRun) onOpenQuickRun(tc);
-                                  else if (onRunSingleCase) onRunSingleCase(tc);
-                                }}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 transition-all cursor-pointer shadow-2xs"
-                                title="Bu Senaryoyu Hızlı Koş"
-                                aria-label="Hızlı Koş"
-                              >
-                                <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
-                                <span>Hızlı Koş</span>
-                              </button>
-                            )}
+                          if (col.id === 'priority') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
+                                <span
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                    tc.priority === 'BLOCKER' || tc.priority === 'CRITICAL'
+                                      ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
+                                      : tc.priority === 'NORMAL'
+                                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
+                                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                  }`}
+                                >
+                                  {tc.priority || 'NORMAL'}
+                                </span>
+                              </td>
+                            );
+                          }
 
-                            {/* Edit Scenario */}
-                            <button
-                              type="button"
-                              onClick={() => onSelectCase(tc)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              title="Senaryoyu Düzenle"
-                              aria-label="Senaryoyu Düzenle"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
+                          if (col.id === 'jiraStoryKey') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
+                                {tc.jiraStoryKey ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-mono text-[10px] font-bold">
+                                    {tc.jiraStoryKey}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300 dark:text-slate-600 text-[11px] font-mono">
+                                    -
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          }
 
-                            {/* Delete Scenario */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm(`'${tc.code} - ${tc.title}' senaryosunu silmek istediğinize emin misiniz?`)) {
-                                  onDeleteCase(tc.id);
-                                }
-                              }}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors cursor-pointer"
-                              title="Senaryoyu Sil"
-                              aria-label="Senaryoyu Sil"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
+                          if (col.id === 'stepsCount') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap text-slate-600 dark:text-slate-400 font-mono text-[11px] ${alignClass}`}>
+                                {tc.steps?.length || 0} Adım
+                              </td>
+                            );
+                          }
+
+                          if (col.id === 'lastResult') {
+                            const lastRes = tc.results && tc.results.length > 0 ? tc.results[0] : null;
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
+                                {lastRes ? (
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                      lastRes.status === 'PASSED'
+                                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                                        : lastRes.status === 'FAILED'
+                                        ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                                        : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                                    }`}
+                                  >
+                                    {lastRes.status}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 text-[10px]">Koşulmadı</span>
+                                )}
+                              </td>
+                            );
+                          }
+
+                          if (col.id === 'updatedAt') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap text-slate-500 dark:text-slate-400 text-[11px] font-mono ${alignClass}`}>
+                                {tc.updatedAt ? new Date(tc.updatedAt).toLocaleDateString('tr-TR') : '—'}
+                              </td>
+                            );
+                          }
+
+                          if (col.id === 'actions') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} px-4 text-right whitespace-nowrap`} onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end space-x-1">
+                                  {/* Quick Run Scenario */}
+                                  {(onOpenQuickRun || onRunSingleCase) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (onOpenQuickRun) onOpenQuickRun(tc);
+                                        else if (onRunSingleCase) onRunSingleCase(tc);
+                                      }}
+                                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 transition-all cursor-pointer shadow-2xs"
+                                      title="Bu Senaryoyu Hızlı Koş"
+                                      aria-label="Hızlı Koş"
+                                    >
+                                      <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                      <span>Hızlı Koş</span>
+                                    </button>
+                                  )}
+
+                                  {/* Edit Scenario */}
+                                  <button
+                                    type="button"
+                                    onClick={() => onSelectCase(tc)}
+                                    className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                    title="Senaryoyu Düzenle"
+                                    aria-label="Senaryoyu Düzenle"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Delete Scenario */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (confirm(`'${tc.code} - ${tc.title}' senaryosunu silmek istediğinize emin misiniz?`)) {
+                                        onDeleteCase(tc.id);
+                                      }
+                                    }}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors cursor-pointer"
+                                    title="Senaryoyu Sil"
+                                    aria-label="Senaryoyu Sil"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            );
+                          }
+
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
+                              —
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })

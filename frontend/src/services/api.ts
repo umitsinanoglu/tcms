@@ -57,10 +57,12 @@ export interface TestPlan {
     key: string;
   };
   testRuns?: TestRun[];
+  cases?: Array<{ id: string; testCaseId: string; testCase?: TestCase }>;
   createdAt: string;
   updatedAt: string;
   _count?: {
     testRuns: number;
+    cases?: number;
   };
 }
 
@@ -73,6 +75,7 @@ export interface CreateTestPlanDto {
   scope?: string;
   requirements?: string;
   projectId: string;
+  caseIds?: string[];
 }
 
 export interface UpdateTestPlanDto {
@@ -83,6 +86,7 @@ export interface UpdateTestPlanDto {
   status?: PlanStatus;
   scope?: string;
   requirements?: string;
+  caseIds?: string[];
 }
 
 export interface StepAttachment {
@@ -292,6 +296,12 @@ export const TestPlansService = {
     api.post<{ success: boolean; count: number; data: TestPlan[] }>('/test-plans/bulk', { projectId, items }).then((res) => res.data),
   update: (id: string, data: UpdateTestPlanDto) =>
     api.patch<TestPlan>(`/test-plans/${id}`, data).then((res) => res.data),
+  syncCases: (id: string, caseIds: string[]) =>
+    api.post<TestPlan>(`/test-plans/${id}/cases/sync`, { caseIds }).then((res) => res.data),
+  addCases: (id: string, caseIds: string[]) =>
+    api.post<TestPlan>(`/test-plans/${id}/cases`, { caseIds }).then((res) => res.data),
+  removeCase: (id: string, caseId: string) =>
+    api.delete<{ success: boolean }>(`/test-plans/${id}/cases/${caseId}`).then((res) => res.data),
   delete: (id: string) => api.delete(`/test-plans/${id}`).then((res) => res.data),
 };
 
@@ -992,7 +1002,45 @@ export const SettingsService = {
   terminateSession: (id: string) => api.delete<{ success: boolean; message: string }>(`/settings/sessions/${id}`).then((res) => res.data),
   terminateAllOtherSessions: () =>
     api.post<{ success: boolean; message: string }>('/settings/sessions/terminate-all-others').then((res) => res.data),
+
+  getFieldCustomizations: () => api.get<FieldCustomizationState>('/settings/field-customizations').then((res) => res.data),
+  updateFieldCustomizations: (data: Partial<FieldCustomizationState>) =>
+    api.patch<FieldCustomizationState>('/settings/field-customizations', data).then((res) => res.data),
+  resetFieldCustomizations: (moduleId?: string) =>
+    api.post<FieldCustomizationState>('/settings/field-customizations/reset', { moduleId }).then((res) => res.data),
 };
+
+export type TableDensity = 'comfortable' | 'normal' | 'compact';
+
+export interface GridColumnConfig {
+  id: string;
+  label: string;
+  defaultLabel?: string;
+  visible: boolean;
+  order: number;
+  width?: string;
+  align?: 'left' | 'center' | 'right';
+  sortable?: boolean;
+  isSticky?: 'left' | 'right' | 'none';
+  isSystem?: boolean;
+  description?: string;
+}
+
+export interface ModuleGridConfig {
+  moduleId: string;
+  moduleName: string;
+  density: TableDensity;
+  defaultSortBy?: string;
+  defaultSortOrder?: 'asc' | 'desc';
+  columns: GridColumnConfig[];
+}
+
+export interface FieldCustomizationState {
+  modules: Record<string, ModuleGridConfig>;
+  customTags: string[];
+  updatedAt: string;
+}
+
 
 
 

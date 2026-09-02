@@ -32,6 +32,9 @@ import {
 } from 'lucide-react';
 import { ExcelImportModal } from './ExcelImportModal';
 import { downloadTestPlanTemplate, exportTestPlansToExcel } from '@/utils/excelUtils';
+import { useCustomization } from '@/context/CustomizationContext';
+import { ColumnCustomizerMenu } from './ColumnCustomizerMenu';
+import { useNavigation } from '@/context/NavigationContext';
 
 interface TestPlansViewProps {
   project: Project | null;
@@ -59,6 +62,12 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   onPlansChange,
 }) => {
   const { can } = useAuth();
+  const { pushState } = useNavigation();
+  const { getVisibleColumns, getModuleConfig, getDensityClasses } = useCustomization();
+  const visibleCols = getVisibleColumns('test-plans');
+  const moduleConfig = getModuleConfig('test-plans');
+  const densityCls = getDensityClasses(moduleConfig.density);
+
   const [plans, setPlans] = useState<TestPlan[]>(testPlans || []);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('ALL');
@@ -188,16 +197,23 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
 
       // 3. Runs & Results metrics calculation from actual plan cases
       let planCaseIds: string[] = [];
-      try {
-        const saved = localStorage.getItem(`tcms_plan_cases_${plan.id}`);
-        if (saved !== null) {
-          planCaseIds = JSON.parse(saved);
+      if (plan.cases && plan.cases.length > 0) {
+        planCaseIds = plan.cases.map((c) => c.testCaseId);
+      } else {
+        try {
+          const saved = localStorage.getItem(`tcms_plan_cases_${plan.id}`);
+          if (saved !== null) {
+            planCaseIds = JSON.parse(saved);
+          }
+        } catch {
+          planCaseIds = [];
         }
-      } catch {
-        planCaseIds = [];
       }
 
-      let totalScenarios = planCaseIds.length;
+      let totalScenarios = plan._count?.cases !== undefined ? plan._count.cases : planCaseIds.length;
+      if (totalScenarios === 0 && planCaseIds.length > 0) {
+        totalScenarios = planCaseIds.length;
+      }
       let executedScenarios = 0;
       let passed = 0;
       let failed = 0;
@@ -450,6 +466,20 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
             )}
           </div>
 
+          {/* Column Customizer Dropdown */}
+          <ColumnCustomizerMenu
+            moduleId="test-plans"
+            onOpenAdvancedSettings={() =>
+              pushState({
+                tab: 'SETTINGS',
+                projectId: project?.id || null,
+                suiteId: null,
+                caseId: null,
+                label: 'Alan Özelleştirme',
+              })
+            }
+          />
+
           {/* New Test Plan Button */}
           <button
             type="button"
@@ -586,42 +616,28 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
             <table className="w-full text-left text-xs border-collapse min-w-full">
               <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
                 <tr className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                  {/* Flexible Column 1: Test Planı (Daraltılmış & Esnek) */}
-                  <th className="py-3 px-4 min-w-[180px] w-[26%] whitespace-nowrap">TEST PLANI</th>
-                  
-                  {/* Fixed Column 1: Tür */}
-                  <th className="py-3 px-3 w-[84px] min-w-[84px] whitespace-nowrap">TÜR</th>
-                  
-                  {/* Flexible Column 2: Kapsam (Daraltılmış & Esnek) */}
-                  <th className="py-3 px-3 min-w-[130px] w-[18%] whitespace-nowrap">KAPSAM</th>
-                  
-                  {/* Fixed Column 2: Senaryo */}
-                  <th className="py-3 px-3 w-[76px] min-w-[76px] text-center whitespace-nowrap">SENARYO</th>
-                  
-                  {/* Fixed Column 3: Başarı Oranı */}
-                  <th className="py-3 px-3 w-[120px] min-w-[120px] whitespace-nowrap">BAŞARI ORANI</th>
-                  
-                  {/* Fixed Column 4: Durum */}
-                  <th className="py-3 px-3 w-[100px] min-w-[100px] whitespace-nowrap">DURUM</th>
-                  
-                  {/* Fixed Column 5: Son Çalıştırma */}
-                  <th className="py-3 px-3 w-[130px] min-w-[130px] whitespace-nowrap">SON ÇALIŞTIRMA</th>
-                  
-                  {/* Fixed Column 6: İşlemler */}
-                  <th className="py-3 px-4 w-[90px] min-w-[90px] text-right whitespace-nowrap">İŞLEMLER</th>
+                  {visibleCols.map((col) => (
+                    <th
+                      key={col.id}
+                      style={{ width: col.width || 'auto' }}
+                      className={`${densityCls.pyTh} whitespace-nowrap text-${col.align || 'left'}`}
+                    >
+                      {col.label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="py-14 text-center text-slate-400">
+                    <td colSpan={visibleCols.length || 8} className="py-14 text-center text-slate-400">
                       <div className="w-6 h-6 border-2 border-[var(--accent-primary)]/20 border-t-[var(--accent-primary)] rounded-full animate-spin mx-auto mb-2" />
                       <span>Yükleniyor...</span>
                     </td>
                   </tr>
                 ) : paginatedPlans.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-14 text-center text-slate-400">
+                    <td colSpan={visibleCols.length || 8} className="py-14 text-center text-slate-400">
                       <ClipboardList className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
                       <p>Kayıtlı test planı bulunamadı.</p>
                     </td>
@@ -643,145 +659,181 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                         }}
                         className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
                       >
-                        {/* 1. Flexible Column: Test Planı Adı ve Açıklaması */}
-                        <td className="py-2.5 px-4 min-w-0 max-w-[260px] whitespace-nowrap">
-                          <div className="flex items-center space-x-2.5 min-w-0">
-                            <div className="w-7 h-7 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                              <Calendar className="w-3.5 h-3.5" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-[var(--accent-primary)] transition-colors text-xs" title={p.title}>
-                                {p.title}
-                              </p>
-                              {p.description && (
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5" title={p.description}>
-                                  {p.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </td>
+                        {visibleCols.map((col) => {
+                          const alignClass = `text-${col.align || 'left'}`;
 
-                        {/* 2. Fixed Column: Tür Rozeti */}
-                        <td className="py-2.5 px-3 w-[84px] min-w-[84px] whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-xs ${
-                              stats?.typeColor.bg || 'bg-slate-100 dark:bg-slate-800'
-                            } ${stats?.typeColor.text || 'text-slate-700 dark:text-slate-300'} ${
-                              stats?.typeColor.border || 'border-slate-200 dark:border-slate-700'
-                            }`}
-                          >
-                            {stats?.type || 'Regression'}
-                          </span>
-                        </td>
+                          if (col.id === 'title') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} min-w-0 max-w-[260px] whitespace-nowrap ${alignClass}`}>
+                                <div className="flex items-center space-x-2.5 min-w-0">
+                                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                    <Calendar className="w-3.5 h-3.5" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-[var(--accent-primary)] transition-colors text-xs" title={p.title}>
+                                      {p.title}
+                                    </p>
+                                    {p.description && (
+                                      <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5" title={p.description}>
+                                        {p.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            );
+                          }
 
-                        {/* 3. Flexible Column: Kapsam */}
-                        <td className="py-2.5 px-3 min-w-0 max-w-[180px] whitespace-nowrap" title={stats?.scope || 'Web, Mobil'}>
-                          <p className="truncate text-xs text-slate-600 dark:text-slate-400 font-medium">
-                            {stats?.scope || 'Web, Mobil'}
-                          </p>
-                        </td>
-
-                        {/* 4. Fixed Column: Senaryo Sayısı */}
-                        <td className="py-2.5 px-3 w-[76px] min-w-[76px] text-center font-bold text-slate-800 dark:text-slate-200 font-mono whitespace-nowrap">
-                          {stats ? stats.totalScenarios : 0}
-                        </td>
-
-                        {/* 5. Fixed Column: Başarı Oranı & Progress Bar */}
-                        <td className="py-2.5 px-3 w-[120px] min-w-[120px] whitespace-nowrap">
-                          {stats && stats.executedScenarios > 0 ? (
-                            <div className="flex items-center space-x-2 w-full">
-                              <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-[11px] shrink-0 w-8">
-                                %{stats.passRate}
-                              </span>
-                              <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full ${
-                                    stats.passRate >= 75
-                                      ? 'bg-emerald-500'
-                                      : stats.passRate >= 50
-                                      ? 'bg-amber-500'
-                                      : 'bg-rose-500'
+                          if (col.id === 'type') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[84px] min-w-[84px] whitespace-nowrap ${alignClass}`}>
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-xs ${
+                                    stats?.typeColor.bg || 'bg-slate-100 dark:bg-slate-800'
+                                  } ${stats?.typeColor.text || 'text-slate-700 dark:text-slate-300'} ${
+                                    stats?.typeColor.border || 'border-slate-200 dark:border-slate-700'
                                   }`}
-                                  style={{ width: `${stats.passRate}%` }}
-                                />
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-slate-400 font-mono text-[11px]">—</span>
-                          )}
-                        </td>
+                                >
+                                  {stats?.type || 'Regression'}
+                                </span>
+                              </td>
+                            );
+                          }
 
-                        {/* 6. Fixed Column: Durum Rozeti */}
-                        <td className="py-2.5 px-3 w-[100px] min-w-[100px] whitespace-nowrap">
-                          {stats?.statusKey === 'ACTIVE' ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
-                              Aktif
-                            </span>
-                          ) : stats?.statusKey === 'IN_PROGRESS' ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs">
-                              Devam Eden
-                            </span>
-                          ) : stats?.statusKey === 'COMPLETED' ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 shadow-xs">
-                              Tamamlandı
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs">
-                              Pasif
-                            </span>
-                          )}
-                        </td>
+                          if (col.id === 'scope') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} min-w-0 max-w-[180px] whitespace-nowrap ${alignClass}`} title={stats?.scope || 'Web, Mobil'}>
+                                <p className="truncate text-xs text-slate-600 dark:text-slate-400 font-medium">
+                                  {stats?.scope || 'Web, Mobil'}
+                                </p>
+                              </td>
+                            );
+                          }
 
-                        {/* 7. Fixed Column: Son Çalıştırma Tarihi */}
-                        <td className="py-2.5 px-3 w-[130px] min-w-[130px] text-slate-500 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap">
-                          {stats?.lastRunDate || '—'}
-                        </td>
+                          if (col.id === 'scenariosCount') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[76px] min-w-[76px] text-center font-bold text-slate-800 dark:text-slate-200 font-mono whitespace-nowrap`}>
+                                {stats ? stats.totalScenarios : 0}
+                              </td>
+                            );
+                          }
 
-                        {/* 8. Fixed Column: İşlemler Aksiyon Butonları */}
-                        <td className="py-2.5 px-4 w-[90px] min-w-[90px] text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end space-x-1">
-                            {/* Koşum Başlat */}
-                            <button
-                              type="button"
-                              onClick={() => onStartRunWithPlan(p)}
-                              className="p-1 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
-                              title="Koşum Başlat"
-                              aria-label="Koşum Başlat"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-current text-emerald-600 dark:text-emerald-400" />
-                            </button>
+                          if (col.id === 'passRate') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[120px] min-w-[120px] whitespace-nowrap ${alignClass}`}>
+                                {stats && stats.executedScenarios > 0 ? (
+                                  <div className="flex items-center space-x-2 w-full">
+                                    <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-[11px] shrink-0 w-8">
+                                      %{stats.passRate}
+                                    </span>
+                                    <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full ${
+                                          stats.passRate >= 75
+                                            ? 'bg-emerald-500'
+                                            : stats.passRate >= 50
+                                            ? 'bg-amber-500'
+                                            : 'bg-rose-500'
+                                        }`}
+                                        style={{ width: `${stats.passRate}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 font-mono text-[11px]">—</span>
+                                )}
+                              </td>
+                            );
+                          }
 
-                            {/* Düzenle */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (onSelectPlanToView) {
-                                  onSelectPlanToView(p);
-                                } else {
-                                  setSelectedPlanForEdit(p);
-                                  setIsEditPlanOpen(true);
-                                }
-                              }}
-                              className="p-1 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              title="Planı Düzenle"
-                              aria-label="Planı Düzenle"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
+                          if (col.id === 'status') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[100px] min-w-[100px] whitespace-nowrap ${alignClass}`}>
+                                {stats?.statusKey === 'ACTIVE' ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
+                                    Aktif
+                                  </span>
+                                ) : stats?.statusKey === 'IN_PROGRESS' ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs">
+                                    Devam Eden
+                                  </span>
+                                ) : stats?.statusKey === 'COMPLETED' ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 shadow-xs">
+                                    Tamamlandı
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs">
+                                    Pasif
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          }
 
-                            {/* Sil */}
-                            <button
-                              type="button"
-                              onClick={() => handleDeletePlan(p.id)}
-                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors cursor-pointer"
-                              title="Planı Sil"
-                              aria-label="Planı Sil"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
+                          if (col.id === 'lastRun') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[130px] min-w-[130px] text-slate-500 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap ${alignClass}`}>
+                                {stats?.lastRunDate || '—'}
+                              </td>
+                            );
+                          }
+
+                          if (col.id === 'actions') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[90px] min-w-[90px] text-right whitespace-nowrap`} onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end space-x-1">
+                                  {/* Koşum Başlat */}
+                                  <button
+                                    type="button"
+                                    onClick={() => onStartRunWithPlan(p)}
+                                    className="p-1 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
+                                    title="Koşum Başlat"
+                                    aria-label="Koşum Başlat"
+                                  >
+                                    <Play className="w-3.5 h-3.5 fill-current text-emerald-600 dark:text-emerald-400" />
+                                  </button>
+
+                                  {/* Düzenle */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (onSelectPlanToView) {
+                                        onSelectPlanToView(p);
+                                      } else {
+                                        setSelectedPlanForEdit(p);
+                                        setIsEditPlanOpen(true);
+                                      }
+                                    }}
+                                    className="p-1 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                    title="Planı Düzenle"
+                                    aria-label="Planı Düzenle"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Sil */}
+                                  {can('DELETE_PLAN') && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeletePlan(p.id)}
+                                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                      title="Planı Sil"
+                                      aria-label="Planı Sil"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          }
+
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} whitespace-nowrap ${alignClass}`}>
+                              —
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })

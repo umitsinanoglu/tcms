@@ -37,6 +37,9 @@ import {
 } from 'lucide-react';
 import { NewDefectModal } from './NewDefectModal';
 import { DefectDetailModal } from './DefectDetailModal';
+import { useCustomization } from '@/context/CustomizationContext';
+import { ColumnCustomizerMenu } from './ColumnCustomizerMenu';
+import { useNavigation } from '@/context/NavigationContext';
 
 interface DefectsViewProps {
   selectedProject: Project | null;
@@ -61,6 +64,12 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
   onClearInitialDefect,
   onDefectsLoaded,
 }) => {
+  const { pushState } = useNavigation();
+  const { getVisibleColumns, getModuleConfig, getDensityClasses } = useCustomization();
+  const visibleCols = getVisibleColumns('defects');
+  const moduleConfig = getModuleConfig('defects');
+  const densityCls = getDensityClasses(moduleConfig.density);
+
   const [defects, setDefects] = useState<Defect[]>([]);
   const [stats, setStats] = useState<DefectStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -376,6 +385,19 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-2 flex-wrap">
+            <ColumnCustomizerMenu
+              moduleId="defects"
+              onOpenAdvancedSettings={() =>
+                pushState({
+                  tab: 'SETTINGS',
+                  projectId: selectedProject?.id || null,
+                  suiteId: null,
+                  caseId: null,
+                  label: 'Alan Özelleştirme',
+                })
+              }
+            />
+
             <button
               type="button"
               onClick={exportToCsv}
@@ -650,15 +672,15 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-[#181f2c]/75 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="py-3 px-4">Kod</th>
-                    <th className="py-3 px-4">Hata Başlığı</th>
-                    <th className="py-3 px-3">Önem</th>
-                    <th className="py-3 px-3">Durum</th>
-                    <th className="py-3 px-3">Ortam</th>
-                    <th className="py-3 px-3">İlişkili Senaryo</th>
-                    <th className="py-3 px-3">Atanan</th>
-                    <th className="py-3 px-3">Jira</th>
-                    <th className="py-3 px-4 text-right">İşlemler</th>
+                    {visibleCols.map((col) => (
+                      <th
+                        key={col.id}
+                        style={{ width: col.width || 'auto' }}
+                        className={`${densityCls.pyTh} px-4 whitespace-nowrap text-${col.align || 'left'}`}
+                      >
+                        {col.label}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -671,95 +693,152 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
                       }}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
                     >
-                      {/* Key */}
-                      <td className="py-3 px-4 font-mono font-black text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                        <span className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[11px]">
-                          {d.key}
-                        </span>
-                      </td>
+                      {visibleCols.map((col) => {
+                        const alignClass = `text-${col.align || 'left'}`;
 
-                      {/* Title */}
-                      <td className="py-3 px-4 max-w-xs">
-                        <p className="font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
-                          {d.title}
-                        </p>
-                        {d.description && (
-                          <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                            {d.description}
-                          </p>
-                        )}
-                      </td>
+                        if (col.id === 'key') {
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-4 font-mono font-black text-slate-900 dark:text-slate-100 whitespace-nowrap ${alignClass}`}>
+                              <span className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[11px]">
+                                {d.key}
+                              </span>
+                            </td>
+                          );
+                        }
 
-                      {/* Severity */}
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getSeverityBadge(d.severity)}`}>
-                          {d.severity}
-                        </span>
-                      </td>
+                        if (col.id === 'title') {
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-4 max-w-xs ${alignClass}`}>
+                              <p className="font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                                {d.title}
+                              </p>
+                              {d.description && (
+                                <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                                  {d.description}
+                                </p>
+                              )}
+                            </td>
+                          );
+                        }
 
-                      {/* Status */}
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getStatusBadge(d.status)}`}>
-                          {getStatusLabel(d.status)}
-                        </span>
-                      </td>
+                        if (col.id === 'severity') {
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getSeverityBadge(d.severity)}`}>
+                                {d.severity}
+                              </span>
+                            </td>
+                          );
+                        }
 
-                      {/* Environment & Channel */}
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <span className="text-slate-600 dark:text-slate-400 font-medium">
-                          {d.environment || 'STAGING'} &bull; {d.channel || 'WEB'}
-                        </span>
-                      </td>
+                        if (col.id === 'status') {
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getStatusBadge(d.status)}`}>
+                                {getStatusLabel(d.status)}
+                              </span>
+                            </td>
+                          );
+                        }
 
-                      {/* Linked Case */}
-                      <td className="py-3 px-3 max-w-[150px] truncate">
-                        {d.testCase ? (
-                          <span className="font-mono text-[11px] font-bold text-blue-600 dark:text-blue-400">
-                            {d.testCase.code}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
-                      </td>
+                        if (col.id === 'environment') {
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
+                              <span className="text-slate-600 dark:text-slate-400 font-medium">
+                                {d.environment || 'STAGING'} &bull; {d.channel || 'WEB'}
+                              </span>
+                            </td>
+                          );
+                        }
 
-                      {/* Assigned To */}
-                      <td className="py-3 px-3 whitespace-nowrap text-slate-600 dark:text-slate-300">
-                        {d.assignedTo || <span className="text-slate-400 italic">Atanmamış</span>}
-                      </td>
+                        if (col.id === 'testCase') {
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-3 max-w-[150px] truncate ${alignClass}`}>
+                              {d.testCase ? (
+                                <span className="font-mono text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                                  {d.testCase.code}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">-</span>
+                              )}
+                            </td>
+                          );
+                        }
 
-                      {/* Jira */}
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        {d.jiraBugKey ? (
-                          <a
-                            href={d.jiraBugUrl || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center space-x-1 font-mono text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            <span>{d.jiraBugKey}</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
-                      </td>
+                        if (col.id === 'assignedTo') {
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap text-slate-600 dark:text-slate-300 ${alignClass}`}>
+                              {d.assignedTo || <span className="text-slate-400 italic">Atanmamış</span>}
+                            </td>
+                          );
+                        }
 
-                      {/* Actions */}
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDefect(d);
-                            setIsDetailModalOpen(true);
-                          }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                          title="Detayları İncele"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </td>
+                        if (col.id === 'jiraBugKey') {
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
+                              {d.jiraBugKey ? (
+                                <a
+                                  href={d.jiraBugUrl || '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center space-x-1 font-mono text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                                >
+                                  <span>{d.jiraBugKey}</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              ) : (
+                                <span className="text-slate-400">-</span>
+                              )}
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'reportedBy') {
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap text-slate-600 dark:text-slate-300 ${alignClass}`}>
+                              {d.reportedBy || 'QA Tester'}
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'createdAt') {
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap text-slate-500 dark:text-slate-400 font-mono text-[11px] ${alignClass}`}>
+                              {new Date(d.createdAt).toLocaleDateString('tr-TR', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'actions') {
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} px-4 text-right whitespace-nowrap ${alignClass}`}>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedDefect(d);
+                                  setIsDetailModalOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                title="Detayları İncele"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            </td>
+                          );
+                        }
+
+                        return (
+                          <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
+                            —
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>

@@ -1232,9 +1232,11 @@ export default function Home() {
           }
         }}
         projectId={selectedProject?.id || ''}
-        testCases={activeSuiteRunCases || allCases}
+        testCases={allCases}
         initialTestPlan={activeRunTestPlan}
+        initialSelectedCaseIds={activeSuiteRunCases ? activeSuiteRunCases.map((c) => c.id) : undefined}
         onSuccess={handleManualRunSuccess}
+        onNavigateToRuns={() => handleTabChange('RUNS')}
       />
 
       <UserManagementModal

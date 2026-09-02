@@ -54,16 +54,32 @@ import {
   XSquare,
   Clock,
   Terminal,
+  SlidersHorizontal,
+  ArrowUp,
+  ArrowDown,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Tag,
+  RotateCcw,
+  Table,
+  Columns,
+  Layers,
+  Move,
+  CheckCircle,
 } from 'lucide-react';
+import { useCustomization } from '@/context/CustomizationContext';
 
 export type SettingsTab =
   | 'PROJECTS_SYSTEM'
+  | 'FIELD_CUSTOMIZATION'
   | 'USERS'
   | 'SESSIONS'
   | 'ROLES'
   | 'LDAP'
   | 'API_KEYS'
   | 'WEBHOOKS';
+
 
 interface SettingsViewProps {
   projects: Project[];
@@ -85,10 +101,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onDeleteProject,
 }) => {
   const { currentUser, users, refreshUsers, isAdmin } = useAuth();
+  const {
+    customizationState,
+    getModuleConfig,
+    toggleColumnVisibility,
+    setColumnVisibility,
+    updateColumn,
+    moveColumnUp,
+    moveColumnDown,
+    setModuleDensity,
+    setModuleSort,
+    addCustomTag,
+    removeCustomTag,
+    resetModuleToDefault,
+    saveCustomizations,
+    getDensityClasses,
+  } = useCustomization();
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('PROJECTS_SYSTEM');
+  const [selectedCustomModule, setSelectedCustomModule] = useState<'test-plans' | 'test-cases' | 'test-runs' | 'defects'>('test-plans');
+  const [newTagInput, setNewTagInput] = useState('');
+  const [isSavingCustomization, setIsSavingCustomization] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+
 
   // Notification Toast
   const [toast, setToast] = useState<{ type: 'SUCCESS' | 'ERROR'; msg: string } | null>(null);
@@ -481,6 +517,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   // Nav Items config
   const navTabs = [
     { id: 'PROJECTS_SYSTEM' as SettingsTab, label: 'Projeler & Sistem', icon: Building2, desc: 'Proje ID, İsim ve Genel Ayarlar' },
+    { id: 'FIELD_CUSTOMIZATION' as SettingsTab, label: 'Alan Özelleştirme', icon: SlidersHorizontal, desc: 'Grid Kolonları, Başlıklar, Yoğunluk & Etiketler' },
     { id: 'USERS' as SettingsTab, label: 'Kullanıcı Yönetimi', icon: Users, desc: 'Kullanıcılar, Departman ve Durumlar', count: users.length },
     { id: 'SESSIONS' as SettingsTab, label: 'Oturumlar & Güvenlik', icon: Lock, desc: 'Aktif Oturumlar ve İstemciler', count: sessions.length },
     { id: 'ROLES' as SettingsTab, label: 'Rol & Yetki Matrisi', icon: ShieldCheck, desc: 'RBAC İzin ve Rol Yapılandırması' },
@@ -488,6 +525,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     { id: 'API_KEYS' as SettingsTab, label: 'API Anahtarları (Tokens)', icon: Key, desc: 'Otomasyon ve CI/CD Tokenları', count: apiKeys.length },
     { id: 'WEBHOOKS' as SettingsTab, label: 'Webhook Entegrasyonları', icon: Webhook, desc: 'Dış Sistem Bildirimleri ve Ping', count: webhooksList.length },
   ];
+
 
   const filteredUsers = users.filter((u) => {
     if (!userSearchQuery.trim()) return true;
@@ -821,9 +859,600 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           )}
 
           {/* ========================================================================= */}
+          {/* 1.5. FIELD & COLUMN CUSTOMIZATION TAB                                     */}
+          {/* ========================================================================= */}
+          {activeTab === 'FIELD_CUSTOMIZATION' && (() => {
+            const currentModuleCfg = getModuleConfig(selectedCustomModule);
+            const sortedColumns = [...currentModuleCfg.columns].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            const visibleCount = sortedColumns.filter((c) => c.visible).length;
+            const densityCls = getDensityClasses(currentModuleCfg.density);
+
+            const handleSaveCustomization = async () => {
+              try {
+                setIsSavingCustomization(true);
+                await saveCustomizations();
+                showToast('SUCCESS', 'Alan ve kolon özelleştirmeleri başarıyla kaydedildi.');
+              } catch (err) {
+                showToast('ERROR', 'Özelleştirmeler kaydedilirken bir hata oluştu.');
+              } finally {
+                setIsSavingCustomization(false);
+              }
+            };
+
+            const handleResetCustomization = async () => {
+              if (!confirm(`'${currentModuleCfg.moduleName}' tablosunu varsayılan fabrika kolon düzenine döndürmek istediğinize emin misiniz?`)) return;
+              try {
+                await resetModuleToDefault(selectedCustomModule);
+                showToast('SUCCESS', `${currentModuleCfg.moduleName} kolonları sıfırlandı.`);
+              } catch {
+                showToast('ERROR', 'Sıfırlama başarısız oldu.');
+              }
+            };
+
+            const handleAddTag = (e: React.FormEvent) => {
+              e.preventDefault();
+              if (!newTagInput.trim()) return;
+              addCustomTag(newTagInput.trim());
+              setNewTagInput('');
+              showToast('SUCCESS', 'Yeni etiket eklendi.');
+            };
+
+            // Sample mock data for live interactive preview
+            const previewDataMap = {
+              'test-plans': [
+                { id: '1', title: 'Mobil Bankacılık v2.4.0 Regresyon Planı', type: 'MOBILE', scope: 'Kredi Kartı & Para Transferleri', scenariosCount: 34, passRate: 94, status: 'ACTIVE', lastRun: 'Bugün 14:30' },
+                { id: '2', title: 'Core Banking FAST & EFT Entegrasyonu', type: 'WEB', scope: 'FAST / Havale / Swift', scenariosCount: 18, passRate: 88, status: 'ACTIVE', lastRun: 'Dün 17:15' },
+                { id: '3', title: 'Güvenlik & Penetrasyon Regresyon Paketi', type: 'API', scope: 'OAuth2 & Token Validation', scenariosCount: 12, passRate: 100, status: 'COMPLETED', lastRun: '28.08.2026' },
+              ],
+              'test-cases': [
+                { id: '1', code: 'TC-101', title: 'Bireysel Kullanıcı SMS OTP ile Giriş', type: 'MOBILE', executionType: 'AUTOMATED', priority: 'CRITICAL', jiraStoryKey: 'TTB-1420', stepsCount: 6, lastResult: 'PASSED', updatedAt: 'Bugün 11:20' },
+                { id: '2', code: 'TC-102', title: '7/24 FAST Anlık IBAN Para Transferi', type: 'WEB', executionType: 'MANUAL', priority: 'BLOCKER', jiraStoryKey: 'TTB-1890', stepsCount: 8, lastResult: 'PASSED', updatedAt: 'Dün 16:45' },
+                { id: '3', code: 'TC-103', title: 'Kredi Kartı Borç Ödeme ve Ekstre İndirme', type: 'WEB', executionType: 'AUTOMATED', priority: 'NORMAL', jiraStoryKey: 'TTB-1945', stepsCount: 5, lastResult: 'FAILED', updatedAt: '26.08.2026' },
+              ],
+              'test-runs': [
+                { id: '1', title: 'Sprint-24 iOS Nightly Regression Run', status: 'COMPLETED', environment: 'STAGING', version: 'v2.4.0', executedBy: 'Jenkins CI Bot', metrics: '24/24 Geçti (%100)', duration: '4dk 12s', createdAt: 'Bugün 03:00' },
+                { id: '2', title: 'API Gateway Performans & Yük Testi', status: 'IN_PROGRESS', environment: 'DEV', version: 'v2.4.1-rc', executedBy: 'Ahmet Yılmaz', metrics: '15 Geçti, 1 Hata', duration: '12dk 40s', createdAt: 'Bugün 13:10' },
+                { id: '3', title: 'Core Banking Swift Entegrasyon Koşumu', status: 'COMPLETED', environment: 'UAT', version: 'v2.3.9', executedBy: 'Zeynep Kaya', metrics: '18/18 Geçti (%100)', duration: '6dk 05s', createdAt: 'Dün 18:20' },
+              ],
+              'defects': [
+                { id: '1', key: 'DEF-204', title: 'Kredi kartı limit artırımında HTTP 500 hatası', severity: 'CRITICAL', status: 'OPEN', assignedTo: 'Mehmet Kaya', reportedBy: 'Zeynep Arslan', environment: 'STAGING', channel: 'MOBILE', jiraBugKey: 'BUG-882', createdAt: 'Bugün 10:15' },
+                { id: '2', key: 'DEF-205', title: 'Geçersiz IBAN formatında uyarı metni eksik', severity: 'MINOR', status: 'IN_PROGRESS', assignedTo: 'Ali Can', reportedBy: 'Caner Yılmaz', environment: 'UAT', channel: 'WEB', jiraBugKey: 'BUG-885', createdAt: 'Dün 15:40' },
+                { id: '3', key: 'DEF-206', title: 'OTP SMS kodu 3 dakika sonra düşüyor', severity: 'BLOCKER', status: 'RESOLVED', assignedTo: 'Sistem Ekibi', reportedBy: 'Ahmet Yılmaz', environment: 'PROD', channel: 'MOBILE', jiraBugKey: 'BUG-890', createdAt: '25.08.2026' },
+              ],
+            };
+
+            const previewRows = previewDataMap[selectedCustomModule] || [];
+
+            return (
+              <div className="space-y-6 animate-in fade-in duration-150 max-w-5xl">
+                {/* 1. Header Card */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2.5 rounded-xl bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] shadow-xs">
+                        <SlidersHorizontal className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                          Alan & Kolon Özelleştirme Merkezi
+                        </h2>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Sayfalardaki grid tabloların kolonlarını, başlıklarını, genişliklerini ve tablo yoğunluğunu yönetin.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={handleResetCustomization}
+                        className="flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                        title="Modülü fabrika ayarlarına sıfırla"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Varsayılana Sıfırla</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSaveCustomization}
+                        disabled={isSavingCustomization}
+                        className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-accent-gradient text-white text-xs font-semibold shadow-md shadow-[var(--accent-dark)]/25 hover:brightness-110 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>{isSavingCustomization ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Module Selector Pill Strip */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                    {(
+                      [
+                        { id: 'test-plans' as const, label: 'Test Planları', desc: 'Plan & Kapsam Tablosu' },
+                        { id: 'test-cases' as const, label: 'Test Senaryoları', desc: 'Senaryo Listesi' },
+                        { id: 'test-runs' as const, label: 'Test Koşumları', desc: 'Koşum Geçmişi' },
+                        { id: 'defects' as const, label: 'Defektler', desc: 'Hata Takip Listesi' },
+                      ] as const
+                    ).map((m) => {
+                      const isSelected = selectedCustomModule === m.id;
+                      const modCfg = getModuleConfig(m.id);
+                      const modVisible = modCfg.columns.filter((c) => c.visible).length;
+
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setSelectedCustomModule(m.id)}
+                          className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                            isSelected
+                              ? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)] text-slate-900 dark:text-white shadow-xs'
+                              : 'bg-slate-50/60 dark:bg-slate-900/40 border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-xs">{m.label}</span>
+                            <span
+                              className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
+                                isSelected
+                                  ? 'bg-[var(--accent-primary)] text-white'
+                                  : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                              }`}
+                            >
+                              {modVisible}/{modCfg.columns.length}
+                            </span>
+                          </div>
+                          <span className="text-[11px] opacity-75">{m.desc}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. Module Grid Preferences (Density & Sorting) */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center space-x-2.5">
+                      <Table className="w-4 h-4 text-[var(--accent-primary)]" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                        {currentModuleCfg.moduleName} Tablo Görünüm Tercihleri
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => sortedColumns.forEach((c) => !c.isSystem && setColumnVisibility(selectedCustomModule, c.id, true))}
+                        className="text-[var(--accent-primary)] hover:underline font-semibold cursor-pointer"
+                      >
+                        Tümünü Aç
+                      </button>
+                      <span className="text-slate-300 dark:text-slate-700">&bull;</span>
+                      <button
+                        type="button"
+                        onClick={() => sortedColumns.forEach((c) => !c.isSystem && setColumnVisibility(selectedCustomModule, c.id, false))}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold cursor-pointer"
+                      >
+                        Tümünü Kapat
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    {/* Satır Yoğunluğu (Density) */}
+                    <div className="space-y-1.5">
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 block">
+                        Satır Yoğunluğu (Row Density)
+                      </label>
+                      <div className="flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1 rounded-xl">
+                        {(
+                          [
+                            { id: 'compact' as const, label: 'Kompakt', desc: 'Dar satırlar' },
+                            { id: 'normal' as const, label: 'Standart', desc: 'Dengeli' },
+                            { id: 'comfortable' as const, label: 'Rahat', desc: 'Geniş' },
+                          ] as const
+                        ).map((d) => (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => setModuleDensity(selectedCustomModule, d.id)}
+                            className={`flex-1 py-1.5 px-2 rounded-lg text-center font-semibold transition-all cursor-pointer ${
+                              currentModuleCfg.density === d.id
+                                ? 'bg-white dark:bg-[#1e2738] text-[var(--accent-primary)] shadow-xs font-bold border border-slate-200/50 dark:border-slate-700/50'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                            }`}
+                          >
+                            {d.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Varsayılan Sıralama Kolonu */}
+                    <div className="space-y-1.5">
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 block">
+                        Varsayılan Sıralama Alanı
+                      </label>
+                      <select
+                        value={currentModuleCfg.defaultSortBy || ''}
+                        onChange={(e) => setModuleSort(selectedCustomModule, e.target.value, currentModuleCfg.defaultSortOrder || 'desc')}
+                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                      >
+                        {sortedColumns.filter((c) => c.sortable).map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.label} ({c.id})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Varsayılan Sıralama Yönü */}
+                    <div className="space-y-1.5">
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 block">
+                        Sıralama Yönü
+                      </label>
+                      <select
+                        value={currentModuleCfg.defaultSortOrder || 'desc'}
+                        onChange={(e) => setModuleSort(selectedCustomModule, currentModuleCfg.defaultSortBy || 'createdAt', e.target.value as 'asc' | 'desc')}
+                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                      >
+                        <option value="desc">Azalan (Yeniden Eskiye / Z-A / 9-0)</option>
+                        <option value="asc">Artan (Eskiden Yeniye / A-Z / 0-9)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Kolon Listesi Yönetim Tablosu */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center space-x-2.5">
+                      <Columns className="w-4 h-4 text-[var(--accent-primary)]" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                        Kolon Yapılandırması & Sıralaması ({visibleCount}/{sortedColumns.length} Kolon Görünür)
+                      </h3>
+                    </div>
+                    <span className="text-[11px] text-slate-400">
+                      Kolon sırasını yukarı/aşağı okları ile değiştirebilir, başlıkları çift tıklayarak düzenleyebilirsiniz.
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-slate-100/90 dark:bg-[#18202e] border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 uppercase tracking-wider text-[10px] font-bold">
+                        <tr>
+                          <th className="py-2.5 px-3 w-12 text-center">Sıra</th>
+                          <th className="py-2.5 px-3 w-16 text-center">Durum</th>
+                          <th className="py-2.5 px-4 min-w-[200px]">Görünen Başlık (Custom Label)</th>
+                          <th className="py-2.5 px-3 min-w-[140px]">Orijinal Alan</th>
+                          <th className="py-2.5 px-3 w-28 text-center">Genişlik</th>
+                          <th className="py-2.5 px-3 w-28 text-center">Hizalama</th>
+                          <th className="py-2.5 px-3 w-24 text-center">Taşı</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-medium">
+                        {sortedColumns.map((col, idx) => {
+                          const isFirst = idx === 0;
+                          const isLast = idx === sortedColumns.length - 1;
+
+                          return (
+                            <tr
+                              key={col.id}
+                              className={`transition-colors ${
+                                col.visible
+                                  ? 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-800 dark:text-slate-200'
+                                  : 'bg-slate-50/40 dark:bg-slate-900/30 text-slate-400 opacity-60 hover:opacity-100'
+                              }`}
+                            >
+                              {/* 1. Sıra No */}
+                              <td className="py-2.5 px-3 text-center font-mono text-[11px] text-slate-400">
+                                #{idx + 1}
+                              </td>
+
+                              {/* 2. Görünürlük Checkbox */}
+                              <td className="py-2.5 px-3 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={col.visible}
+                                  disabled={col.isSystem}
+                                  onChange={() => toggleColumnVisibility(selectedCustomModule, col.id)}
+                                  className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]/30 cursor-pointer disabled:opacity-40"
+                                  title={col.isSystem ? 'Sistem zorunlu kolonu gizlenemez' : 'Görünürlüğü aç/kapa'}
+                                />
+                              </td>
+
+                              {/* 3. Görünen Başlık (Editable Input) */}
+                              <td className="py-2.5 px-4">
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="text"
+                                    value={col.label}
+                                    onChange={(e) =>
+                                      updateColumn(selectedCustomModule, col.id, { label: e.target.value })
+                                    }
+                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                                  />
+                                  {col.isSystem && (
+                                    <span title="Sistem zorunlu kolonu">
+                                      <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* 4. Orijinal Alan ve Açıklama */}
+                              <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400">
+                                <div className="flex flex-col">
+                                  <span className="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                    {col.id}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 truncate max-w-xs" title={col.description}>
+                                    {col.description || col.defaultLabel}
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* 5. Genişlik */}
+                              <td className="py-2.5 px-3 text-center">
+                                <select
+                                  value={col.width || 'auto'}
+                                  onChange={(e) =>
+                                    updateColumn(selectedCustomModule, col.id, { width: e.target.value })
+                                  }
+                                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                                >
+                                  <option value="auto">Esnek / Otomatik</option>
+                                  <option value="80px">Dar (80px)</option>
+                                  <option value="110px">Orta (110px)</option>
+                                  <option value="150px">Geniş (150px)</option>
+                                  <option value="220px">Çok Geniş (220px)</option>
+                                  <option value="280px">Geniş Metin (280px)</option>
+                                  <option value="28%">Oransal (%28)</option>
+                                </select>
+                              </td>
+
+                              {/* 6. Hizalama */}
+                              <td className="py-2.5 px-3 text-center">
+                                <div className="inline-flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateColumn(selectedCustomModule, col.id, { align: 'left' })}
+                                    className={`p-1 rounded cursor-pointer ${
+                                      (col.align || 'left') === 'left'
+                                        ? 'bg-white dark:bg-slate-800 text-[var(--accent-primary)] shadow-xs font-bold'
+                                        : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                    }`}
+                                    title="Sola Hizala"
+                                  >
+                                    <AlignLeft className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateColumn(selectedCustomModule, col.id, { align: 'center' })}
+                                    className={`p-1 rounded cursor-pointer ${
+                                      col.align === 'center'
+                                        ? 'bg-white dark:bg-slate-800 text-[var(--accent-primary)] shadow-xs font-bold'
+                                        : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                    }`}
+                                    title="Ortala"
+                                  >
+                                    <AlignCenter className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateColumn(selectedCustomModule, col.id, { align: 'right' })}
+                                    className={`p-1 rounded cursor-pointer ${
+                                      col.align === 'right'
+                                        ? 'bg-white dark:bg-slate-800 text-[var(--accent-primary)] shadow-xs font-bold'
+                                        : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                    }`}
+                                    title="Sağa Hizala"
+                                  >
+                                    <AlignRight className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </td>
+
+                              {/* 7. Sıralama Yukarı / Aşağı */}
+                              <td className="py-2.5 px-3 text-center">
+                                <div className="inline-flex items-center space-x-1">
+                                  <button
+                                    type="button"
+                                    disabled={isFirst}
+                                    onClick={() => moveColumnUp(selectedCustomModule, col.id)}
+                                    className="p-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 disabled:opacity-20 transition-colors cursor-pointer"
+                                    title="Yukarı Taşı"
+                                  >
+                                    <ArrowUp className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={isLast}
+                                    onClick={() => moveColumnDown(selectedCustomModule, col.id)}
+                                    className="p-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 disabled:opacity-20 transition-colors cursor-pointer"
+                                    title="Aşağı Taşı"
+                                  >
+                                    <ArrowDown className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 4. Canlı İnteraktif Tablo Önizlemesi (Live Preview) */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                        Canlı İnteraktif Tablo Önizlemesi ({currentModuleCfg.moduleName})
+                      </h3>
+                    </div>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
+                      Yoğunluk: {currentModuleCfg.density.toUpperCase()}
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-slate-50/50 dark:bg-[#151c28] rounded-xl border border-slate-200 dark:border-slate-700/80 overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-slate-200/70 dark:bg-[#192233] border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold tracking-wider uppercase text-[10px]">
+                        <tr>
+                          {sortedColumns.filter((c) => c.visible).map((col) => (
+                            <th
+                              key={col.id}
+                              style={{ width: col.width || 'auto' }}
+                              className={`${densityCls.pyTh} whitespace-nowrap text-${col.align || 'left'}`}
+                            >
+                              {col.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/80 font-medium">
+                        {previewRows.map((row: any, rIdx: number) => (
+                          <tr key={row.id || rIdx} className="hover:bg-white dark:hover:bg-slate-800/50 transition-colors">
+                            {sortedColumns.filter((c) => c.visible).map((col) => {
+                              const val = row[col.id];
+                              const alignClass = `text-${col.align || 'left'}`;
+
+                              return (
+                                <td
+                                  key={col.id}
+                                  className={`${densityCls.pyTd} whitespace-nowrap ${alignClass} ${densityCls.textClass}`}
+                                >
+                                  {col.id === 'title' && (
+                                    <span className="font-bold text-slate-900 dark:text-slate-100">{val || '—'}</span>
+                                  )}
+                                  {col.id === 'code' && (
+                                    <span className="px-2 py-0.5 rounded-md font-mono font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                                      {val}
+                                    </span>
+                                  )}
+                                  {col.id === 'key' && (
+                                    <span className="px-2 py-0.5 rounded-md font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                                      {val}
+                                    </span>
+                                  )}
+                                  {col.id === 'status' && (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                                      {val}
+                                    </span>
+                                  )}
+                                  {col.id === 'priority' && (
+                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                                      {val}
+                                    </span>
+                                  )}
+                                  {col.id === 'severity' && (
+                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                                      {val}
+                                    </span>
+                                  )}
+                                  {col.id === 'passRate' && (
+                                    <div className="flex items-center space-x-2">
+                                      <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                        <div className="h-full bg-emerald-500" style={{ width: `${val}%` }} />
+                                      </div>
+                                      <span className="font-bold text-[11px]">%{val}</span>
+                                    </div>
+                                  )}
+                                  {col.id === 'actions' && (
+                                    <div className="flex items-center justify-end space-x-1 text-slate-400">
+                                      <button type="button" className="p-1 hover:text-[var(--accent-primary)] cursor-pointer">
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button type="button" className="p-1 hover:text-rose-500 cursor-pointer">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  )}
+                                  {col.id !== 'title' &&
+                                    col.id !== 'code' &&
+                                    col.id !== 'key' &&
+                                    col.id !== 'status' &&
+                                    col.id !== 'priority' &&
+                                    col.id !== 'severity' &&
+                                    col.id !== 'passRate' &&
+                                    col.id !== 'actions' && (
+                                      <span className="text-slate-600 dark:text-slate-300">{val !== undefined ? String(val) : '—'}</span>
+                                    )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 5. Özel Etiketler & Metadata Havuzu */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center space-x-2.5">
+                      <Tag className="w-4 h-4 text-[var(--accent-primary)]" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                        Özel Etiket & Metadata Alan Havuzu
+                      </h3>
+                    </div>
+                    <span className="text-[11px] text-slate-400">
+                      Test senaryoları ve koşumları filtrelerken kullanılan etiket tanımları.
+                    </span>
+                  </div>
+
+                  {/* Add Tag Form */}
+                  <form onSubmit={handleAddTag} className="flex gap-2 max-w-md">
+                    <input
+                      type="text"
+                      placeholder="Yeni etiket adı (Örn: CoreBanking, Sprint-24)..."
+                      value={newTagInput}
+                      onChange={(e) => setNewTagInput(e.target.value)}
+                      className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] text-slate-800 dark:text-slate-200"
+                    />
+                    <button
+                      type="submit"
+                      className="px-3.5 py-2 rounded-xl bg-[var(--accent-primary)] text-white text-xs font-semibold hover:brightness-110 transition-all cursor-pointer flex items-center space-x-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Ekle</span>
+                    </button>
+                  </form>
+
+                  {/* Active Tags Chip List */}
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {customizationState.customTags.map((t) => (
+                      <span
+                        key={t}
+                        className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 group"
+                      >
+                        <Tag className="w-3 h-3 text-[var(--accent-primary)]" />
+                        <span>{t}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeCustomTag(t)}
+                          className="text-slate-400 hover:text-rose-500 transition-colors ml-1 cursor-pointer"
+                          title="Etiketi Sil"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ========================================================================= */}
           {/* 2. USERS TAB                                                              */}
           {/* ========================================================================= */}
           {activeTab === 'USERS' && (
+
             <div className="space-y-5 animate-in fade-in duration-150 max-w-5xl">
               {/* Header with Search and New User CTA */}
               <div className="p-5 rounded-2xl bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">

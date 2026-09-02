@@ -52,6 +52,31 @@ export class TestPlansController {
     return this.testPlansService.update(id, updateTestPlanDto);
   }
 
+  @Post('test-plans/:id/cases/sync')
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
+  @ApiOperation({ summary: 'Test planına bağlı senaryoları topluca senkronize et (güncelle)' })
+  @ApiParam({ name: 'id', description: 'Test Planı UUID' })
+  syncCases(@Param('id') id: string, @Body('caseIds') caseIds: string[]) {
+    return this.testPlansService.syncCases(id, caseIds || []);
+  }
+
+  @Post('test-plans/:id/cases')
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
+  @ApiOperation({ summary: 'Test planına yeni senaryolar ekle' })
+  @ApiParam({ name: 'id', description: 'Test Planı UUID' })
+  addCases(@Param('id') id: string, @Body('caseIds') caseIds: string[]) {
+    return this.testPlansService.addCases(id, caseIds || []);
+  }
+
+  @Delete('test-plans/:id/cases/:caseId')
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
+  @ApiOperation({ summary: 'Test planından bir senaryoyu çıkart' })
+  @ApiParam({ name: 'id', description: 'Test Planı UUID' })
+  @ApiParam({ name: 'caseId', description: 'TestCase UUID' })
+  removeCase(@Param('id') id: string, @Param('caseId') caseId: string) {
+    return this.testPlansService.removeCase(id, caseId);
+  }
+
   @Delete('test-plans/:id')
   @Roles(Role.ADMIN, Role.TEST_LEAD)
   @ApiOperation({ summary: 'Test planını sil (Admin & Test Lead)' })

@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- Test Planı ile Koşum Başlat modalı doğrudan Senaryo Düzenleme & Seçim modunda açılacak ve Koşumu Başlat ile hemen yürütmeye geçecek şekilde sadeleştirildi
+- Test Planı ile Koşum Başlatıldığında plana ait senaryoların otomatik seçili gelmesi ve doğrudan/hızlı koşum başlatma desteği eklendi
 - ManualRunModal kosu tamamlandiginda verilerin yenilenmesi sirasinda modalin basa sarip tekrar acilmasina neden olan useEffect re-trigger hatasi duzeltildi
 - Test kosumu tamamlandiginda Test Kosumlari sayfasinin otomatik ve aninda guncellenmesi saglandi.
 - Kosum detay sayfasinda kosum sirasinda defect olusturulan senaryolara (Defect Edildi) rozeti ve defect detay tiklama destegi eklendi.
@@ -34,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Ayarlar bölümüne Alan & Kolon Özelleştirme (Field Customization) modülü ve grid popover entegrasyonu eklendi
+- Created 'IOS Mobile Banking Automation' project and imported 111 iOS Cucumber test scenarios across 18 feature modules with 5 linked test plans
+- Imported Core Banking Cucumber real test suites (701 cases across 31 feature modules) and initialized 5 structured Test Plans
 - Test Otomasyon ve entegrasyonlar için Otomasyon Uzmanı (AUTOMATION_ENGINEER) rolü ve yetkilendirmesi eklendi; yetkisiz rollerde otomasyon butonları gizlendi.
 - Tekli ve coklu kosum modallarinda defect olusturuldugunda olusturulan Defect Key ve basari durum rozetinin aninda gosterilmesi saglandi.
 - Test kosumu FAILED durumunda Jira alani yanina Defect Olusturma butonu ve otomatik form doldurma destegi eklendi.
@@ -63,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Linked all 701 test scenarios to the 5 Core Banking Test Plans based on file path hierarchies and module domains
 - Hiyerarsi en tepesine Test Projesi yerlestirildi, veri olmadiginda ilk islem olarak yeni proje olusturma akisi ve sifir veri karsilama ekrani duzenlendi
 - Local veritabanındaki dummy veriler temizlendi, kullanıcı ve sistem konfigürasyonları korundu
 - Test kosum ekranlarinda PASSED secildiginde tum adimlarin otomatik passed isaretlenmesi, baslangicta hicbir sonucun on secili gelmemesi ve genel sayfa scroll duzenlemesi

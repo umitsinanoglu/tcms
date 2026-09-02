@@ -17,6 +17,10 @@ import { exportTestRunsToExcel } from '@/utils/excelUtils';
 import { AutomationTriggerModal } from './AutomationTriggerModal';
 import { LiveRunTerminalModal } from './LiveRunTerminalModal';
 import { useAuth } from '@/context/AuthContext';
+import { useCustomization } from '@/context/CustomizationContext';
+import { ColumnCustomizerMenu } from './ColumnCustomizerMenu';
+import { useNavigation } from '@/context/NavigationContext';
+import { GridColumnConfig } from '@/services/api';
 import {
   Play,
   Send,
@@ -85,6 +89,12 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
   onSelectRun,
 }) => {
   const { can } = useAuth();
+  const { pushState } = useNavigation();
+  const { getVisibleColumns, getModuleConfig, getDensityClasses } = useCustomization();
+  const visibleCols = getVisibleColumns('test-runs');
+  const moduleConfig = getModuleConfig('test-runs');
+  const densityCls = getDensityClasses(moduleConfig.density);
+
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -518,6 +528,19 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             </>
           )}
 
+          <ColumnCustomizerMenu
+            moduleId="test-runs"
+            onOpenAdvancedSettings={() =>
+              pushState({
+                tab: 'SETTINGS',
+                projectId: projectId || null,
+                suiteId: null,
+                caseId: null,
+                label: 'Alan Özelleştirme',
+              })
+            }
+          />
+
           {/* Yöntem 1: Hızlı Test Koşumu (Tekil Senaryo) */}
           <button
             type="button"
@@ -532,7 +555,12 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           {/* Yöntem 2: Test Planı ile Koşum Başlat (Çoklu Senaryo) */}
           <button
             type="button"
-            onClick={() => onOpenManualRun(null)}
+            onClick={() => {
+              const activePlan = planFilter !== 'ALL' && planFilter !== '__NO_PLAN__'
+                ? testPlans.find((p) => p.id === planFilter) || null
+                : (testPlans.length > 0 ? testPlans[0] : null);
+              onOpenManualRun(activePlan);
+            }}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white transition-all duration-200 rounded-[10px] bg-accent-gradient hover:brightness-110 shadow-sm hover:shadow-[0_4px_12px_var(--accent-glow)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
             title="Bir test planı veya çoklu senaryo seçerek kapsamlı koşum başlatın"
           >
@@ -652,15 +680,15 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           onClick={() => setStatusFilter(statusFilter === 'PENDING' ? 'ALL' : 'PENDING')}
           className={`p-3.5 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs cursor-pointer col-span-2 sm:col-span-1 ${
             statusFilter === 'PENDING'
-              ? 'border-slate-700 ring-1 ring-slate-700/30'
+              ? 'border-amber-600 ring-1 ring-amber-600/30'
               : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-              Bekliyor
+            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+              Bekliyor / Diğer
             </span>
-            <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500">
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <Clock className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -668,7 +696,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
               {pendingRuns}
             </span>
-            <span className="text-[10px] text-slate-500">başlamadı</span>
+            <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80">sırada</span>
           </div>
         </div>
       </div>
@@ -777,20 +805,21 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#161f30] border-b border-[#d0d8e4] dark:border-[#2e3748] text-[#64748b] dark:text-[#8e9bb0]">
               <tr className="font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3 px-4 min-w-[200px]">Koşum Adı</th>
-                <th className="py-3 px-4 min-w-[160px]">Test Plan</th>
-                <th className="py-3 px-4 w-32">Durum</th>
-                <th className="py-3 px-4 min-w-[180px]">İlerleme & Sonuçlar</th>
-                <th className="py-3 px-4 w-36">Başlangıç</th>
-                <th className="py-3 px-4 w-24">Süre</th>
-                <th className="py-3 px-4 w-36">Çalıştıran</th>
-                <th className="py-3 px-4 w-28 text-right">Aksiyonlar</th>
+                {visibleCols.map((col) => (
+                  <th
+                    key={col.id}
+                    style={{ width: col.width || 'auto' }}
+                    className="py-3 px-4 whitespace-nowrap"
+                  >
+                    {col.label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#2e3748]/60">
               {filteredRuns.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center">
+                  <td colSpan={visibleCols.length || 8} className="py-16 text-center">
                     {runs.length === 0 ? (
                       /* 5. Clean Empty State: No runs at all */
                       <div className="max-w-md mx-auto space-y-3 px-4">
@@ -806,7 +835,12 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                         <div className="pt-2 flex items-center justify-center gap-3">
                           <button
                             type="button"
-                            onClick={() => onOpenManualRun(null)}
+                            onClick={() => {
+                              const activePlan = planFilter !== 'ALL' && planFilter !== '__NO_PLAN__'
+                                ? testPlans.find((p) => p.id === planFilter) || null
+                                : (testPlans.length > 0 ? testPlans[0] : null);
+                              onOpenManualRun(activePlan);
+                            }}
                             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white rounded-[10px] bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" />
@@ -851,256 +885,314 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                       onClick={() => handleOpenDetail(run.id)}
                       className="hover:bg-slate-50/80 dark:hover:bg-[#262e3d]/50 cursor-pointer transition-colors group"
                     >
-                      {/* Koşum Adı & Sürüm & Ortam */}
-                      <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">
-                        <div className="flex items-start space-x-2.5">
-                          <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 mt-0.5">
-                            <Play className="w-3.5 h-3.5 fill-current" />
-                          </div>
-                          <div className="min-w-0 space-y-1">
-                            <div className="flex items-center space-x-2">
-                              <span className="truncate max-w-xs group-hover:text-[var(--accent-primary)] transition-colors">
-                                {run.title}
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-1.5 text-[10px] font-mono font-normal">
-                              <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748]">
-                                {run.version || 'v1.0.0'}
-                              </span>
-                              <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748]">
-                                {run.environment || 'STAGING'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
+                      {visibleCols.map((col) => {
+                        const alignClass = `text-${col.align || 'left'}`;
 
-                      {/* Test Plan Kolonu */}
-                      <td className="py-3 px-4">
-                        {run.testPlan ? (
-                          <div
-                            onClick={(e) => {
-                              if (onSelectPlan) {
-                                e.stopPropagation();
-                                onSelectPlan(run.testPlan as TestPlan);
-                              }
-                            }}
-                            className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-[8px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 hover:border-amber-500/40 text-xs font-semibold transition-colors truncate max-w-[170px]"
-                            title={`Test Planı: ${run.testPlan.title}`}
-                          >
-                            <ClipboardList className="w-3 h-3 text-amber-500 shrink-0" />
-                            <span className="truncate">{run.testPlan.title}</span>
-                          </div>
-                        ) : (
-                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-[6px] bg-slate-100 dark:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] text-[11px] font-medium border border-[#d0d8e4] dark:border-[#2e3748]">
-                            <Zap className="w-2.5 h-2.5 text-amber-500" />
-                            <span>Hızlı / Bağımsız</span>
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Durum Rozeti (WCAG AA) */}
-                      <td className="py-3 px-4">
-                        {run.status === 'IN_PROGRESS' && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
-                            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-ping" />
-                            <span>ÇALIŞIYOR</span>
-                          </span>
-                        )}
-                        {run.status === 'COMPLETED' && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>TAMAMLANDI</span>
-                          </span>
-                        )}
-                        {run.status === 'ABORTED' && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
-                            <XCircle className="w-3.5 h-3.5" />
-                            <span>İPTAL EDİLDİ</span>
-                          </span>
-                        )}
-                      </td>
-
-                      {/* İlerleme & Çok Renkli Progress Bar */}
-                      <td className="py-3 px-4">
-                        <div className="space-y-1.5 min-w-[160px]">
-                          <div className="flex items-center justify-between text-[11px] font-mono">
-                            <span className="font-bold text-slate-800 dark:text-slate-200">
-                              {stats.executed} / {stats.total} test
-                            </span>
-                            <span className="font-semibold text-[#64748b] dark:text-[#8e9bb0]">
-                              %{stats.passRate}
-                            </span>
-                          </div>
-
-                          {/* Multi-segment Colored Bar */}
-                          <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-[#141821] overflow-hidden flex">
-                            {stats.total > 0 && stats.passed > 0 && (
-                              <div
-                                style={{ width: `${(stats.passed / stats.total) * 100}%` }}
-                                className="bg-emerald-500 h-full"
-                                title={`Passed: ${stats.passed}`}
-                              />
-                            )}
-                            {stats.total > 0 && stats.failed > 0 && (
-                              <div
-                                style={{ width: `${(stats.failed / stats.total) * 100}%` }}
-                                className="bg-rose-500 h-full"
-                                title={`Failed: ${stats.failed}`}
-                              />
-                            )}
-                            {stats.total > 0 && stats.blocked > 0 && (
-                              <div
-                                style={{ width: `${(stats.blocked / stats.total) * 100}%` }}
-                                className="bg-amber-500 h-full"
-                                title={`Blocked: ${stats.blocked}`}
-                              />
-                            )}
-                            {stats.total > 0 && stats.skipped > 0 && (
-                              <div
-                                style={{ width: `${(stats.skipped / stats.total) * 100}%` }}
-                                className="bg-slate-400 h-full"
-                                title={`Skipped: ${stats.skipped}`}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Başlangıç Tarihi */}
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-mono text-[11px]">
-                        <div className="space-y-0.5">
-                          <div>
-                            {new Date(run.createdAt).toLocaleDateString('tr-TR', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
-                          </div>
-                          <div className="text-[10px] text-[#64748b] dark:text-[#8e9bb0]">
-                            {new Date(run.createdAt).toLocaleTimeString('tr-TR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Süre */}
-                      <td className="py-3 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-300">
-                        {stats.durationFormatted}
-                      </td>
-
-                      {/* Çalıştıran */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#262e3d] text-[var(--accent-primary)] font-bold text-[10px] flex items-center justify-center border border-[#d0d8e4] dark:border-[#2e3748] shrink-0 uppercase">
-                            {run.executedBy ? run.executedBy.charAt(0) : 'T'}
-                          </div>
-                          <span className="truncate max-w-[120px] text-slate-800 dark:text-slate-200 font-medium text-xs">
-                            {run.executedBy || 'QA Tester'}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Aksiyonlar & Üç Nokta Menüsü */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end space-x-1" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetail(run.id)}
-                            className="p-1.5 rounded-[8px] bg-slate-100 dark:bg-[#262e3d] hover:bg-slate-200 dark:hover:bg-[#2e3748] text-slate-600 dark:text-slate-300 transition-colors"
-                            title="Detayları İncele"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => ReportsService.downloadRunReport(run.id, 'csv', run.title)}
-                            className="p-1.5 rounded-[8px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
-                            title="CSV Raporu İndir"
-                          >
-                            <FileSpreadsheet className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* Kebab Menu */}
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={() => setActiveMenuRunId(isMenuOpen ? null : run.id)}
-                              className="p-1.5 rounded-[8px] hover:bg-slate-200 dark:hover:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] transition-colors"
-                              title="Diğer İşlemler"
-                            >
-                              <MoreVertical className="w-3.5 h-3.5" />
-                            </button>
-
-                            {isMenuOpen && (
-                              <div
-                                ref={menuRef}
-                                className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] shadow-xl z-30 py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100"
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveMenuRunId(null);
-                                    handleOpenDetail(run.id);
-                                  }}
-                                  className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-slate-700 dark:text-slate-300"
-                                >
-                                  <Eye className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-                                  <span>Detayları İncele</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveMenuRunId(null);
-                                    ReportsService.downloadRunReport(run.id, 'html', run.title);
-                                  }}
-                                  className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-slate-700 dark:text-slate-300"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-                                  <span>HTML Raporunu Aç</span>
-                                </button>
-
-                                {run.status === 'IN_PROGRESS' && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleUpdateRunStatus(run.id, 'COMPLETED')}
-                                      className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-emerald-600 dark:text-emerald-400"
-                                    >
-                                      <CheckCircle2 className="w-3.5 h-3.5" />
-                                      <span>Koşuyu Tamamla</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleUpdateRunStatus(run.id, 'ABORTED')}
-                                      className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-amber-600 dark:text-amber-400"
-                                    >
-                                      <Slash className="w-3.5 h-3.5" />
-                                      <span>Koşuyu İptal Et</span>
-                                    </button>
-                                  </>
-                                )}
-
-                                <div className="border-t border-[#d0d8e4] dark:border-[#2e3748] my-1" />
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteRun(run.id, run.title)}
-                                  className="w-full px-3 py-1.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 flex items-center space-x-2 text-rose-600 dark:text-rose-400"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  <span>Koşumu Sil</span>
-                                </button>
+                        if (col.id === 'title') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 font-bold text-slate-900 dark:text-slate-100 ${alignClass}`}>
+                              <div className="flex items-start space-x-2.5">
+                                <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 mt-0.5">
+                                  <Play className="w-3.5 h-3.5 fill-current" />
+                                </div>
+                                <div className="min-w-0 space-y-1">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="truncate max-w-xs group-hover:text-[var(--accent-primary)] transition-colors">
+                                      {run.title}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-1.5 text-[10px] font-mono font-normal">
+                                    <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748]">
+                                      {run.version || 'v1.0.0'}
+                                    </span>
+                                    <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748]">
+                                      {run.environment || 'STAGING'}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'status') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              {run.status === 'IN_PROGRESS' && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-ping" />
+                                  <span>ÇALIŞIYOR</span>
+                                </span>
+                              )}
+                              {run.status === 'COMPLETED' && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>TAMAMLANDI</span>
+                                </span>
+                              )}
+                              {run.status === 'ABORTED' && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                                  <XCircle className="w-3.5 h-3.5" />
+                                  <span>İPTAL EDİLDİ</span>
+                                </span>
+                              )}
+                              {(run.status as string) === 'PENDING' && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>BEKLİYOR</span>
+                                </span>
+                              )}
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'environment') {
+                          const envVal = run.environment || (run.testPlan as any)?.environment || 'STAGING';
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-[6px] bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748] font-mono font-semibold text-[11px]">
+                                {envVal}
+                              </span>
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'version') {
+                          const verVal = run.version || (run.testPlan as any)?.version || 'v1.0.0';
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-[6px] bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748] font-mono font-semibold text-[11px]">
+                                {verVal}
+                              </span>
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'testPlan') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              {run.testPlan ? (
+                                <div
+                                  onClick={(e) => {
+                                    if (onSelectPlan) {
+                                      e.stopPropagation();
+                                      onSelectPlan(run.testPlan as TestPlan);
+                                    }
+                                  }}
+                                  className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-[8px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 hover:border-amber-500/40 text-xs font-semibold transition-colors truncate max-w-[170px]"
+                                  title={`Test Planı: ${run.testPlan.title}`}
+                                >
+                                  <ClipboardList className="w-3 h-3 text-amber-500 shrink-0" />
+                                  <span className="truncate">{run.testPlan.title}</span>
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-[6px] bg-slate-100 dark:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] text-[11px] font-medium border border-[#d0d8e4] dark:border-[#2e3748]">
+                                  <Zap className="w-2.5 h-2.5 text-amber-500" />
+                                  <span>Hızlı / Bağımsız</span>
+                                </span>
+                              )}
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'metrics') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              <div className="space-y-1.5 min-w-[160px]">
+                                <div className="flex items-center justify-between text-[11px] font-mono">
+                                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                                    {stats.executed} / {stats.total} test
+                                  </span>
+                                  <span className="font-semibold text-[#64748b] dark:text-[#8e9bb0]">
+                                    %{stats.passRate}
+                                  </span>
+                                </div>
+
+                                {/* Multi-segment Colored Bar */}
+                                <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-[#141821] overflow-hidden flex">
+                                  {stats.total > 0 && stats.passed > 0 && (
+                                    <div
+                                      style={{ width: `${(stats.passed / stats.total) * 100}%` }}
+                                      className="bg-emerald-500 h-full"
+                                      title={`Passed: ${stats.passed}`}
+                                    />
+                                  )}
+                                  {stats.total > 0 && stats.failed > 0 && (
+                                    <div
+                                      style={{ width: `${(stats.failed / stats.total) * 100}%` }}
+                                      className="bg-rose-500 h-full"
+                                      title={`Failed: ${stats.failed}`}
+                                    />
+                                  )}
+                                  {stats.total > 0 && stats.blocked > 0 && (
+                                    <div
+                                      style={{ width: `${(stats.blocked / stats.total) * 100}%` }}
+                                      className="bg-amber-500 h-full"
+                                      title={`Blocked: ${stats.blocked}`}
+                                    />
+                                  )}
+                                  {stats.total > 0 && stats.skipped > 0 && (
+                                    <div
+                                      style={{ width: `${(stats.skipped / stats.total) * 100}%` }}
+                                      className="bg-slate-400 h-full"
+                                      title={`Skipped: ${stats.skipped}`}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'createdAt') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 text-slate-600 dark:text-slate-300 font-mono text-[11px] ${alignClass}`}>
+                              <div className="space-y-0.5">
+                                <div>
+                                  {new Date(run.createdAt).toLocaleDateString('tr-TR', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })}
+                                </div>
+                                <div className="text-[10px] text-[#64748b] dark:text-[#8e9bb0]">
+                                  {new Date(run.createdAt).toLocaleTimeString('tr-TR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'duration') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-300 ${alignClass}`}>
+                              {stats.durationFormatted}
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'executedBy') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              <div className="flex items-center space-x-2">
+                                <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#262e3d] text-[var(--accent-primary)] font-bold text-[10px] flex items-center justify-center border border-[#d0d8e4] dark:border-[#2e3748] shrink-0 uppercase">
+                                  {run.executedBy ? run.executedBy.charAt(0) : 'T'}
+                                </div>
+                                <span className="truncate max-w-[120px] text-slate-800 dark:text-slate-200 font-medium text-xs">
+                                  {run.executedBy || 'QA Tester'}
+                                </span>
+                              </div>
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'actions') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 text-right ${alignClass}`}>
+                              <div className="flex items-center justify-end space-x-1" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenDetail(run.id)}
+                                  className="p-1.5 rounded-[8px] bg-slate-100 dark:bg-[#262e3d] hover:bg-slate-200 dark:hover:bg-[#2e3748] text-slate-600 dark:text-slate-300 transition-colors"
+                                  title="Detayları İncele"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => ReportsService.downloadRunReport(run.id, 'csv', run.title)}
+                                  className="p-1.5 rounded-[8px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
+                                  title="CSV Raporu İndir"
+                                >
+                                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                                </button>
+
+                                {/* Kebab Menu */}
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveMenuRunId(isMenuOpen ? null : run.id)}
+                                    className="p-1.5 rounded-[8px] hover:bg-slate-200 dark:hover:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] transition-colors"
+                                    title="Diğer İşlemler"
+                                  >
+                                    <MoreVertical className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {isMenuOpen && (
+                                    <div
+                                      ref={menuRef}
+                                      className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] shadow-xl z-30 py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100"
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveMenuRunId(null);
+                                          handleOpenDetail(run.id);
+                                        }}
+                                        className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-slate-700 dark:text-slate-300"
+                                      >
+                                        <Eye className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                                        <span>Detayları İncele</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveMenuRunId(null);
+                                          ReportsService.downloadRunReport(run.id, 'html', run.title);
+                                        }}
+                                        className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-slate-700 dark:text-slate-300"
+                                      >
+                                        <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+                                        <span>HTML Raporunu Aç</span>
+                                      </button>
+
+                                      {run.status === 'IN_PROGRESS' && (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleUpdateRunStatus(run.id, 'COMPLETED')}
+                                            className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-emerald-600 dark:text-emerald-400"
+                                          >
+                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                            <span>Koşuyu Tamamla</span>
+                                          </button>
+
+                                          <button
+                                            type="button"
+                                            onClick={() => handleUpdateRunStatus(run.id, 'ABORTED')}
+                                            className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-amber-600 dark:text-amber-400"
+                                          >
+                                            <Slash className="w-3.5 h-3.5" />
+                                            <span>Koşuyu İptal Et</span>
+                                          </button>
+                                        </>
+                                      )}
+
+                                      <div className="border-t border-[#d0d8e4] dark:border-[#2e3748] my-1" />
+
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteRun(run.id, run.title)}
+                                        className="w-full px-3 py-1.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 flex items-center space-x-2 text-rose-600 dark:text-rose-400"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        <span>Koşumu Sil</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        }
+
+                        return <td key={col.id} className={`py-3 px-4 ${alignClass}`}>—</td>;
+                      })}
                     </tr>
                   );
                 })

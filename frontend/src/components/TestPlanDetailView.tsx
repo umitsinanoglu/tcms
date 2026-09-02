@@ -94,8 +94,11 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
   const [isSavingMetadata, setIsSavingMetadata] = useState(false);
 
   // Scenarios In Plan State
-  // We keep track of scenario IDs assigned to this plan (persisted locally / dynamically)
+  // We keep track of scenario IDs assigned to this plan (persisted in DB and synced locally)
   const [planCaseIds, setPlanCaseIds] = useState<string[]>(() => {
+    if (initialPlan.cases && initialPlan.cases.length > 0) {
+      return initialPlan.cases.map((c) => c.testCaseId);
+    }
     try {
       const saved = localStorage.getItem(`tcms_plan_cases_${initialPlan.id}`);
       if (saved !== null) return JSON.parse(saved);
@@ -130,15 +133,19 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
     setEditScope(initialPlan.scope || '');
     setEditRequirements(initialPlan.requirements || '');
 
-    try {
-      const saved = localStorage.getItem(`tcms_plan_cases_${initialPlan.id}`);
-      if (saved !== null) {
-        setPlanCaseIds(JSON.parse(saved));
-      } else {
+    if (initialPlan.cases && initialPlan.cases.length > 0) {
+      setPlanCaseIds(initialPlan.cases.map((c) => c.testCaseId));
+    } else {
+      try {
+        const saved = localStorage.getItem(`tcms_plan_cases_${initialPlan.id}`);
+        if (saved !== null) {
+          setPlanCaseIds(JSON.parse(saved));
+        } else {
+          setPlanCaseIds([]);
+        }
+      } catch {
         setPlanCaseIds([]);
       }
-    } catch {
-      setPlanCaseIds([]);
     }
   }, [initialPlan]);
 
@@ -156,6 +163,13 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
         setEditStatus(fresh.status || 'ACTIVE');
         setEditScope(fresh.scope || '');
         setEditRequirements(fresh.requirements || '');
+        if (fresh.cases && fresh.cases.length > 0) {
+          const ids = fresh.cases.map((c) => c.testCaseId);
+          setPlanCaseIds(ids);
+          try {
+            localStorage.setItem(`tcms_plan_cases_${fresh.id}`, JSON.stringify(ids));
+          } catch {}
+        }
       }
     } catch (err) {
       console.error('Failed to reload test plan:', err);
@@ -164,7 +178,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
     }
   }, [plan.id]);
 
-  // Save Plan Case IDs to localStorage
+  // Save Plan Case IDs to server and localStorage
   const updatePlanCaseIds = (newIds: string[]) => {
     setPlanCaseIds(newIds);
     try {
@@ -172,6 +186,9 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
     } catch {
       // Ignore
     }
+    TestPlansService.syncCases(plan.id, newIds).catch((err) => {
+      console.warn('Failed to sync plan cases to server:', err);
+    });
   };
 
   // Scenarios mapped to this plan

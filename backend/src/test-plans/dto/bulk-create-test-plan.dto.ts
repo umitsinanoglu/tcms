@@ -38,6 +38,10 @@ export class BulkTestPlanItemDto {
   @IsString()
   @IsOptional()
   requirements?: string;
+
+  @ApiPropertyOptional({ description: 'Plana dahil edilecek Test Senaryosu ID listesi', type: [String] })
+  @IsOptional()
+  caseIds?: string[];
 }
 
 export class BulkCreateTestPlansDto {
