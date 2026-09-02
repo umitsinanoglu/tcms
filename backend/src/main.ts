@@ -8,6 +8,7 @@ import { resolveDatabaseEnv } from './prisma/db-env';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
 
   // Enable CORS for frontend
   app.enableCors({
@@ -31,12 +32,16 @@ async function bootstrap() {
   // OpenAPI / Swagger Configuration
   const config = new DocumentBuilder()
     .setTitle('Test Case Management System (TCMS) API')
-    .setDescription('TCMS Backend API documentation for Projects, Suites, TestCases, and Automation Test Run Ingestion')
+    .setDescription('TCMS Backend API documentation for Projects, Test Plans, Suites, TestCases, Automation Ingestion, Reports, and RBAC')
     .setVersion('1.0')
-    .addTag('Projects', 'Proje yönetimi ve klasör ağacı API\'leri')
-    .addTag('Suites', 'Klasör yapısı ve sürükle-bırak sıralama API\'leri')
-    .addTag('Test Cases', 'Test senaryoları ve adımları API\'leri')
-    .addTag('Test Runs & Automation', 'Otomasyon araçları ve manuel koşu API\'leri')
+    .addTag('Projects', "Proje yönetimi ve klasör ağacı API'leri")
+    .addTag('Test Plans', "Test planı ve sürüm kapsam yönetimi API'leri")
+    .addTag('Suites', "Klasör yapısı ve sürükle-bırak sıralama API'leri")
+    .addTag('Test Cases', "Test senaryoları ve adımları API'leri")
+    .addTag('Test Runs & Automation', "Otomasyon araçları ve manuel koşu API'leri")
+    .addTag('Webhooks & Automation Trigger', "Dış otomasyon sistemlerini (Test Otomasyon Merkezi) tetikleme ve webhook API'leri")
+    .addTag('Reports & Analytics', "Proje, Koşu, Suite ve TestCase analitik ve rapor dışa aktarma (CSV/HTML/JSON) API'leri")
+    .addTag('Users & RBAC', "Kullanıcı yönetimi, oturum ve rol tabanlı yetkilendirme (RBAC) API'leri")
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

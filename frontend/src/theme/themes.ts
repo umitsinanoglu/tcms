@@ -1,6 +1,46 @@
 import { DesignTokens, ThemeId } from './tokens';
 
 export const themePresets: Record<ThemeId, DesignTokens> = {
+  'azure-blue': {
+    colors: {
+      background: '#f4f5f7',
+      surface: '#ffffff',
+      surfaceSecondary: '#ebecf0',
+      border: '#dfe1e6',
+      textMain: '#091e42',
+      textMuted: '#626f86',
+      accentPrimary: '#0c66e4',
+      accentDark: '#0052cc',
+      accentGradient: 'linear-gradient(135deg, #0c66e4 0%, #0052cc 100%)',
+      accentHover: '#0055cc',
+      glassPanelBg: 'rgba(255, 255, 255, 0.95)',
+      glassPanelBorder: 'rgba(12, 102, 228, 0.18)',
+      scrollbarTrack: '#f4f5f7',
+      scrollbarThumb: '#cbd5e1',
+    },
+    status: {
+      passed: { bg: '#e3fcef', text: '#006644', border: '#abf5d1' },
+      failed: { bg: '#ffebe6', text: '#bf2600', border: '#ffbdad' },
+      blocked: { bg: '#fffae6', text: '#ff8b00', border: '#fff0b3' },
+      inProgress: { bg: '#deebff', text: '#0c66e4', border: '#b3d4ff' },
+      draft: { bg: '#f4f5f7', text: '#626f86', border: '#dfe1e6' },
+    },
+    radii: {
+      sm: '8px',
+      button: '10px',
+      card: '14px',
+      container: '16px',
+      pill: '9999px',
+    },
+    shadows: {
+      xs: '0 1px 2px 0 rgba(9, 30, 66, 0.04)',
+      sm: '0 2px 4px 0 rgba(9, 30, 66, 0.06)',
+      md: '0 4px 12px 0 rgba(9, 30, 66, 0.08)',
+      lg: '0 10px 25px -5px rgba(9, 30, 66, 0.10)',
+      xl: '0 20px 40px -10px rgba(9, 30, 66, 0.14)',
+      accentGlow: '0 0 20px rgba(12, 102, 228, 0.18)',
+    },
+  },
   'crimson-dark': {
     colors: {
       background: '#141821',
@@ -43,7 +83,7 @@ export const themePresets: Record<ThemeId, DesignTokens> = {
   },
   'crimson-light': {
     colors: {
-      background: '#f2f5f8',
+      background: '#f4f6f8',
       surface: '#ffffff',
       surfaceSecondary: '#e6ebf2',
       border: '#d0d8e4',
@@ -59,11 +99,11 @@ export const themePresets: Record<ThemeId, DesignTokens> = {
       scrollbarThumb: '#cbd5e1',
     },
     status: {
-      passed: { bg: '#d1fae5', text: '#059669', border: '#a7f3d0' },
-      failed: { bg: '#fee2e2', text: '#dc2626', border: '#fecaca' },
-      blocked: { bg: '#fef3c7', text: '#d97706', border: '#fde68a' },
-      inProgress: { bg: '#dbeafe', text: '#2563eb', border: '#bfdbfe' },
-      draft: { bg: '#f1f5f9', text: '#64748b', border: '#e2e8f0' },
+      passed: { bg: '#ecfdf5', text: '#047857', border: '#a7f3d0' },
+      failed: { bg: '#fef2f2', text: '#b91c1c', border: '#fecaca' },
+      blocked: { bg: '#fffbeb', text: '#b45309', border: '#fde68a' },
+      inProgress: { bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' },
+      draft: { bg: '#f8fafc', text: '#64748b', border: '#e2e8f0' },
     },
     radii: {
       sm: '8px',
@@ -79,6 +119,46 @@ export const themePresets: Record<ThemeId, DesignTokens> = {
       lg: '0 10px 25px -5px rgba(0, 0, 0, 0.10)',
       xl: '0 20px 40px -10px rgba(0, 0, 0, 0.15)',
       accentGlow: '0 0 20px rgba(184, 58, 75, 0.15)',
+    },
+  },
+  'corporate-light': {
+    colors: {
+      background: '#eef2f6',
+      surface: '#ffffff',
+      surfaceSecondary: '#e2e8f0',
+      border: '#cbd5e1',
+      textMain: '#090d16',
+      textMuted: '#475569',
+      accentPrimary: '#991b1b',
+      accentDark: '#7f1d1d',
+      accentGradient: 'linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%)',
+      accentHover: '#b91c1c',
+      glassPanelBg: 'rgba(255, 255, 255, 0.96)',
+      glassPanelBorder: 'rgba(203, 213, 225, 0.85)',
+      scrollbarTrack: '#e2e8f0',
+      scrollbarThumb: '#94a3b8',
+    },
+    status: {
+      passed: { bg: '#ecfdf5', text: '#047857', border: '#a7f3d0' },
+      failed: { bg: '#fef2f2', text: '#991b1b', border: '#fecaca' },
+      blocked: { bg: '#fffbeb', text: '#b45309', border: '#fde68a' },
+      inProgress: { bg: '#f0f9ff', text: '#0369a1', border: '#bae6fd' },
+      draft: { bg: '#f8fafc', text: '#475569', border: '#cbd5e1' },
+    },
+    radii: {
+      sm: '8px',
+      button: '10px',
+      card: '14px',
+      container: '16px',
+      pill: '9999px',
+    },
+    shadows: {
+      xs: '0 1px 2px 0 rgba(15, 23, 42, 0.04)',
+      sm: '0 2px 4px 0 rgba(15, 23, 42, 0.06)',
+      md: '0 4px 10px 0 rgba(15, 23, 42, 0.08)',
+      lg: '0 10px 20px -3px rgba(15, 23, 42, 0.09)',
+      xl: '0 20px 30px -8px rgba(15, 23, 42, 0.12)',
+      accentGlow: '0 0 16px rgba(153, 27, 27, 0.14)',
     },
   },
 };

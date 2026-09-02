@@ -1,10 +1,31 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { TestRun, TestRunsService, RunStatus, ResultStatus, TestCase, ReportsService } from '@/services/api';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import {
+  TestRun,
+  TestRunsService,
+  RunStatus,
+  ResultStatus,
+  TestCase,
+  TestPlan,
+  ReportsService,
+  WebhooksService,
+  TriggerTargetScope,
+} from '@/services/api';
 import { parseScreenshots } from './QuickRunModal';
+import { exportTestRunsToExcel } from '@/utils/excelUtils';
+import { AutomationTriggerModal } from './AutomationTriggerModal';
+import { LiveRunTerminalModal } from './LiveRunTerminalModal';
+import { useAuth } from '@/context/AuthContext';
+import { useCustomization } from '@/context/CustomizationContext';
+import { ColumnCustomizerMenu } from './ColumnCustomizerMenu';
+import { useNavigation } from '@/context/NavigationContext';
+import { GridColumnConfig } from '@/services/api';
 import {
   Play,
+  Send,
+  Radio,
+  Activity,
   CheckCircle2,
   XCircle,
   Clock,
@@ -32,27 +53,108 @@ import {
   Smartphone,
   Zap,
   Folder,
+  ClipboardList,
+  MoreVertical,
+  Trash2,
+  RotateCcw,
+  Sparkles,
+  Calendar,
+  User,
+  SlidersHorizontal,
+  Layers,
+  FileText,
 } from 'lucide-react';
 
 interface TestRunsViewProps {
   projectId: string;
-  onOpenManualRun: () => void;
+  testPlans?: TestPlan[];
+  allCases?: TestCase[];
+  refreshKey?: number;
+  onOpenManualRun: (initialPlan?: TestPlan | null) => void;
+  onOpenQuickRun?: (testCase?: TestCase | null) => void;
   onSelectCase?: (testCase: TestCase) => void;
+  onSelectPlan?: (testPlan: TestPlan) => void;
+  onSelectRun?: (run: TestRun) => void;
 }
 
 export const TestRunsView: React.FC<TestRunsViewProps> = ({
   projectId,
+  testPlans = [],
+  allCases = [],
+  refreshKey = 0,
   onOpenManualRun,
+  onOpenQuickRun,
   onSelectCase,
+  onSelectPlan,
+  onSelectRun,
 }) => {
+  const { can } = useAuth();
+  const { pushState } = useNavigation();
+  const { getVisibleColumns, getModuleConfig, getDensityClasses } = useCustomization();
+  const visibleCols = getVisibleColumns('test-runs');
+  const moduleConfig = getModuleConfig('test-runs');
+  const densityCls = getDensityClasses(moduleConfig.density);
+
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [loading, setLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'ALL' | RunStatus>('ALL');
+
+  // Filters State
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | RunStatus | 'FAILED' | 'PENDING'>('ALL');
+  const [planFilter, setPlanFilter] = useState<string>('ALL');
+  const [dateFilter, setDateFilter] = useState<'ALL' | 'TODAY' | 'WEEK' | 'MONTH'>('ALL');
+  const [testerFilter, setTesterFilter] = useState<string>('ALL');
+
+  // Detail Modal & Automation Modal State
   const [selectedRunDetails, setSelectedRunDetails] = useState<TestRun | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailFilterStatus, setDetailFilterStatus] = useState<'ALL' | ResultStatus>('ALL');
+  const [detailSearch, setDetailSearch] = useState('');
   const [isAutomationModalOpen, setIsAutomationModalOpen] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
+
+  // Webhook Trigger Modal State
+  const [isWebhookModalOpen, setIsWebhookModalOpen] = useState(false);
+  const [isTACModalOpen, setIsTACModalOpen] = useState(false);
+  const [isLiveTerminalOpen, setIsLiveTerminalOpen] = useState(false);
+  const [activeTerminalRunId, setActiveTerminalRunId] = useState<string | undefined>();
+  const [activeTerminalRunTitle, setActiveTerminalRunTitle] = useState<string | undefined>();
+  const [activeTerminalPlatform, setActiveTerminalPlatform] = useState<string>('iOS');
+  const [activeTerminalDevice, setActiveTerminalDevice] = useState<string>('iphone15');
+  const [webhookUrl, setWebhookUrl] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('tcms_automation_webhook_url') || 'http://localhost:8000/api/webhook/trigger';
+    }
+    return 'http://localhost:8000/api/webhook/trigger';
+  });
+  const [webhookSecret, setWebhookSecret] = useState('');
+  const [webhookTitle, setWebhookTitle] = useState('Otomasyon Regresyon Koşusu');
+  const [webhookEnvironment, setWebhookEnvironment] = useState('STAGING');
+  const [webhookScope, setWebhookScope] = useState<TriggerTargetScope>('ALL');
+  const [webhookSuiteId, setWebhookSuiteId] = useState<string>('');
+  const [webhookTriggerLoading, setWebhookTriggerLoading] = useState(false);
+  const [webhookPingLoading, setWebhookPingLoading] = useState(false);
+  const [webhookPingResult, setWebhookPingResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [webhookResponse, setWebhookResponse] = useState<any | null>(null);
+
+  // Quick Run Case Picker Modal (for Secondary Action)
+  const [isQuickPickerOpen, setIsQuickPickerOpen] = useState(false);
+  const [quickPickerSearch, setQuickPickerSearch] = useState('');
+
+  // Dropdown Menu State
+  const [activeMenuRunId, setActiveMenuRunId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setActiveMenuRunId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Fetch test runs list
   const loadRuns = useCallback(async () => {
@@ -60,7 +162,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
     setLoading(true);
     try {
       const data = await TestRunsService.getRuns(projectId);
-      setRuns(data);
+      setRuns(data || []);
     } catch (err) {
       console.error('Failed to load test runs:', err);
     } finally {
@@ -70,14 +172,20 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
 
   useEffect(() => {
     loadRuns();
-  }, [loadRuns]);
+  }, [loadRuns, refreshKey]);
 
-  // Open detailed run view
+  // Open detailed run view (navigate to dedicated view if available, or fallback to modal)
   const handleOpenDetail = async (runId: string) => {
     try {
       const details = await TestRunsService.getRunDetails(runId);
-      setSelectedRunDetails(details);
-      setIsDetailOpen(true);
+      if (onSelectRun && details) {
+        onSelectRun(details);
+      } else {
+        setSelectedRunDetails(details);
+        setDetailFilterStatus('ALL');
+        setDetailSearch('');
+        setIsDetailOpen(true);
+      }
     } catch (err) {
       console.error('Failed to fetch run details:', err);
     }
@@ -92,30 +200,199 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
         const updated = await TestRunsService.getRunDetails(runId);
         setSelectedRunDetails(updated);
       }
+      setActiveMenuRunId(null);
     } catch (err) {
       console.error('Failed to update run status:', err);
     }
   };
 
-  // Filter runs logic
-  const filteredRuns = runs.filter((run) => {
-    if (statusFilter !== 'ALL' && run.status !== statusFilter) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const titleMatch = run.title.toLowerCase().includes(q);
-      const versionMatch = run.version.toLowerCase().includes(q);
-      const envMatch = run.environment.toLowerCase().includes(q);
-      const testerMatch = run.executedBy ? run.executedBy.toLowerCase().includes(q) : false;
-      return titleMatch || versionMatch || envMatch || testerMatch;
+  // Delete run action
+  const handleDeleteRun = async (runId: string, runTitle: string) => {
+    if (window.confirm(`"${runTitle}" test koşumunu ve tüm sonuçlarını silmek istediğinize emin misiniz?`)) {
+      try {
+        await TestRunsService.deleteRun(runId);
+        await loadRuns();
+        if (selectedRunDetails?.id === runId) {
+          setIsDetailOpen(false);
+          setSelectedRunDetails(null);
+        }
+        setActiveMenuRunId(null);
+      } catch (err) {
+        console.error('Failed to delete test run:', err);
+      }
     }
-    return true;
-  });
+  };
 
-  // Global Run KPI Stats
+  const handleTestWebhook = async () => {
+    if (!webhookUrl) return;
+    setWebhookPingLoading(true);
+    setWebhookPingResult(null);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tcms_automation_webhook_url', webhookUrl);
+      }
+      const res = await WebhooksService.testWebhook(projectId, webhookUrl, webhookSecret);
+      if (res.success) {
+        setWebhookPingResult({ success: true, message: `Bağlantı Başarılı! (HTTP ${res.status || 200})` });
+      } else {
+        setWebhookPingResult({ success: false, message: `Bağlantı Hatası: ${res.error || 'Cevap alınamadı'}` });
+      }
+    } catch (err: any) {
+      setWebhookPingResult({ success: false, message: `Hata: ${err?.message || 'Uzak sunucuya ulaşılamadı'}` });
+    } finally {
+      setWebhookPingLoading(false);
+    }
+  };
+
+  const handleTriggerWebhook = async () => {
+    if (!webhookUrl) return;
+    setWebhookTriggerLoading(true);
+    setWebhookResponse(null);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tcms_automation_webhook_url', webhookUrl);
+      }
+      const res = await WebhooksService.triggerAutomation(projectId, {
+        webhookUrl,
+        secretToken: webhookSecret || undefined,
+        title: webhookTitle || undefined,
+        environment: webhookEnvironment,
+        scope: webhookScope,
+        suiteId: webhookScope === 'SUITE' ? webhookSuiteId : undefined,
+      });
+
+      setWebhookResponse(res);
+      await loadRuns();
+    } catch (err: any) {
+      setWebhookResponse({
+        success: false,
+        message: err?.response?.data?.message || err?.message || 'Webhook tetiklenemedi',
+      });
+    } finally {
+      setWebhookTriggerLoading(false);
+    }
+  };
+
+  // Extract unique testers for filter
+  const uniqueTesters = useMemo(() => {
+    const set = new Set<string>();
+    runs.forEach((r) => {
+      if (r.executedBy) set.add(r.executedBy.trim());
+    });
+    return Array.from(set).filter(Boolean);
+  }, [runs]);
+
+  // Helper to compute stats for a single run
+  const getRunStats = (run: TestRun) => {
+    const results = run.results || [];
+    const total = run._count?.results ?? results.length;
+    const passed = results.filter((r) => r.status === 'PASSED').length;
+    const failed = results.filter((r) => r.status === 'FAILED').length;
+    const blocked = results.filter((r) => r.status === 'BLOCKED').length;
+    const skipped = results.filter((r) => r.status === 'SKIPPED').length;
+    const executed = passed + failed + blocked + skipped;
+    const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+    const isFailed = failed > 0 || run.status === 'ABORTED';
+    const isPending = run.status === 'IN_PROGRESS' && executed === 0;
+
+    // Estimate duration
+    const totalMs = results.reduce((acc, curr) => acc + (curr.executionMs || 0), 0);
+    const durationFormatted = formatDuration(totalMs);
+
+    return { total, passed, failed, blocked, skipped, executed, passRate, isFailed, isPending, durationFormatted };
+  };
+
+  // KPI Calculations across all runs
   const totalRuns = runs.length;
   const inProgressRuns = runs.filter((r) => r.status === 'IN_PROGRESS').length;
   const completedRuns = runs.filter((r) => r.status === 'COMPLETED').length;
-  const abortedRuns = runs.filter((r) => r.status === 'ABORTED').length;
+  const failedRuns = runs.filter((r) => {
+    const hasFailedResult = r.results?.some((res) => res.status === 'FAILED');
+    return r.status === 'ABORTED' || hasFailedResult;
+  }).length;
+  const pendingRuns = runs.filter((r) => {
+    const stats = getRunStats(r);
+    return r.status === 'IN_PROGRESS' && stats.executed === 0;
+  }).length;
+
+  // Filter logic
+  const filteredRuns = useMemo(() => {
+    return runs.filter((run) => {
+      const stats = getRunStats(run);
+
+      // Status filter
+      if (statusFilter !== 'ALL') {
+        if (statusFilter === 'FAILED') {
+          if (!stats.isFailed) return false;
+        } else if (statusFilter === 'PENDING') {
+          if (!stats.isPending && run.status !== 'IN_PROGRESS') return false;
+        } else if (run.status !== statusFilter) {
+          return false;
+        }
+      }
+
+      // Test Plan filter
+      if (planFilter !== 'ALL') {
+        if (planFilter === '__NO_PLAN__') {
+          if (run.testPlanId) return false;
+        } else if (run.testPlanId !== planFilter) {
+          return false;
+        }
+      }
+
+      // Tester filter
+      if (testerFilter !== 'ALL' && run.executedBy !== testerFilter) {
+        return false;
+      }
+
+      // Date filter
+      if (dateFilter !== 'ALL') {
+        const runDate = new Date(run.createdAt);
+        const now = new Date();
+        if (dateFilter === 'TODAY') {
+          const isToday = runDate.toDateString() === now.toDateString();
+          if (!isToday) return false;
+        } else if (dateFilter === 'WEEK') {
+          const diffDays = (now.getTime() - runDate.getTime()) / (1000 * 3600 * 24);
+          if (diffDays > 7) return false;
+        } else if (dateFilter === 'MONTH') {
+          const diffDays = (now.getTime() - runDate.getTime()) / (1000 * 3600 * 24);
+          if (diffDays > 30) return false;
+        }
+      }
+
+      // Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const titleMatch = run.title?.toLowerCase().includes(q);
+        const versionMatch = run.version?.toLowerCase().includes(q);
+        const envMatch = run.environment?.toLowerCase().includes(q);
+        const testerMatch = run.executedBy?.toLowerCase().includes(q);
+        const planMatch = run.testPlan?.title?.toLowerCase().includes(q);
+        if (!titleMatch && !versionMatch && !envMatch && !testerMatch && !planMatch) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [runs, statusFilter, planFilter, testerFilter, dateFilter, searchQuery]);
+
+  const hasActiveFilters = searchQuery.trim() !== '' || statusFilter !== 'ALL' || planFilter !== 'ALL' || dateFilter !== 'ALL' || testerFilter !== 'ALL';
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('ALL');
+    setPlanFilter('ALL');
+    setDateFilter('ALL');
+    setTesterFilter('ALL');
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCurl(true);
+    setTimeout(() => setCopiedCurl(false), 2000);
+  };
 
   const automationCurlExample = `curl -X POST "http://localhost:3001/api/v1/projects/${projectId}/runs/automation" \\
   -H "Content-Type: application/json" \\
@@ -141,413 +418,781 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
     ]
   }'`;
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedCurl(true);
-    setTimeout(() => setCopiedCurl(false), 2000);
-  };
-
-  // Helper to extract parent suite names from test cases in the run
-  const getRunParentSuites = (run: TestRun): string[] => {
-    if (!run.results || run.results.length === 0) return ['Plan Kökü'];
-    const suiteNames = new Set<string>();
-    run.results.forEach((res) => {
-      if (res.testCase?.suite?.name) {
-        suiteNames.add(res.testCase.suite.name);
-      } else {
-        suiteNames.add('Plan Kökü');
+  // Filtered detail results
+  const filteredDetailResults = useMemo(() => {
+    if (!selectedRunDetails?.results) return [];
+    return selectedRunDetails.results.filter((res) => {
+      if (detailFilterStatus !== 'ALL' && res.status !== detailFilterStatus) return false;
+      if (detailSearch.trim()) {
+        const q = detailSearch.toLowerCase();
+        const codeMatch = res.testCase?.code?.toLowerCase().includes(q);
+        const titleMatch = res.testCase?.title?.toLowerCase().includes(q);
+        const errMsgMatch = res.errorMessage?.toLowerCase().includes(q);
+        const bugMatch = res.jiraBugKey?.toLowerCase().includes(q);
+        if (!codeMatch && !titleMatch && !errMsgMatch && !bugMatch) return false;
       }
+      return true;
     });
-    return Array.from(suiteNames);
-  };
-
-  // Helper to extract unique product/test types from test cases in the run
-  const getRunProductTypes = (run: TestRun): string[] => {
-    if (!run.results || run.results.length === 0) return ['WEB'];
-    const types = new Set<string>();
-    run.results.forEach((res) => {
-      if (res.testCase?.type) {
-        types.add(res.testCase.type);
-      } else {
-        types.add('WEB');
-      }
-    });
-    return Array.from(types);
-  };
-
-  const renderTypeBadge = (t: string) => {
-    switch (t) {
-      case 'WEB':
-        return (
-          <span key={t} className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono font-bold text-[10px] border border-blue-500/20">
-            <Globe className="w-3 h-3" />
-            <span>WEB</span>
-          </span>
-        );
-      case 'MOBILE':
-      case 'IOS':
-      case 'ANDROID':
-        return (
-          <span key={t} className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-mono font-bold text-[10px] border border-purple-500/20">
-            <Smartphone className="w-3 h-3" />
-            <span>{t}</span>
-          </span>
-        );
-      case 'API':
-        return (
-          <span key={t} className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px] border border-emerald-500/20">
-            <Terminal className="w-3 h-3" />
-            <span>API</span>
-          </span>
-        );
-      case 'PERFORMANCE':
-        return (
-          <span key={t} className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono font-bold text-[10px] border border-amber-500/20">
-            <Zap className="w-3 h-3" />
-            <span>PERF</span>
-          </span>
-        );
-      default:
-        return (
-          <span key={t} className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 font-mono font-bold text-[10px] border border-slate-500/20">
-            <span>{t}</span>
-          </span>
-        );
-    }
-  };
+  }, [selectedRunDetails, detailFilterStatus, detailSearch]);
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 dark:bg-[#090d16] text-slate-800 dark:text-slate-100 p-4 sm:p-6 space-y-6 overflow-y-auto transition-colors duration-200">
-      {/* Top Banner / Title & Primary Action */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
-        <div>
+    <div className="flex-1 flex flex-col bg-[#f2f5f8] dark:bg-[#141821] text-[#0f172a] dark:text-[#f1f5f9] p-4 sm:p-6 space-y-5 overflow-y-auto transition-colors duration-200 min-h-0">
+      {/* 1. Header Area */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#d0d8e4] dark:border-[#2e3748]">
+        <div className="space-y-1">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-md shadow-emerald-500/10">
-              <Play className="w-5 h-5 fill-current text-emerald-500" />
+            <div className="w-10 h-10 rounded-xl bg-accent-gradient text-white flex items-center justify-center shadow-md shadow-[var(--accent-dark)]/25">
+              <Play className="w-5 h-5 fill-current" />
             </div>
             <div>
               <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-                Test Koşumları (Test Executions)
+                Test Koşumları
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Test planı tabanlı manuel ve otomasyon (Appium/Selenium/Playwright) koşularını yönetin ve yürütün.
+              <p className="text-xs text-[#64748b] dark:text-[#8e9bb0]">
+                Test planlarını çalıştırın, ilerlemeyi takip edin ve sonuçları yönetin.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2.5">
+        {/* Header Action Buttons */}
+        <div className="flex items-center flex-wrap gap-2.5">
           <button
             type="button"
-            onClick={() => setIsAutomationModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shadow-xs"
+            onClick={loadRuns}
+            className="p-2 rounded-[10px] bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] hover:border-[var(--accent-primary)]/40 transition-all cursor-pointer shadow-xs"
+            title="Yenile"
           >
-            <Code className="w-3.5 h-3.5 text-[#b83a4b]" />
-            <span>Otomasyon API (CI/CD)</span>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             type="button"
-            onClick={onOpenManualRun}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-500/25 active:scale-98 transition-all cursor-pointer"
+            onClick={() => exportTestRunsToExcel(runs, 'TCMS')}
+            disabled={runs.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] border border-[#d0d8e4] dark:border-[#2e3748] disabled:opacity-40 transition-all cursor-pointer shadow-xs"
+            title="Tüm Test Koşumlarını ve Detaylı Sonuçlarını Excel'e Aktar"
           >
-            <Play className="w-4 h-4 fill-white" />
-            <span>Yeni Test Koşumu Başlat</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Excel'e Aktar</span>
           </button>
-        </div>
-      </div>
 
-      {/* KPI Cards Row (4 Compact Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Total Runs */}
-        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <Play className="w-4 h-4 fill-current text-emerald-500" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Toplam Koşu
-              </span>
-              <button onClick={loadRuns} className="text-slate-400 hover:text-slate-200 transition-colors" title="Yenile">
-                <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          {can('AUTOMATION_ACCESS') && (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsAutomationModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9] border border-[#d0d8e4] dark:border-[#2e3748] transition-all cursor-pointer shadow-xs"
+              >
+                <Code className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                <span>Otomasyon API (CI/CD)</span>
               </button>
-            </div>
-            <div className="flex items-baseline space-x-1.5">
-              <span className="text-lg font-black text-slate-900 dark:text-slate-100 font-mono leading-none">
-                {totalRuns}
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium">Koşu</span>
-            </div>
-          </div>
-        </div>
 
-        {/* In Progress Runs */}
-        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
-            </span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-              Devam Eden Koşular
-            </span>
-            <div className="flex items-baseline space-x-1.5">
-              <span className="text-lg font-black font-mono text-blue-600 dark:text-blue-400 leading-none">
-                {inProgressRuns}
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium">Aktif</span>
-            </div>
-          </div>
-        </div>
+              <button
+                type="button"
+                onClick={() => setIsTACModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-bold bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-800 transition-all cursor-pointer shadow-xs"
+                title="Test Automation Center (TAC) üzerinden mobil testleri çalıştırın"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-purple-500" />
+                <span>⚡ Mobil Otomasyonu Koş (TAC)</span>
+              </button>
 
-        {/* Completed Runs */}
-        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-              Tamamlanan
-            </span>
-            <div className="flex items-baseline space-x-1.5">
-              <span className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-300 leading-none">
-                {completedRuns}
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium">Başarılı</span>
-            </div>
-          </div>
-        </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTerminalRunId(undefined);
+                  setActiveTerminalRunTitle('Test Automation Canlı Terminal');
+                  setIsLiveTerminalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748] transition-all cursor-pointer shadow-xs"
+                title="TAC WebSocket canlı log akışını izleyin"
+              >
+                <Terminal className="w-3.5 h-3.5 text-slate-500" />
+                <span>Canlı Log Terminali</span>
+              </button>
 
-        {/* Aborted Runs */}
-        <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-            <XCircle className="w-4 h-4 text-rose-500" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-              İptal / Durdurulan
-            </span>
-            <div className="flex items-baseline space-x-1.5">
-              <span className="text-lg font-black font-mono text-rose-700 dark:text-rose-300 leading-none">
-                {abortedRuns}
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium">Durduruldu</span>
-            </div>
-          </div>
-        </div>
-      </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setWebhookResponse(null);
+                  setWebhookPingResult(null);
+                  setIsWebhookModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50 hover:border-indigo-400 transition-all cursor-pointer shadow-xs"
+                title="Dış Test Otomasyon Merkezini Webhook ile anında tetikleyin"
+              >
+                <Send className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Webhook Tetikle</span>
+              </button>
+            </>
+          )}
 
-      {/* Controls & Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900/80 p-2.5 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-        {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Koşu başlığı, modül, versiyon veya ortam ara..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          <ColumnCustomizerMenu
+            moduleId="test-runs"
+            onOpenAdvancedSettings={() =>
+              pushState({
+                tab: 'SETTINGS',
+                projectId: projectId || null,
+                suiteId: null,
+                caseId: null,
+                label: 'Alan Özelleştirme',
+              })
+            }
           />
-        </div>
 
-        {/* Status Filter Buttons */}
-        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl space-x-1 text-xs overflow-x-auto no-scrollbar">
+          {/* Yöntem 1: Hızlı Test Koşumu (Tekil Senaryo) */}
           <button
-            onClick={() => setStatusFilter('ALL')}
-            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
-              statusFilter === 'ALL'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            type="button"
+            onClick={() => setIsQuickPickerOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] text-xs font-semibold bg-white dark:bg-[#1d232f] hover:bg-slate-50 dark:hover:bg-[#262e3d] text-slate-800 dark:text-slate-200 border border-[#d0d8e4] dark:border-[#2e3748] hover:border-amber-500/50 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+            title="Tek bir test senaryosunu hızlıca koşun (N defa tekrarlanabilir)"
           >
-            Tümü ({runs.length})
+            <Zap className="w-3.5 h-3.5 text-amber-500" />
+            <span>⚡ Hızlı Test Koşumu</span>
           </button>
+
+          {/* Yöntem 2: Test Planı ile Koşum Başlat (Çoklu Senaryo) */}
           <button
-            onClick={() => setStatusFilter('IN_PROGRESS')}
-            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
-              statusFilter === 'IN_PROGRESS'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            type="button"
+            onClick={() => {
+              const activePlan = planFilter !== 'ALL' && planFilter !== '__NO_PLAN__'
+                ? testPlans.find((p) => p.id === planFilter) || null
+                : (testPlans.length > 0 ? testPlans[0] : null);
+              onOpenManualRun(activePlan);
+            }}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white transition-all duration-200 rounded-[10px] bg-accent-gradient hover:brightness-110 shadow-sm hover:shadow-[0_4px_12px_var(--accent-glow)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+            title="Bir test planı veya çoklu senaryo seçerek kapsamlı koşum başlatın"
           >
-            Devam Eden ({inProgressRuns})
-          </button>
-          <button
-            onClick={() => setStatusFilter('COMPLETED')}
-            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
-              statusFilter === 'COMPLETED'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            Tamamlanan ({completedRuns})
-          </button>
-          <button
-            onClick={() => setStatusFilter('ABORTED')}
-            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-colors ${
-              statusFilter === 'ABORTED'
-                ? 'bg-rose-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            İptal ({abortedRuns})
+            <ClipboardList className="w-4 h-4" />
+            <span>📋 Test Planı ile Koşum Başlat</span>
           </button>
         </div>
       </div>
 
-      {/* Test Runs Table */}
-      <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 shadow-xs">
-        <div className="overflow-x-auto">
+      {/* 2. KPI Cards Area (5 Compact Metrics) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {/* Toplam Koşum */}
+        <div
+          onClick={() => setStatusFilter('ALL')}
+          className={`p-3.5 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs cursor-pointer ${
+            statusFilter === 'ALL'
+              ? 'border-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)]/30'
+              : 'border-[#d0d8e4] dark:border-[#2e3748] hover:border-[var(--accent-primary)]/40'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-[#64748b] dark:text-[#8e9bb0] uppercase tracking-wider">
+              Toplam Koşum
+            </span>
+            <div className="p-1.5 rounded-lg bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]">
+              <ClipboardList className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
+              {totalRuns}
+            </span>
+            <span className="text-[10px] text-[#64748b] dark:text-[#8e9bb0]">koşu</span>
+          </div>
+        </div>
+
+        {/* Çalışıyor (IN_PROGRESS) */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === 'IN_PROGRESS' ? 'ALL' : 'IN_PROGRESS')}
+          className={`p-3.5 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs cursor-pointer ${
+            statusFilter === 'IN_PROGRESS'
+              ? 'border-slate-800 dark:border-slate-400 ring-1 ring-slate-800/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+              Çalışıyor
+            </span>
+            <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-600"></span>
+              </span>
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
+              {inProgressRuns}
+            </span>
+            <span className="text-[10px] text-slate-500">aktif</span>
+          </div>
+        </div>
+
+        {/* Tamamlandı */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === 'COMPLETED' ? 'ALL' : 'COMPLETED')}
+          className={`p-3.5 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs cursor-pointer ${
+            statusFilter === 'COMPLETED'
+              ? 'border-emerald-600 ring-1 ring-emerald-600/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+              Tamamlandı
+            </span>
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
+              {completedRuns}
+            </span>
+            <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80">başarılı</span>
+          </div>
+        </div>
+
+        {/* Başarısız (Failed or Aborted) */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === 'FAILED' ? 'ALL' : 'FAILED')}
+          className={`p-3.5 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs cursor-pointer ${
+            statusFilter === 'FAILED'
+              ? 'border-rose-600 ring-1 ring-rose-600/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider">
+              Başarısız
+            </span>
+            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+              <XCircle className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
+              {failedRuns}
+            </span>
+            <span className="text-[10px] text-rose-600/80 dark:text-rose-400/80">hata / iptal</span>
+          </div>
+        </div>
+
+        {/* Bekliyor */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === 'PENDING' ? 'ALL' : 'PENDING')}
+          className={`p-3.5 rounded-[12px] bg-white dark:bg-[#1d232f] border transition-all duration-200 shadow-xs cursor-pointer col-span-2 sm:col-span-1 ${
+            statusFilter === 'PENDING'
+              ? 'border-amber-600 ring-1 ring-amber-600/30'
+              : 'border-slate-200 dark:border-[#2e3748] hover:border-slate-400 dark:hover:border-slate-600'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+              Bekliyor / Diğer
+            </span>
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <Clock className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
+              {pendingRuns}
+            </span>
+            <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80">sırada</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Horizontal Compact Filtering Bar */}
+      <div className="p-3 bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[12px] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex flex-1 items-center flex-wrap gap-2.5">
+          {/* Search Box */}
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="w-3.5 h-3.5 text-[#64748b] dark:text-[#8e9bb0] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Koşum adı, plan, versiyon veya tester ara..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] pl-9 pr-3 py-1.5 text-xs text-[#0f172a] dark:text-[#f1f5f9] placeholder-[#64748b] dark:placeholder-[#8e9bb0] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)]/30 transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer"
+          >
+            <option value="ALL">Durum: Tümü</option>
+            <option value="IN_PROGRESS">Durum: Çalışıyor</option>
+            <option value="COMPLETED">Durum: Tamamlandı</option>
+            <option value="FAILED">Durum: Başarısız</option>
+            <option value="PENDING">Durum: Bekliyor</option>
+            <option value="ABORTED">Durum: İptal Edildi</option>
+          </select>
+
+          {/* Test Plan Filter */}
+          <select
+            value={planFilter}
+            onChange={(e) => setPlanFilter(e.target.value)}
+            className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer max-w-[180px] truncate"
+          >
+            <option value="ALL">Plan: Tüm Test Planları</option>
+            <option value="__NO_PLAN__">Plan: Bağımsız / Hızlı Koşumlar</option>
+            {testPlans.map((p) => (
+              <option key={p.id} value={p.id}>
+                Plan: {p.title}
+              </option>
+            ))}
+          </select>
+
+          {/* Date Filter */}
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value as any)}
+            className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer"
+          >
+            <option value="ALL">Tarih: Tüm Zamanlar</option>
+            <option value="TODAY">Tarih: Bugün</option>
+            <option value="WEEK">Tarih: Son 7 Gün</option>
+            <option value="MONTH">Tarih: Son 30 Gün</option>
+          </select>
+
+          {/* Tester Filter */}
+          {uniqueTesters.length > 0 && (
+            <select
+              value={testerFilter}
+              onChange={(e) => setTesterFilter(e.target.value)}
+              className="bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer max-w-[150px] truncate"
+            >
+              <option value="ALL">Çalıştıran: Tümü</option>
+              {uniqueTesters.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-rose-500 hover:text-rose-600 bg-rose-500/10 hover:bg-rose-500/15 rounded-[8px] transition-colors"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Filtreleri Temizle</span>
+            </button>
+          )}
+        </div>
+
+        <div className="text-xs text-[#64748b] dark:text-[#8e9bb0] font-mono shrink-0">
+          Gösterilen: <strong className="text-slate-900 dark:text-slate-100">{filteredRuns.length}</strong> / {runs.length}
+        </div>
+      </div>
+
+      {/* 4. Test Koşumları Tablosu */}
+      <div className="border border-[#d0d8e4] dark:border-[#2e3748] rounded-[12px] overflow-hidden bg-white dark:bg-[#1d232f] shadow-xs flex-1 flex flex-col min-h-0">
+        <div className="overflow-x-auto flex-1">
           <table className="w-full text-left text-xs border-collapse">
-            <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#161f30] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
-              <tr className="text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-2.5 px-4 min-w-[180px]">Test Koşusu Başlığı</th>
-                <th className="py-2.5 px-4 min-w-[140px]">Ebeveyn / Modül</th>
-                <th className="py-2.5 px-4 min-w-[110px]">Ürün Tipi</th>
-                <th className="py-2.5 px-4 w-24">Versiyon</th>
-                <th className="py-2.5 px-4 w-24">Ortam</th>
-                <th className="py-2.5 px-4 w-32">Çalıştıran</th>
-                <th className="py-2.5 px-4 w-28">Durum</th>
-                <th className="py-2.5 px-4 w-24 text-center">Case Sayısı</th>
-                <th className="py-2.5 px-4 w-32">Tarih</th>
-                <th className="py-2.5 px-4 w-24 text-right">İşlemler</th>
+            <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#161f30] border-b border-[#d0d8e4] dark:border-[#2e3748] text-[#64748b] dark:text-[#8e9bb0]">
+              <tr className="font-bold uppercase tracking-wider text-[11px]">
+                {visibleCols.map((col) => (
+                  <th
+                    key={col.id}
+                    style={{ width: col.width || 'auto' }}
+                    className="py-3 px-4 whitespace-nowrap"
+                  >
+                    {col.label}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+            <tbody className="divide-y divide-slate-100 dark:divide-[#2e3748]/60">
               {filteredRuns.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-400 dark:text-slate-500">
-                    <Filter className="w-6 h-6 mx-auto mb-2 opacity-30 text-slate-400" />
-                    <p>Kriterlere uygun test koşusu kaydı bulunamadı.</p>
+                  <td colSpan={visibleCols.length || 8} className="py-16 text-center">
+                    {runs.length === 0 ? (
+                      /* 5. Clean Empty State: No runs at all */
+                      <div className="max-w-md mx-auto space-y-3 px-4">
+                        <div className="w-12 h-12 rounded-2xl bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] flex items-center justify-center mx-auto">
+                          <Play className="w-6 h-6 fill-current" />
+                        </div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                          Henüz Test Koşumu Bulunmuyor
+                        </h3>
+                        <p className="text-xs text-[#64748b] dark:text-[#8e9bb0] leading-relaxed">
+                          Test planlarını çalıştırarak kalite metriklerini takip edebilir ve test senaryolarının durumunu doğrulayabilirsiniz.
+                        </p>
+                        <div className="pt-2 flex items-center justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const activePlan = planFilter !== 'ALL' && planFilter !== '__NO_PLAN__'
+                                ? testPlans.find((p) => p.id === planFilter) || null
+                                : (testPlans.length > 0 ? testPlans[0] : null);
+                              onOpenManualRun(activePlan);
+                            }}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white rounded-[10px] bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/25 cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Test Planından Koşum Başlat</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsQuickPickerOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-[10px] bg-slate-100 dark:bg-[#262e3d] text-slate-800 dark:text-slate-200 border border-[#d0d8e4] dark:border-[#2e3748] hover:bg-slate-200 dark:hover:bg-[#2e3748] transition-all cursor-pointer"
+                          >
+                            <Zap className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Hızlı Test Koşumu</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Filter Result Empty State */
+                      <div className="space-y-2">
+                        <Filter className="w-8 h-8 mx-auto opacity-30 text-slate-400" />
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Arama kriterlerine uygun test koşusu kaydı bulunamadı.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleResetFilters}
+                          className="text-xs font-semibold text-[var(--accent-primary)] hover:underline"
+                        >
+                          Filtreleri Sıfırla
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (
                 filteredRuns.map((run) => {
-                  const parentSuites = getRunParentSuites(run);
-                  const productTypes = getRunProductTypes(run);
+                  const stats = getRunStats(run);
+                  const isMenuOpen = activeMenuRunId === run.id;
 
                   return (
                     <tr
                       key={run.id}
                       onClick={() => handleOpenDetail(run.id)}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition-colors"
+                      className="hover:bg-slate-50/80 dark:hover:bg-[#262e3d]/50 cursor-pointer transition-colors group"
                     >
-                      <td className="py-2.5 px-4 font-bold text-slate-900 dark:text-slate-100">
-                        <div className="flex items-center space-x-2">
-                          <Play className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                          <span className="truncate max-w-xs">{run.title}</span>
-                        </div>
-                      </td>
+                      {visibleCols.map((col) => {
+                        const alignClass = `text-${col.align || 'left'}`;
 
-                      {/* Parent Suite / Modül Column */}
-                      <td className="py-2.5 px-4">
-                        <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                          {parentSuites.map((s, sIdx) => (
-                            <span
-                              key={sIdx}
-                              className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium text-[11px] border border-amber-500/20"
-                              title={`Ebeveyn Suite: ${s}`}
-                            >
-                              <Folder className="w-3 h-3 text-amber-500 shrink-0" />
-                              <span className="truncate max-w-[120px]">{s}</span>
-                            </span>
-                          ))}
-                        </div>
-                      </td>
+                        if (col.id === 'title') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 font-bold text-slate-900 dark:text-slate-100 ${alignClass}`}>
+                              <div className="flex items-start space-x-2.5">
+                                <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 mt-0.5">
+                                  <Play className="w-3.5 h-3.5 fill-current" />
+                                </div>
+                                <div className="min-w-0 space-y-1">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="truncate max-w-xs group-hover:text-[var(--accent-primary)] transition-colors">
+                                      {run.title}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-1.5 text-[10px] font-mono font-normal">
+                                    <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748]">
+                                      {run.version || 'v1.0.0'}
+                                    </span>
+                                    <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748]">
+                                      {run.environment || 'STAGING'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        }
 
-                      {/* Product Type / Test Type Column */}
-                      <td className="py-2.5 px-4">
-                        <div className="flex items-center space-x-1 flex-wrap gap-y-1">
-                          {productTypes.map((t) => renderTypeBadge(t))}
-                        </div>
-                      </td>
+                        if (col.id === 'status') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              {run.status === 'IN_PROGRESS' && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-ping" />
+                                  <span>ÇALIŞIYOR</span>
+                                </span>
+                              )}
+                              {run.status === 'COMPLETED' && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>TAMAMLANDI</span>
+                                </span>
+                              )}
+                              {run.status === 'ABORTED' && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                                  <XCircle className="w-3.5 h-3.5" />
+                                  <span>İPTAL EDİLDİ</span>
+                                </span>
+                              )}
+                              {(run.status as string) === 'PENDING' && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>BEKLİYOR</span>
+                                </span>
+                              )}
+                            </td>
+                          );
+                        }
 
-                      <td className="py-2.5 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">
-                        {run.version}
-                      </td>
+                        if (col.id === 'environment') {
+                          const envVal = run.environment || (run.testPlan as any)?.environment || 'STAGING';
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-[6px] bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748] font-mono font-semibold text-[11px]">
+                                {envVal}
+                              </span>
+                            </td>
+                          );
+                        }
 
-                      <td className="py-2.5 px-4 font-mono text-[11px]">
-                        <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold border border-slate-300 dark:border-slate-700">
-                          {run.environment}
-                        </span>
-                      </td>
+                        if (col.id === 'version') {
+                          const verVal = run.version || (run.testPlan as any)?.version || 'v1.0.0';
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-[6px] bg-slate-100 dark:bg-[#141821] text-slate-700 dark:text-slate-300 border border-[#d0d8e4] dark:border-[#2e3748] font-mono font-semibold text-[11px]">
+                                {verVal}
+                              </span>
+                            </td>
+                          );
+                        }
 
-                      <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300 font-medium truncate max-w-[130px]">
-                        {run.executedBy || 'QA Tester'}
-                      </td>
+                        if (col.id === 'testPlan') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              {run.testPlan ? (
+                                <div
+                                  onClick={(e) => {
+                                    if (onSelectPlan) {
+                                      e.stopPropagation();
+                                      onSelectPlan(run.testPlan as TestPlan);
+                                    }
+                                  }}
+                                  className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-[8px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 hover:border-amber-500/40 text-xs font-semibold transition-colors truncate max-w-[170px]"
+                                  title={`Test Planı: ${run.testPlan.title}`}
+                                >
+                                  <ClipboardList className="w-3 h-3 text-amber-500 shrink-0" />
+                                  <span className="truncate">{run.testPlan.title}</span>
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-[6px] bg-slate-100 dark:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] text-[11px] font-medium border border-[#d0d8e4] dark:border-[#2e3748]">
+                                  <Zap className="w-2.5 h-2.5 text-amber-500" />
+                                  <span>Hızlı / Bağımsız</span>
+                                </span>
+                              )}
+                            </td>
+                          );
+                        }
 
-                      <td className="py-2.5 px-4">
-                        {run.status === 'IN_PROGRESS' && (
-                          <span className="inline-flex items-center space-x-1.5 text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/80 px-2.5 py-0.5 rounded-full border border-blue-300 dark:border-blue-700/60 shadow-xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
-                            <span>DEVAM EDİYOR</span>
-                          </span>
-                        )}
-                        {run.status === 'COMPLETED' && (
-                          <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                            <span>TAMAMLANDI</span>
-                          </span>
-                        )}
-                        {run.status === 'ABORTED' && (
-                          <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2.5 py-0.5 rounded-full border border-rose-300 dark:border-rose-700/60 shadow-xs">
-                            <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
-                            <span>İPTAL EDİLDİ</span>
-                          </span>
-                        )}
-                      </td>
+                        if (col.id === 'metrics') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              <div className="space-y-1.5 min-w-[160px]">
+                                <div className="flex items-center justify-between text-[11px] font-mono">
+                                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                                    {stats.executed} / {stats.total} test
+                                  </span>
+                                  <span className="font-semibold text-[#64748b] dark:text-[#8e9bb0]">
+                                    %{stats.passRate}
+                                  </span>
+                                </div>
 
-                      <td className="py-3 px-4 font-mono font-bold text-center text-slate-700 dark:text-slate-300">
-                        {run._count?.results ?? run.results?.length ?? 0} Test
-                      </td>
+                                {/* Multi-segment Colored Bar */}
+                                <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-[#141821] overflow-hidden flex">
+                                  {stats.total > 0 && stats.passed > 0 && (
+                                    <div
+                                      style={{ width: `${(stats.passed / stats.total) * 100}%` }}
+                                      className="bg-emerald-500 h-full"
+                                      title={`Passed: ${stats.passed}`}
+                                    />
+                                  )}
+                                  {stats.total > 0 && stats.failed > 0 && (
+                                    <div
+                                      style={{ width: `${(stats.failed / stats.total) * 100}%` }}
+                                      className="bg-rose-500 h-full"
+                                      title={`Failed: ${stats.failed}`}
+                                    />
+                                  )}
+                                  {stats.total > 0 && stats.blocked > 0 && (
+                                    <div
+                                      style={{ width: `${(stats.blocked / stats.total) * 100}%` }}
+                                      className="bg-amber-500 h-full"
+                                      title={`Blocked: ${stats.blocked}`}
+                                    />
+                                  )}
+                                  {stats.total > 0 && stats.skipped > 0 && (
+                                    <div
+                                      style={{ width: `${(stats.skipped / stats.total) * 100}%` }}
+                                      className="bg-slate-400 h-full"
+                                      title={`Skipped: ${stats.skipped}`}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        }
 
-                      <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
-                        {new Date(run.createdAt).toLocaleDateString('tr-TR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </td>
+                        if (col.id === 'createdAt') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 text-slate-600 dark:text-slate-300 font-mono text-[11px] ${alignClass}`}>
+                              <div className="space-y-0.5">
+                                <div>
+                                  {new Date(run.createdAt).toLocaleDateString('tr-TR', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })}
+                                </div>
+                                <div className="text-[10px] text-[#64748b] dark:text-[#8e9bb0]">
+                                  {new Date(run.createdAt).toLocaleTimeString('tr-TR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        }
 
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end space-x-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              ReportsService.downloadRunReport(run.id, 'csv', run.title);
-                            }}
-                            className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
-                            title="Koşum Raporunu CSV Olarak İndir"
-                          >
-                            <FileSpreadsheet className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              ReportsService.downloadRunReport(run.id, 'html', run.title);
-                            }}
-                            className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition-colors"
-                            title="HTML Koşum Raporunu Aç"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenDetail(run.id);
-                            }}
-                            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                            title="Detayları İncele"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
+                        if (col.id === 'duration') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-300 ${alignClass}`}>
+                              {stats.durationFormatted}
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'executedBy') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 ${alignClass}`}>
+                              <div className="flex items-center space-x-2">
+                                <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#262e3d] text-[var(--accent-primary)] font-bold text-[10px] flex items-center justify-center border border-[#d0d8e4] dark:border-[#2e3748] shrink-0 uppercase">
+                                  {run.executedBy ? run.executedBy.charAt(0) : 'T'}
+                                </div>
+                                <span className="truncate max-w-[120px] text-slate-800 dark:text-slate-200 font-medium text-xs">
+                                  {run.executedBy || 'QA Tester'}
+                                </span>
+                              </div>
+                            </td>
+                          );
+                        }
+
+                        if (col.id === 'actions') {
+                          return (
+                            <td key={col.id} className={`py-3 px-4 text-right ${alignClass}`}>
+                              <div className="flex items-center justify-end space-x-1" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenDetail(run.id)}
+                                  className="p-1.5 rounded-[8px] bg-slate-100 dark:bg-[#262e3d] hover:bg-slate-200 dark:hover:bg-[#2e3748] text-slate-600 dark:text-slate-300 transition-colors"
+                                  title="Detayları İncele"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => ReportsService.downloadRunReport(run.id, 'csv', run.title)}
+                                  className="p-1.5 rounded-[8px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
+                                  title="CSV Raporu İndir"
+                                >
+                                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                                </button>
+
+                                {/* Kebab Menu */}
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveMenuRunId(isMenuOpen ? null : run.id)}
+                                    className="p-1.5 rounded-[8px] hover:bg-slate-200 dark:hover:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] transition-colors"
+                                    title="Diğer İşlemler"
+                                  >
+                                    <MoreVertical className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {isMenuOpen && (
+                                    <div
+                                      ref={menuRef}
+                                      className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] shadow-xl z-30 py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100"
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveMenuRunId(null);
+                                          handleOpenDetail(run.id);
+                                        }}
+                                        className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-slate-700 dark:text-slate-300"
+                                      >
+                                        <Eye className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                                        <span>Detayları İncele</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveMenuRunId(null);
+                                          ReportsService.downloadRunReport(run.id, 'html', run.title);
+                                        }}
+                                        className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-slate-700 dark:text-slate-300"
+                                      >
+                                        <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+                                        <span>HTML Raporunu Aç</span>
+                                      </button>
+
+                                      {run.status === 'IN_PROGRESS' && (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleUpdateRunStatus(run.id, 'COMPLETED')}
+                                            className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-emerald-600 dark:text-emerald-400"
+                                          >
+                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                            <span>Koşuyu Tamamla</span>
+                                          </button>
+
+                                          <button
+                                            type="button"
+                                            onClick={() => handleUpdateRunStatus(run.id, 'ABORTED')}
+                                            className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-[#262e3d] flex items-center space-x-2 text-amber-600 dark:text-amber-400"
+                                          >
+                                            <Slash className="w-3.5 h-3.5" />
+                                            <span>Koşuyu İptal Et</span>
+                                          </button>
+                                        </>
+                                      )}
+
+                                      <div className="border-t border-[#d0d8e4] dark:border-[#2e3748] my-1" />
+
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteRun(run.id, run.title)}
+                                        className="w-full px-3 py-1.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 flex items-center space-x-2 text-rose-600 dark:text-rose-400"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        <span>Koşumu Sil</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        }
+
+                        return <td key={col.id} className={`py-3 px-4 ${alignClass}`}>—</td>;
+                      })}
                     </tr>
                   );
                 })
@@ -557,25 +1202,25 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
         </div>
       </div>
 
-      {/* Test Run Detail Drawer / Modal */}
+      {/* 6. Detail Inspection Modal / Drawer */}
       {isDetailOpen && selectedRunDetails && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[16px] w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-[#d0d8e4] dark:border-[#2e3748] flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80 shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                <div className="w-10 h-10 rounded-xl bg-accent-gradient text-white flex items-center justify-center shadow-md">
                   <Play className="w-5 h-5 fill-current" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold flex items-center space-x-2">
+                  <h3 className="text-base font-bold flex items-center space-x-2 text-slate-900 dark:text-slate-100">
                     <span>{selectedRunDetails.title}</span>
-                    <span className="text-xs font-mono bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300">
+                    <span className="text-xs font-mono bg-slate-200 dark:bg-[#262e3d] px-2 py-0.5 rounded text-slate-700 dark:text-slate-300">
                       {selectedRunDetails.version}
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                    Ortam: {selectedRunDetails.environment} &bull; Tester: {selectedRunDetails.executedBy} &bull;{' '}
+                  <p className="text-xs text-[#64748b] dark:text-[#8e9bb0] font-mono mt-0.5">
+                    Ortam: <span className="font-bold text-slate-800 dark:text-slate-200">{selectedRunDetails.environment}</span> &bull; Tester: {selectedRunDetails.executedBy} &bull;{' '}
                     {new Date(selectedRunDetails.createdAt).toLocaleString('tr-TR')}
                   </p>
                 </div>
@@ -583,35 +1228,39 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
 
               <div className="flex items-center space-x-2">
                 <button
+                  type="button"
                   onClick={() => ReportsService.downloadRunReport(selectedRunDetails.id, 'csv', selectedRunDetails.title)}
-                  className="flex items-center space-x-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-all"
-                  title="CSV Formatında İndir"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[8px] text-xs font-semibold shadow-xs transition-all"
+                  title="CSV İndir"
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>CSV İndir</span>
+                  <span className="hidden sm:inline">CSV İndir</span>
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => ReportsService.downloadRunReport(selectedRunDetails.id, 'html', selectedRunDetails.title)}
-                  className="flex items-center space-x-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 text-white border border-slate-700 rounded-lg text-xs font-semibold shadow-sm transition-all"
-                  title="HTML Raporu Yeni Sekmede Aç / Yazdır"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded-[8px] text-xs font-semibold shadow-xs transition-all"
+                  title="HTML Rapor Aç"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span>HTML Rapor</span>
+                  <span className="hidden sm:inline">HTML Rapor</span>
                 </button>
 
                 {selectedRunDetails.status === 'IN_PROGRESS' && (
                   <button
+                    type="button"
                     onClick={() => handleUpdateRunStatus(selectedRunDetails.id, 'COMPLETED')}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-all"
+                    className="px-3 py-1.5 bg-accent-gradient hover:brightness-110 text-white rounded-[8px] text-xs font-bold shadow-xs transition-all"
                   >
                     Koşuyu Tamamla
                   </button>
                 )}
 
                 <button
+                  type="button"
                   onClick={() => setIsDetailOpen(false)}
-                  className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                  className="p-1.5 rounded-lg bg-slate-100 dark:bg-[#262e3d] text-slate-400 hover:text-white transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -620,64 +1269,84 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
 
             {/* Content Body */}
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Koşu Sonuçları ({selectedRunDetails.results?.length || 0} Test Case)
-                </h4>
+              {/* Filter / Search within results */}
+              <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#d0d8e4] dark:border-[#2e3748]">
+                <div className="flex items-center space-x-2">
+                  {(['ALL', 'PASSED', 'FAILED', 'BLOCKED', 'SKIPPED'] as const).map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => setDetailFilterStatus(st)}
+                      className={`px-2.5 py-1 rounded-[6px] text-xs font-bold transition-all ${
+                        detailFilterStatus === st
+                          ? 'bg-[var(--accent-primary)] text-white'
+                          : 'bg-slate-100 dark:bg-[#262e3d] text-[#64748b] dark:text-[#8e9bb0] hover:text-[#0f172a] dark:hover:text-[#f1f5f9]'
+                      }`}
+                    >
+                      {st === 'ALL' ? 'Tümü' : st}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="relative max-w-xs w-full">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Sonuçlarda ara (Kod, başlık, hata)..."
+                    value={detailSearch}
+                    onChange={(e) => setDetailSearch(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] pl-8 pr-3 py-1 text-xs"
+                  />
+                </div>
               </div>
 
-              {!selectedRunDetails.results || selectedRunDetails.results.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-xs">
-                  Bu koşuya ait henüz kaydedilmiş test sonucu bulunmamaktadır.
+              {filteredDetailResults.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 text-xs">
+                  Kriterlere uygun sonuç bulunamadı.
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {selectedRunDetails.results.map((res) => (
+                <div className="space-y-2.5">
+                  {filteredDetailResults.map((res) => (
                     <div
                       key={res.id}
-                      className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 space-y-2 text-xs"
+                      className="p-3.5 rounded-[12px] bg-slate-50 dark:bg-[#141821]/60 border border-[#d0d8e4] dark:border-[#2e3748] space-y-2 text-xs"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2.5 min-w-0">
                           {res.status === 'PASSED' && (
-                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px] shrink-0">
-                              PASS
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                              <CheckCircle2 className="w-3 h-3" />
+                              PASSED
                             </span>
                           )}
                           {res.status === 'FAILED' && (
-                            <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-600 dark:text-rose-400 font-mono font-bold text-[10px] shrink-0">
-                              FAIL
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                              <XCircle className="w-3 h-3" />
+                              FAILED
                             </span>
                           )}
                           {res.status === 'BLOCKED' && (
-                            <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-600 dark:text-purple-400 font-mono font-bold text-[10px] shrink-0">
-                              BLOCK
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                              <Slash className="w-3 h-3" />
+                              BLOCKED
                             </span>
                           )}
                           {res.status === 'SKIPPED' && (
-                            <span className="px-2 py-0.5 rounded bg-slate-500/20 text-slate-600 dark:text-slate-400 font-mono font-bold text-[10px] shrink-0">
-                              SKIP
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30">
+                              SKIPPED
                             </span>
                           )}
 
                           <span className="font-mono font-bold text-blue-600 dark:text-blue-400 shrink-0">
                             {res.testCase?.code || 'TC'}
                           </span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-xs">
-                            {res.testCase?.title || 'Test Case'}
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-md">
+                            {res.testCase?.title || 'Test Senaryosu'}
                           </span>
-
-                          {/* Parent Suite & Type in Detail */}
-                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium text-[10px] border border-amber-500/20 shrink-0">
-                            <Folder className="w-2.5 h-2.5 text-amber-500" />
-                            <span>{res.testCase?.suite?.name || 'Plan Kökü'}</span>
-                          </span>
-
-                          {res.testCase?.type && renderTypeBadge(res.testCase.type)}
                         </div>
 
-                        <div className="flex items-center space-x-3 shrink-0 font-mono text-[11px] text-slate-400">
-                          {res.executionMs && <span>{res.executionMs} ms</span>}
+                        <div className="flex items-center space-x-3 shrink-0 font-mono text-[11px] text-[#64748b] dark:text-[#8e9bb0]">
+                          {res.executionMs ? <span>{res.executionMs} ms</span> : null}
                           {res.jiraBugKey && (
                             <a
                               href={res.jiraBugUrl || `https://company.atlassian.net/browse/${res.jiraBugKey}`}
@@ -694,26 +1363,17 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
 
                       {res.errorMessage && (
                         <div
-                          className={`p-2.5 rounded-lg text-[11px] font-mono ${
+                          className={`p-2.5 rounded-[8px] text-[11px] font-mono ${
                             res.status === 'PASSED'
                               ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
                               : res.status === 'BLOCKED'
-                              ? 'bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300'
+                              ? 'bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300'
                               : res.status === 'FAILED'
                               ? 'bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-300'
                               : 'bg-slate-500/10 border border-slate-500/20 text-slate-700 dark:text-slate-300'
                           }`}
                         >
-                          <strong>
-                            {res.status === 'PASSED'
-                              ? 'Başarı Yorumu / Not:'
-                              : res.status === 'BLOCKED'
-                              ? 'Engellenme Nedeni:'
-                              : res.status === 'FAILED'
-                              ? 'Hata:'
-                              : 'Not / Yorum:'}
-                          </strong>{' '}
-                          {res.errorMessage}
+                          <strong>{res.status === 'FAILED' ? 'Hata Detayı:' : 'Yorum / Not:'}</strong> {res.errorMessage}
                         </div>
                       )}
 
@@ -722,7 +1382,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                         if (screenList.length === 0) return null;
                         return (
                           <div className="pt-1.5 space-y-1">
-                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center space-x-1">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-1">
                               <ImageIcon className="w-3 h-3 text-indigo-400" />
                               <span>Ekran Görüntüleri ({screenList.length})</span>
                             </span>
@@ -731,10 +1391,10 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                                 <img
                                   key={imgIdx}
                                   src={imgUrl}
-                                  alt={`Execution Screenshot ${imgIdx + 1}`}
-                                  className="max-h-28 rounded-lg border border-slate-700 object-contain cursor-pointer hover:opacity-90 transition-opacity bg-black/20"
+                                  alt={`Screenshot ${imgIdx + 1}`}
+                                  className="max-h-24 rounded-[8px] border border-slate-700 object-contain cursor-pointer hover:opacity-90 transition-opacity bg-black/20"
                                   onClick={() => window.open(imgUrl, '_blank')}
-                                  title="Tam boyutta aç"
+                                  title="Büyük boyutta aç"
                                 />
                               ))}
                             </div>
@@ -750,59 +1410,347 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
         </div>
       )}
 
-      {/* Automation Ingestion API Modal */}
-      {isAutomationModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
+      {/* 7. Quick Run Case Selector Modal (Secondary Action Launcher) */}
+      {isQuickPickerOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[16px] w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
+            <div className="px-5 py-3.5 border-b border-[#d0d8e4] dark:border-[#2e3748] flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80">
               <div className="flex items-center space-x-2.5">
-                <Terminal className="w-5 h-5 text-blue-500" />
-                <h3 className="text-base font-bold">Otomasyon Test Entegrasyon Rehberi</h3>
+                <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Hızlı Test Koşumu</h3>
+                  <p className="text-[11px] text-[#64748b] dark:text-[#8e9bb0]">Koşturmak istediğiniz test senaryosunu seçin</p>
+                </div>
               </div>
               <button
+                type="button"
+                onClick={() => setIsQuickPickerOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3 flex-1 flex flex-col min-h-0">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Senaryo kodu veya başlığı ara..."
+                  value={quickPickerSearch}
+                  onChange={(e) => setQuickPickerSearch(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[8px] pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex-1 overflow-y-auto border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] divide-y divide-slate-100 dark:divide-[#2e3748]/60 max-h-72">
+                {allCases
+                  .filter((tc) =>
+                    quickPickerSearch
+                      ? tc.title.toLowerCase().includes(quickPickerSearch.toLowerCase()) ||
+                        tc.code.toLowerCase().includes(quickPickerSearch.toLowerCase())
+                      : true
+                  )
+                  .map((tc) => (
+                    <div
+                      key={tc.id}
+                      onClick={() => {
+                        setIsQuickPickerOpen(false);
+                        if (onOpenQuickRun) onOpenQuickRun(tc);
+                      }}
+                      className="p-2.5 hover:bg-slate-50 dark:hover:bg-[#262e3d] cursor-pointer flex items-center justify-between transition-colors group"
+                    >
+                      <div className="flex items-center space-x-2.5 min-w-0">
+                        <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#141821] text-blue-600 dark:text-blue-400 border border-[#d0d8e4] dark:border-[#2e3748] shrink-0">
+                          {tc.code}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-[var(--accent-primary)]">
+                          {tc.title}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-mono">{tc.type}</span>
+                        <Play className="w-3.5 h-3.5 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Automation API Modal */}
+      {isAutomationModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[16px] w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
+            <div className="px-6 py-4 border-b border-[#d0d8e4] dark:border-[#2e3748] flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80">
+              <div className="flex items-center space-x-2.5">
+                <Terminal className="w-5 h-5 text-blue-500" />
+                <h3 className="text-base font-bold">Otomasyon Test Entegrasyon Rehberi (CI/CD)</h3>
+              </div>
+              <button
+                type="button"
                 onClick={() => setIsAutomationModalOpen(false)}
-                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="p-6 space-y-4 text-xs overflow-y-auto max-h-[75vh]">
-              <p className="text-slate-600 dark:text-slate-300">
-                Mobil (Appium/Java) veya Web (Selenium/Playwright) otomasyon projelerinizden test sonuçlarını otomatik olarak TCMS veritabanına aktarabilirsiniz.
+              <p className="text-[#64748b] dark:text-[#8e9bb0] leading-relaxed">
+                Appium, Selenium, Cypress veya Playwright gibi test otomasyon araçlarınızdan çıkan sonuçları aşağıdaki REST API endpoint'ine POST ederek TCMS sistemine aktarabilirsiniz.
               </p>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">HTTP POST Endpoint:</span>
                   <button
+                    type="button"
                     onClick={() => copyToClipboard(automationCurlExample)}
-                    className="flex items-center space-x-1 text-[11px] text-blue-500 hover:underline font-mono"
+                    className="flex items-center space-x-1 text-[11px] text-blue-500 hover:underline font-mono cursor-pointer"
                   >
                     {copiedCurl ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedCurl ? 'Kopyalandı!' : 'cURL Kopyala'}</span>
                   </button>
                 </div>
 
-                <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-emerald-400 font-mono text-[11px] overflow-x-auto whitespace-pre">
+                <div className="p-3.5 bg-slate-900 rounded-[10px] border border-slate-800 text-emerald-400 font-mono text-[11px] overflow-x-auto whitespace-pre">
                   {automationCurlExample}
                 </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-slate-700 dark:text-slate-300 space-y-1">
-                <h4 className="font-bold text-blue-500 flex items-center space-x-1">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span>Entegrasyon Notları</span>
-                </h4>
-                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                  <li><code className="text-blue-400">caseCode</code> (örn: TC-101) ile eşleşen Test Case'ler otomatik ilişkilendirilir.</li>
-                  <li>FAILED olan Test Case'lere <code className="text-blue-400">jiraBugKey</code> eklenirse Jira kartı otomatik oluşturulur.</li>
-                </ul>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* 9. Outbound Webhook Trigger Modal */}
+      {isWebhookModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white dark:bg-[#1d232f] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[16px] w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-[#d0d8e4] dark:border-[#2e3748] flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center border border-indigo-500/20">
+                  <Send className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    Test Otomasyonu Tetikleme (Webhook)
+                  </h3>
+                  <p className="text-[11px] text-[#64748b] dark:text-[#8e9bb0]">
+                    Dış projedeki (Test Otomasyon Merkezi) test botunu tetikleyin ve canlı sonuçları TCMS'e alın.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsWebhookModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 text-xs overflow-y-auto max-h-[75vh]">
+              {/* Webhook URL Input */}
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Webhook Hedef URL (Test Otomasyon Merkezi) *</span>
+                  <button
+                    type="button"
+                    onClick={handleTestWebhook}
+                    disabled={webhookPingLoading || !webhookUrl}
+                    className="text-[11px] font-semibold text-indigo-500 hover:underline flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Radio className={`w-3 h-3 ${webhookPingLoading ? 'animate-pulse' : ''}`} />
+                    <span>{webhookPingLoading ? 'Test Ediliyor...' : 'Bağlantıyı Test Et (Ping)'}</span>
+                  </button>
+                </label>
+                <input
+                  type="url"
+                  placeholder="http://localhost:8000/api/webhook/trigger"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] px-3.5 py-2 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Ping Result Alert */}
+              {webhookPingResult && (
+                <div
+                  className={`p-3 rounded-[10px] text-xs flex items-center gap-2 border ${
+                    webhookPingResult.success
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
+                  }`}
+                >
+                  {webhookPingResult.success ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                  <span>{webhookPingResult.message}</span>
+                </div>
+              )}
+
+              {/* Form Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Koşu Başlığı */}
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">Koşu Başlığı</label>
+                  <input
+                    type="text"
+                    value={webhookTitle}
+                    onChange={(e) => setWebhookTitle(e.target.value)}
+                    placeholder="Örn: Nightly Regression Suite"
+                    className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                {/* Ortam */}
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">Hedef Test Ortamı</label>
+                  <select
+                    value={webhookEnvironment}
+                    onChange={(e) => setWebhookEnvironment(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="DEV">DEV Ortamı</option>
+                    <option value="STAGING">STAGING Ortamı</option>
+                    <option value="UAT">UAT / Pre-Prod</option>
+                    <option value="PROD">PROD (Smoke Yalnızca)</option>
+                  </select>
+                </div>
+
+                {/* Kapsam */}
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">Test Kapsamı (Scope)</label>
+                  <select
+                    value={webhookScope}
+                    onChange={(e) => setWebhookScope(e.target.value as TriggerTargetScope)}
+                    className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="ALL">Tüm Test Senaryoları (Tam Kapsam)</option>
+                    <option value="SMOKE">Smoke Testleri</option>
+                    <option value="REGRESSION">Regresyon Paketi</option>
+                    <option value="SUITE">Belirli Test Suite (Klasör)</option>
+                  </select>
+                </div>
+
+                {/* Secret Token */}
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">
+                    Secret / Bearer Token <span className="text-slate-400 font-normal">(Opsiyonel)</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={webhookSecret}
+                    onChange={(e) => setWebhookSecret(e.target.value)}
+                    placeholder="webhook-secret-token"
+                    className="w-full bg-slate-50 dark:bg-[#141821] border border-[#d0d8e4] dark:border-[#2e3748] rounded-[10px] px-3 py-2 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Webhook Response Box */}
+              {webhookResponse && (
+                <div className="space-y-2 pt-2 border-t border-[#d0d8e4] dark:border-[#2e3748]">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Tetikleme Sonucu:</span>
+                    <span
+                      className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        webhookResponse.success
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                          : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                      }`}
+                    >
+                      {webhookResponse.success ? 'BAŞARILI' : 'HATA'}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-slate-900 rounded-[10px] border border-slate-800 text-slate-300 font-mono text-[11px] overflow-x-auto whitespace-pre max-h-40">
+                    {JSON.stringify(webhookResponse, null, 2)}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-[#d0d8e4] dark:border-[#2e3748] flex items-center justify-between bg-slate-50/80 dark:bg-[#141821]/80">
+              <a
+                href="http://localhost:3001/api/docs"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-blue-500 hover:underline flex items-center gap-1"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Swagger API Dokümanı</span>
+              </a>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setIsWebhookModalOpen(false)}
+                  className="px-4 py-2 rounded-[10px] text-xs font-semibold text-[#64748b] dark:text-[#8e9bb0] hover:bg-slate-100 dark:hover:bg-[#262e3d] transition-colors cursor-pointer"
+                >
+                  Kapat
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTriggerWebhook}
+                  disabled={webhookTriggerLoading || !webhookUrl}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2 text-xs font-bold text-white transition-all duration-200 rounded-[10px] bg-gradient-to-r from-indigo-600 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 shadow-md hover:shadow-indigo-500/25 disabled:opacity-50 cursor-pointer"
+                >
+                  <Send className={`w-3.5 h-3.5 ${webhookTriggerLoading ? 'animate-spin' : ''}`} />
+                  <span>{webhookTriggerLoading ? 'Tetikleniyor...' : '⚡ Koşuyu Başlat (Tetikle)'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAC Mobil Otomasyon Başlatma Modalı */}
+      <AutomationTriggerModal
+        isOpen={isTACModalOpen}
+        onClose={() => setIsTACModalOpen(false)}
+        projectId={projectId}
+        suites={testPlans.map((p) => ({ id: p.id, name: p.title }))}
+        caseCodes={allCases.map((c) => c.code)}
+        onTriggerSuccess={(testRun, plat, dev) => {
+          loadRuns();
+          setActiveTerminalRunId(testRun?.id);
+          setActiveTerminalRunTitle(testRun?.title || 'Mobil Otomasyon Koşusu');
+          setActiveTerminalPlatform(plat);
+          setActiveTerminalDevice(dev);
+          setIsLiveTerminalOpen(true);
+        }}
+      />
+
+      {/* TAC Canlı Log Terminal Modalı */}
+      <LiveRunTerminalModal
+        isOpen={isLiveTerminalOpen}
+        onClose={() => setIsLiveTerminalOpen(false)}
+        runId={activeTerminalRunId}
+        runTitle={activeTerminalRunTitle}
+        platform={activeTerminalPlatform}
+        deviceAlias={activeTerminalDevice}
+        onRunFinished={() => {
+          loadRuns();
+        }}
+      />
     </div>
   );
 };
+
+// Helper to format ms duration into human readable string
+function formatDuration(totalMs: number): string {
+  if (!totalMs || totalMs <= 0) return '—';
+  if (totalMs < 1000) return `${totalMs}ms`;
+  const seconds = Math.floor(totalMs / 1000);
+  if (seconds < 60) return `${seconds}sn`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSec = seconds % 60;
+  return `${minutes}dk ${remainingSec}sn`;
+}

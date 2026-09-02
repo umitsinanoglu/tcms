@@ -67,6 +67,8 @@ export const LoginView: React.FC = () => {
         return 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30';
       case 'TESTER':
         return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+      case 'AUTOMATION_ENGINEER':
+        return 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30';
       case 'VIEWER':
       default:
         return 'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30';
@@ -112,18 +114,18 @@ export const LoginView: React.FC = () => {
     <div className="min-h-screen w-full bg-[#f2f5f8] dark:bg-[#0b0f17] text-slate-900 dark:text-slate-100 transition-colors duration-200 relative overflow-x-hidden flex flex-col justify-between">
       {/* Background Decorative Gradients & Mesh */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-32 -left-32 w-[600px] h-[600px] bg-[#821c2b]/10 dark:bg-[#821c2b]/15 rounded-full blur-3xl opacity-70" />
-        <div className="absolute top-1/3 -right-32 w-[500px] h-[500px] bg-[#b83a4b]/10 dark:bg-[#b83a4b]/15 rounded-full blur-3xl opacity-60" />
+        <div className="absolute -top-32 -left-32 w-[600px] h-[600px] bg-[var(--accent-dark)]/10 dark:bg-[var(--accent-dark)]/15 rounded-full blur-3xl opacity-70" />
+        <div className="absolute top-1/3 -right-32 w-[500px] h-[500px] bg-[var(--accent-primary)]/10 dark:bg-[var(--accent-primary)]/15 rounded-full blur-3xl opacity-60" />
         <div className="absolute -bottom-32 left-1/3 w-[600px] h-[600px] bg-slate-400/10 dark:bg-indigo-950/20 rounded-full blur-3xl opacity-50" />
-        <div className="absolute inset-0 bg-[radial-gradient(#b83a4b_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.03] dark:opacity-[0.05]" />
+        <div className="absolute inset-0 bg-[radial-gradient(var(--accent-primary)_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.03] dark:opacity-[0.05]" />
       </div>
 
       {/* Top Bar / Theme Switcher */}
       <header className="relative z-10 w-full px-6 sm:px-12 pt-6 pb-2 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <TTBLogo variant="horizontal" height={38} showSubtitle={false} />
+          <TTBLogo variant="horizontal" height={38} showSubtitle={true} subtitleText="Test Yönetim Sistemi" />
           <span className="hidden sm:inline-block h-5 w-px bg-slate-300 dark:bg-slate-700" />
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] border border-[#b83a4b]/20">
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20">
             <Sparkles className="w-3 h-3" />
             TCMS v2.5 Enterprise
           </span>
@@ -141,14 +143,14 @@ export const LoginView: React.FC = () => {
           <div className="lg:col-span-7 flex flex-col justify-between space-y-8 pr-0 lg:pr-4">
             <div>
               {/* Badge & Headline */}
-              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-[#d66b7a] border border-rose-500/20 mb-4 backdrop-blur-sm">
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20 mb-4 backdrop-blur-sm">
                 <Shield className="w-3.5 h-3.5" />
                 <span>Türk Ticaret Bankası BT Kalite Güvence Sistemi</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.15]">
                 Kurumsal Kalite Güvence ve{' '}
-                <span className="bg-gradient-to-r from-[#b83a4b] via-[#d66b7a] to-[#821c2b] bg-clip-text text-transparent">
+                <span className="bg-accent-gradient bg-clip-text text-transparent">
                   Test Yönetim
                 </span>{' '}
                 Platformu
@@ -163,7 +165,7 @@ export const LoginView: React.FC = () => {
               {/* High-Impact Stat Badges */}
               <div className="mt-6 flex flex-wrap gap-2.5">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-sm">
-                  <Layers className="w-3.5 h-3.5 text-[#b83a4b]" />
+                  <Layers className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                   4+ Test Türü (Web, Mobil, API, Manuel)
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-sm">
@@ -188,7 +190,7 @@ export const LoginView: React.FC = () => {
                 return (
                   <div
                     key={idx}
-                    className="p-4 rounded-2xl bg-white/70 dark:bg-[#1d232f]/80 border border-slate-200/90 dark:border-[#2e3748] shadow-sm hover:shadow-md hover:border-[#b83a4b]/40 transition-all duration-200 group flex flex-col justify-between"
+                    className="p-4 rounded-2xl bg-white/70 dark:bg-[#1d232f]/80 border border-slate-200/90 dark:border-[#2e3748] shadow-sm hover:shadow-md hover:border-[var(--accent-primary)]/40 transition-all duration-200 group flex flex-col justify-between"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
@@ -199,7 +201,7 @@ export const LoginView: React.FC = () => {
                           {cap.badge}
                         </span>
                       </div>
-                      <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#b83a4b] dark:group-hover:text-[#d66b7a] transition-colors">
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-[var(--accent-primary)] transition-colors">
                         {cap.title}
                       </h3>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
@@ -213,7 +215,7 @@ export const LoginView: React.FC = () => {
 
             {/* Compliance & Security Note */}
             <div className="flex items-center space-x-2.5 p-3 rounded-xl bg-slate-200/50 dark:bg-slate-800/40 border border-slate-300/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-400 text-xs">
-              <ShieldCheck className="w-4 h-4 text-[#b83a4b] shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
               <span>
                 Bankacılık ve finansal standartlarda uçtan uca test izlenebilirliği, denetim günlüğü ve güvenli veri koruması.
               </span>
@@ -223,13 +225,13 @@ export const LoginView: React.FC = () => {
           {/* RIGHT COLUMN: Interactive Login Form & Fast User Switcher */}
           <div className="lg:col-span-5 flex flex-col justify-center">
             <div className="relative w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-[#2e3748] rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-300/30 dark:shadow-black/50 transition-all duration-200">
-              {/* Subtle Crimson Top Accent Border */}
-              <div className="absolute top-0 left-8 right-8 h-1 bg-gradient-to-r from-transparent via-[#b83a4b] to-transparent rounded-full" />
+              {/* Subtle Top Accent Border */}
+              <div className="absolute top-0 left-8 right-8 h-1 bg-gradient-to-r from-transparent via-[var(--accent-primary)] to-transparent rounded-full" />
 
               {/* Login Header */}
               <div className="mb-6">
                 <div className="flex items-center space-x-2">
-                  <div className="p-2 rounded-xl bg-[#b83a4b]/10 text-[#b83a4b]">
+                  <div className="p-2 rounded-xl bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]">
                     <Lock className="w-5 h-5" />
                   </div>
                   <div>
@@ -266,7 +268,7 @@ export const LoginView: React.FC = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="ornek@turkticaretbankasi.com.tr"
-                      className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#b83a4b]/50 focus:border-[#b83a4b] transition-all"
+                      className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 focus:border-[var(--accent-primary)] transition-all"
                     />
                   </div>
                 </div>
@@ -277,7 +279,7 @@ export const LoginView: React.FC = () => {
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                       Şifre
                     </label>
-                    <span className="text-[10px] text-[#b83a4b] dark:text-[#d66b7a] font-mono font-medium">
+                    <span className="text-[10px] text-[var(--accent-primary)] font-mono font-medium">
                       Standart: {STANDARD_PASSWORD}
                     </span>
                   </div>
@@ -289,7 +291,7 @@ export const LoginView: React.FC = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Şifrenizi giriniz..."
-                      className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#b83a4b]/50 focus:border-[#b83a4b] transition-all"
+                      className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 focus:border-[var(--accent-primary)] transition-all"
                     />
                     <button
                       type="button"
@@ -309,7 +311,7 @@ export const LoginView: React.FC = () => {
 
                 {/* Session Banner */}
                 <div className="flex items-center space-x-2 py-2 px-3 bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl text-[11px] text-slate-600 dark:text-slate-400">
-                  <Clock className="w-3.5 h-3.5 text-[#b83a4b] shrink-0" />
+                  <Clock className="w-3.5 h-3.5 text-[var(--accent-primary)] shrink-0" />
                   <span>
                     Oturumunuz <strong>24 saat</strong> boyunca aktif tutulacaktır.
                   </span>
@@ -319,7 +321,7 @@ export const LoginView: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoggingIn || isLoading}
-                  className="w-full py-2.5 px-4 bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white text-xs font-bold rounded-xl transition-all duration-200 shadow-md shadow-[#821c2b]/25 hover:shadow-[0_4px_16px_rgba(130,28,43,0.4)] flex items-center justify-center space-x-2 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                  className="w-full py-2.5 px-4 bg-accent-gradient hover:brightness-110 text-white text-xs font-bold rounded-xl transition-all duration-200 shadow-md shadow-[var(--accent-dark)]/25 flex items-center justify-center space-x-2 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                 >
                   {isLoggingIn ? (
                     <span>Giriş Yapılıyor...</span>
@@ -337,7 +339,7 @@ export const LoginView: React.FC = () => {
                 <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800">
                   <div className="flex items-center justify-between mb-2.5">
                     <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
-                      <Users className="w-3.5 h-3.5 text-[#b83a4b]" />
+                      <Users className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                       <span>Kayıtlı Kullanıcı Seç & Otomatik Doldur:</span>
                     </span>
                   </div>
@@ -351,7 +353,7 @@ export const LoginView: React.FC = () => {
                           onClick={() => handleSelectQuickUser(u.email)}
                           className={`text-left p-2 rounded-xl border flex items-center justify-between text-xs transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-[#b83a4b]/10 dark:bg-[#b83a4b]/20 border-[#b83a4b]/50 text-slate-900 dark:text-white shadow-sm'
+                              ? 'bg-[var(--accent-primary)]/10 dark:bg-[var(--accent-primary)]/20 border-[var(--accent-primary)]/50 text-slate-900 dark:text-white shadow-sm'
                               : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300'
                           }`}
                         >
@@ -363,7 +365,7 @@ export const LoginView: React.FC = () => {
                                 className="w-5 h-5 rounded-full object-cover shrink-0"
                               />
                             ) : (
-                              <div className="w-5 h-5 rounded-full bg-[#b83a4b]/20 text-[#b83a4b] flex items-center justify-center text-[10px] font-bold shrink-0">
+                              <div className="w-5 h-5 rounded-full bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] flex items-center justify-center text-[10px] font-bold shrink-0">
                                 {u.name.charAt(0)}
                               </div>
                             )}
@@ -390,7 +392,7 @@ export const LoginView: React.FC = () => {
 
               {/* Card Footer Assurance */}
               <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-center text-[10px] text-slate-400 dark:text-slate-500 flex items-center justify-center space-x-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#b83a4b]" />
+                <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                 <span>Türk Ticaret Bankası BT Kalite Güvence & Güvenlik</span>
               </div>
             </div>
@@ -404,7 +406,7 @@ export const LoginView: React.FC = () => {
         <span>© 2026 Türk Ticaret Bankası A.Ş. — Test Case Management System (TCMS)</span>
         <div className="flex items-center space-x-4">
           <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
-            <Cpu className="w-3 h-3 text-[#b83a4b]" />
+            <Cpu className="w-3 h-3 text-[var(--accent-primary)]" />
             v2.5.0 Production
           </span>
         </div>

@@ -57,7 +57,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error(err);
-      const message = err?.response?.data?.message || err?.message || 'Test Planı güncellenirken bir hata oluştu.';
+      const message = err?.response?.data?.message || err?.message || 'Test Projesi güncellenirken bir hata oluştu.';
       setErrorMsg(Array.isArray(message) ? message.join(', ') : message);
     } finally {
       setIsSubmitting(false);
@@ -72,7 +72,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error(err);
-      const message = err?.response?.data?.message || err?.message || 'Test Planı silinirken bir hata oluştu.';
+      const message = err?.response?.data?.message || err?.message || 'Test Projesi silinirken bir hata oluştu.';
       setErrorMsg(Array.isArray(message) ? message.join(', ') : message);
     } finally {
       setIsDeleting(false);
@@ -85,9 +85,9 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scaleUp text-slate-800 dark:text-slate-100">
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
           <div className="flex items-center space-x-2.5">
-            <FolderKanban className="w-5 h-5 text-[#b83a4b]" />
+            <FolderKanban className="w-5 h-5 text-[var(--accent-primary)]" />
             <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Test Planını Düzenle</h3>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Test Projesini Düzenle</h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">[{project.key}] {project.name}</p>
             </div>
           </div>
@@ -100,7 +100,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
         </div>
 
         {errorMsg && (
-          <div className="mx-6 mt-4 p-3 bg-[#b83a4b]/10 border border-[#b83a4b]/30 rounded-xl text-xs text-rose-300 font-medium">
+          <div className="mx-6 mt-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-500 font-medium">
             {errorMsg}
           </div>
         )}
@@ -110,10 +110,10 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
             <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl space-y-2">
               <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 font-bold text-xs">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
-                <span>Test Planı Silme Onayı</span>
+                <span>Test Projesi Silme Onayı</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                <strong>"{project.name}"</strong> test planını ve altındaki tüm Suite, Test Case ve Test Koşusu kayıtlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz!
+                <strong>"{project.name}"</strong> test projesini ve altındaki tüm Test Planları, Modül, Test Case ve Test Koşusu kayıtlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz!
               </p>
             </div>
 
@@ -133,27 +133,27 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 className="flex items-center space-x-1.5 px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-red-600/20 disabled:opacity-50"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>{isDeleting ? 'Siliniyor...' : 'Evet, Planı Tamamen Sil'}</span>
+                <span>{isDeleting ? 'Siliniyor...' : 'Evet, Projeyi Tamamen Sil'}</span>
               </button>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Test Planı Adı</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Test Projesi Adı</label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] shadow-sm"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] shadow-sm"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Plan Kodu / Key
+                  Proje Kodu / Key
                 </label>
                 <input
                   type="text"
@@ -161,7 +161,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                   maxLength={10}
                   value={key}
                   onChange={(e) => setKey(e.target.value.toUpperCase())}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-[#b83a4b] dark:text-[#d66b7a] focus:outline-none focus:ring-1 focus:ring-[#b83a4b] uppercase shadow-sm"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-[var(--accent-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] uppercase shadow-sm"
                 />
               </div>
 
@@ -184,10 +184,10 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Açıklama</label>
               <textarea
                 rows={3}
-                placeholder="Test Planı hedefi ve detayları..."
+                placeholder="Test projesi hedefi ve detayları..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] resize-none shadow-sm"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none shadow-sm"
               />
             </div>
 
@@ -198,7 +198,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 className="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>Planı Sil</span>
+                <span>Projeyi Sil</span>
               </button>
 
               <div className="flex items-center space-x-2">
@@ -213,7 +213,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting || !name.trim() || !key.trim()}
-                  className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white text-xs font-semibold rounded-xl shadow-md shadow-[#821c2b]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                  className="flex items-center space-x-2 px-5 py-2 bg-accent-gradient hover:brightness-110 text-white text-xs font-semibold rounded-xl shadow-md shadow-[var(--accent-dark)]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
                   <span>{isSubmitting ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}</span>

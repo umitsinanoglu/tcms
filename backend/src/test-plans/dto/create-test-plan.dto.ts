@@ -42,4 +42,8 @@ export class CreateTestPlanDto {
   @IsString()
   @IsNotEmpty()
   projectId: string;
+
+  @ApiPropertyOptional({ description: 'Plana dahil edilecek Test Senaryosu ID listesi', type: [String] })
+  @IsOptional()
+  caseIds?: string[];
 }

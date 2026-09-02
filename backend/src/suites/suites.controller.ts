@@ -15,7 +15,7 @@ export class SuitesController {
   constructor(private readonly suitesService: SuitesService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Yeni Suite (Klasör) oluştur (Admin, Lead, Tester)' })
   @ApiResponse({ status: 201, description: 'Suite başarıyla oluşturuldu' })
   create(@Body() createSuiteDto: CreateSuiteDto) {
@@ -37,7 +37,7 @@ export class SuitesController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Suite adını veya parent klasörünü güncelle (Admin, Lead, Tester)' })
   @ApiParam({ name: 'id', description: 'Suite UUID' })
   update(@Param('id') id: string, @Body() updateSuiteDto: UpdateSuiteDto) {
@@ -45,7 +45,7 @@ export class SuitesController {
   }
 
   @Patch(':id/reorder')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Suite sıralamasını veya hiyerarşide yerini (parentId) değiştir (Admin, Lead, Tester)' })
   @ApiParam({ name: 'id', description: 'Suite UUID' })
   reorder(@Param('id') id: string, @Body() reorderSuiteDto: ReorderSuiteDto) {

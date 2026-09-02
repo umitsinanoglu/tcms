@@ -92,6 +92,16 @@ export class SuitesService {
 
   async remove(id: string) {
     await this.findOne(id);
+    // Explicitly reassign test cases to null so they remain in the project safely
+    await this.prisma.testCase.updateMany({
+      where: { suiteId: id },
+      data: { suiteId: null },
+    });
+    // Unnest child suites if any
+    await this.prisma.suite.updateMany({
+      where: { parentId: id },
+      data: { parentId: null },
+    });
     return this.prisma.suite.delete({
       where: { id },
     });

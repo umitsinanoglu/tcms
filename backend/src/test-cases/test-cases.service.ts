@@ -1,11 +1,112 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SequenceService } from '../common/sequence.service';
 import { CreateTestCaseDto } from './dto/create-test-case.dto';
 import { UpdateTestCaseDto } from './dto/update-test-case.dto';
+import { BulkCreateTestCasesDto } from './dto/bulk-create-test-case.dto';
 
 @Injectable()
 export class TestCasesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sequenceService: SequenceService,
+  ) {}
+
+  async createBulk(bulkDto: BulkCreateTestCasesDto) {
+    const { projectId, items } = bulkDto;
+
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: { suites: true },
+    });
+
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+
+    // Suite map by name lowercase -> suite ID
+    const suiteMap = new Map<string, string>();
+    project.suites.forEach((s) => {
+      suiteMap.set(s.name.trim().toLowerCase(), s.id);
+    });
+
+    // Auto-create any missing suites mentioned in import
+    for (const item of items) {
+      if (item.suiteName && item.suiteName.trim() && !item.suiteId) {
+        const key = item.suiteName.trim().toLowerCase();
+        if (!suiteMap.has(key)) {
+          const newSuite = await this.prisma.suite.create({
+            data: {
+              name: item.suiteName.trim(),
+              projectId: project.id,
+            },
+          });
+          suiteMap.set(key, newSuite.id);
+        }
+      }
+    }
+
+    // Allocate atomic sequential codes in one atomic operation
+    const itemsNeedingCodeCount = items.filter((it) => !it.code || !it.code.trim()).length;
+    const reservedCodes = itemsNeedingCodeCount > 0
+      ? await this.sequenceService.getNextCodesBatch(project.id, project.key, 'TC', itemsNeedingCodeCount)
+      : [];
+
+    let codeIndex = 0;
+    const createdResults = [];
+
+    // Create cases in a transaction
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        let finalSuiteId = item.suiteId;
+        if (!finalSuiteId && item.suiteName && item.suiteName.trim()) {
+          finalSuiteId = suiteMap.get(item.suiteName.trim().toLowerCase());
+        }
+
+        let code = item.code?.trim();
+        if (!code) {
+          code = reservedCodes[codeIndex++];
+        }
+
+        const createdCase = await tx.testCase.create({
+          data: {
+            title: item.title,
+            description: item.description,
+            code,
+            executionType: item.executionType || 'MANUAL',
+            type: item.type || 'WEB',
+            priority: item.priority || 'NORMAL',
+            precondition: item.precondition,
+            jiraStoryKey: item.jiraStoryKey,
+            projectId: project.id,
+            suiteId: finalSuiteId || undefined,
+            steps: item.steps && item.steps.length > 0 ? {
+              create: item.steps.map((step, idx) => ({
+                stepNumber: step.stepNumber || idx + 1,
+                action: step.action,
+                expectedResult: step.expectedResult || '',
+                attachments: [],
+              })),
+            } : undefined,
+          },
+          include: {
+            steps: {
+              orderBy: { stepNumber: 'asc' },
+            },
+            suite: true,
+          },
+        });
+
+        createdResults.push(createdCase);
+      }
+    });
+
+    return {
+      success: true,
+      count: createdResults.length,
+      data: createdResults,
+    };
+  }
 
   async create(createTestCaseDto: CreateTestCaseDto) {
     let projectKey: string;
@@ -39,31 +140,11 @@ export class TestCasesService {
       throw new NotFoundException('Either suiteId or projectId must be provided to create a Test Case');
     }
 
-    // Find highest test case number for the project to generate unique code
-    const existingCases = await this.prisma.testCase.findMany({
-      where: {
-        OR: [
-          { projectId },
-          { suite: { projectId } },
-        ],
-      },
-      select: { code: true },
-    });
-
-    let maxNumber = 0;
-    const prefix = `${projectKey}-TC-`;
-    for (const tc of existingCases) {
-      if (tc.code.startsWith(prefix)) {
-        const num = parseInt(tc.code.substring(prefix.length), 10);
-        if (!isNaN(num) && num > maxNumber) {
-          maxNumber = num;
-        }
-      }
-    }
-
-    const code = `${projectKey}-TC-${maxNumber + 1}`;
+    // Atomic, race-condition-safe code generation
+    const code = createTestCaseDto.code?.trim() || await this.sequenceService.getNextCode(projectId, projectKey, 'TC');
 
     const { steps, ...caseData } = createTestCaseDto;
+
 
     return this.prisma.testCase.create({
       data: {

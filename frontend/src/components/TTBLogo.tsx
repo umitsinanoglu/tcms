@@ -9,6 +9,8 @@ export interface TTBLogoProps {
   className?: string;
   showSubtitle?: boolean;
   subtitleText?: string;
+  titleText?: string;
+  showBadge?: boolean;
   colorMode?: 'auto' | 'original' | 'coral' | 'white' | 'slate';
 }
 
@@ -18,16 +20,17 @@ export interface TTBLogoProps {
  */
 export const TTBLogo: React.FC<TTBLogoProps> = ({
   variant = 'horizontal',
-  height = 44,
+  height = 40,
   className = '',
   showSubtitle = true,
   subtitleText = 'Test Yönetim Sistemi',
+  titleText = 'TÜRK TİCARET BANKASI',
+  showBadge = true,
   colorMode = 'auto',
 }) => {
   const { theme } = useTheme();
-  const isDark = theme === 'crimson-dark';
 
-  // Determine asset paths based on theme & colorMode
+  // Determine emblem asset path
   const getEmblemSrc = () => {
     if (colorMode === 'original') return '/brand/ttb-emblem-red.png';
     if (colorMode === 'coral') return '/brand/ttb-emblem-coral.png';
@@ -36,20 +39,12 @@ export const TTBLogo: React.FC<TTBLogoProps> = ({
     return '/brand/ttb-emblem-red.png';
   };
 
-  const getTextSrc = () => {
-    if (colorMode === 'original') return '/brand/ttb-text-red.png';
-    if (colorMode === 'coral') return '/brand/ttb-text-coral.png';
-    if (colorMode === 'white') return '/brand/ttb-text-white.png';
-    if (colorMode === 'slate') return '/brand/ttb-text-slate.png';
-    return isDark ? '/brand/ttb-text-white.png' : '/brand/ttb-text-red.png';
-  };
-
   // Emblem Only Variant
   if (variant === 'emblem') {
     return (
       <div
         className={`inline-flex items-center justify-center relative select-none transition-transform duration-200 hover:scale-105 ${className}`}
-        style={{ height: `${height}px`, width: `${Math.round(height * 1.3)}px` }}
+        style={{ height: `${height}px`, width: `${Math.round(height * 1.2)}px` }}
       >
         <img
           src={getEmblemSrc()}
@@ -61,45 +56,36 @@ export const TTBLogo: React.FC<TTBLogoProps> = ({
     );
   }
 
-  // Full Horizontal Brand Logo (Emblem + Typography + TCMS Subtitle)
+  // Full Horizontal Brand Logo (Emblem + TÜRK TİCARET BANKASI + Test Yönetim Sistemi)
   if (variant === 'horizontal' || variant === 'full') {
     return (
-      <div className={`inline-flex items-center space-x-3 sm:space-x-3.5 select-none ${className}`}>
-        {/* Emblem */}
+      <div className={`inline-flex items-center space-x-3 select-none ${className}`}>
+        {/* Official Bank Emblem */}
         <div
           className="relative shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
-          style={{ height: `${height}px`, width: `${Math.round(height * 1.25)}px` }}
+          style={{ height: `${height}px`, width: `${Math.round(height * 1.15)}px` }}
         >
           <img
             src={getEmblemSrc()}
             alt="Türk Ticaret Bankası"
-            className="h-full w-auto object-contain transition-all duration-200 drop-shadow-sm"
+            className="h-full w-auto object-contain transition-all duration-200 drop-shadow-xs"
             style={{ maxHeight: `${height}px` }}
           />
         </div>
 
-        {/* Separator / Typography & Subtitle */}
-        <div className="flex flex-col justify-center shrink-0">
-          <div
-            className="relative"
-            style={{ height: `${Math.round(height * 0.65)}px` }}
-          >
-            <img
-              src={getTextSrc()}
-              alt="Türk Ticaret Bankası"
-              className="h-full w-auto object-contain transition-all duration-200"
-              style={{ maxHeight: `${Math.round(height * 0.65)}px` }}
-            />
+        {/* Brand Typography & System Subtitle */}
+        <div className="flex flex-col justify-center select-none">
+          {/* Upper Title: Official Bank Name */}
+          <div className="text-[12px] sm:text-[12.5px] font-extrabold tracking-[0.03em] text-slate-900 dark:text-white uppercase leading-none font-sans whitespace-nowrap">
+            {titleText}
           </div>
 
-          {showSubtitle && (
-            <div className="flex items-center space-x-2 mt-1">
-              <span className="text-xs font-bold tracking-wider uppercase px-2 py-0.5 bg-[#b83a4b]/15 text-[#b83a4b] dark:text-[#d66b7a] rounded-md border border-[#b83a4b]/30 font-mono leading-none">
-                TCMS
-              </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:inline leading-none">
-                {subtitleText}
-              </span>
+          {/* Lower Subtitle: Exactly justified to match upper title width */}
+          {showSubtitle && subtitleText && (
+            <div className="w-full flex items-center justify-between text-[9.5px] sm:text-[10px] font-bold text-[#b83a4b] dark:text-[#f87171] uppercase tracking-[0.05em] leading-none mt-1.5 select-none">
+              {subtitleText.split(' ').map((word, idx) => (
+                <span key={idx}>{word}</span>
+              ))}
             </div>
           )}
         </div>
@@ -131,9 +117,9 @@ export const TTBLogo: React.FC<TTBLogoProps> = ({
             TTB
           </span>
         </div>
-        {showSubtitle && (
+        {showSubtitle && subtitleText && (
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-1 leading-none">
-            Türk Ticaret Bankası
+            {subtitleText}
           </span>
         )}
       </div>

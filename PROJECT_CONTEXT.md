@@ -72,6 +72,22 @@ This document serves as the high-density architectural blueprint for AI agents a
    - `executedBy`: String?, `testerEmail`: String?
    - Jira bug fields: `jiraBugKey`, `jiraBugUrl`, `screenshotUrl`
 
+7. **`Defect`**:
+   - `id`: UUID
+   - `key`: Unique auto-generated identifier (e.g. `BANK-MOB-DEF-1`)
+   - `title`: String
+   - `description`: String?
+   - `severity`: Enum (`BLOCKER`, `CRITICAL`, `MAJOR`, `MINOR`, `TRIVIAL`)
+   - `status`: Enum (`OPEN`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`, `REOPENED`, `WONT_FIX`)
+   - `projectId`: Foreign Key -> `Project` (Cascade Delete)
+   - `testCaseId`: Foreign Key -> `TestCase`? (SetNull)
+   - `testRunId`: Foreign Key -> `TestRun`? (SetNull)
+   - `testResultId`: Foreign Key -> `TestResult`? (SetNull)
+   - `assignedTo`: String?, `reportedBy`: String?
+   - `environment`: String?, `channel`: String?
+   - Jira fields: `jiraBugKey`, `jiraBugUrl`
+   - `resolutionNotes`: String?, `resolvedAt`: DateTime?
+
 ---
 
 ## 3. Backend API Route Blueprint (`backend/src`)
@@ -97,22 +113,35 @@ This document serves as the high-density architectural blueprint for AI agents a
 | | `/test-runs/:id` | GET | Get test run details & results |
 | | `/test-runs/:id/results` | POST | Record execution result for test case |
 | | `/test-runs/:id/status` | PATCH | Update test run overall status |
+| **Defects** | `/defects/project/:projectId` | GET | List all defects with status/severity/search filters |
+| | `/defects/stats/project/:projectId` | GET | Aggregated metrics, distributions & resolution rate |
+| | `/defects` | POST | Create defect |
+| | `/defects/:id` | GET | Get single defect detail |
+| | `/defects/:id` | PUT | Update defect details |
+| | `/defects/:id/status` | PATCH | Quick status transition |
+| | `/defects/sync-failed/project/:projectId` | POST | Auto-sync failed execution results to defects |
+| | `/defects/:id` | DELETE | Delete defect |
 
 ---
 
 ## 4. Frontend Component Hierarchy (`frontend/src`)
 
-- **`App` (`src/app/page.tsx`)**: Main layout container, active tab controller (`EXPLORER`, `DASHBOARD`, `RUNS`), modal manager.
+- **`App` (`src/app/page.tsx`)**: Main layout container, active tab controller (`DASHBOARD`, `PLANS`, `EXPLORER`, `RUNS`, `DEFECTS`, `REPORTS`), modal manager.
 - **`Header` (`src/components/Header.tsx`)**: Navigation bar, project dropdown selector, active view toggles, theme switcher.
+- **`AppSidebar` (`src/components/AppSidebar.tsx`)**: Collapsible navigation bar with badges for test plans, cases, runs, and active defects.
+- **`DefectsView` (`src/components/DefectsView.tsx`)**: Centralized defect tracking hub with List View, Kanban Board, Analytics charts, and CSV export.
 - **`ExplorerTree` (`src/components/ExplorerTree.tsx`)**: Recursive tree displaying Suites and Test Cases with action context menus.
 - **`TestCaseEditor` (`src/components/TestCaseEditor.tsx`)**: Form for creating/editing test steps, preconditions, priority, type, and Jira linkage.
 - **`DashboardView` (`src/components/DashboardView.tsx`)**: Visual metrics dashboard (total cases, pass rate, priority distribution, test run activity charts).
 - **`TestRunsView` (`src/components/TestRunsView.tsx`)**: Table of test runs, environment breakdown, and execution logs.
 - **Modals**:
+  - `NewDefectModal.tsx`
+  - `DefectDetailModal.tsx`
   - `NewProjectModal.tsx`
   - `NewSuiteModal.tsx`
   - `EditSuiteModal.tsx`
   - `NewCaseModal.tsx`
+  - `NewTestPlanModal.tsx`
   - `ManualRunModal.tsx`
   - `QuickRunModal.tsx`
 

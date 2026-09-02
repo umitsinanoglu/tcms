@@ -15,7 +15,6 @@ import {
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { EditTestPlanModal } from './EditTestPlanModal';
-import { NewCaseModal } from './NewCaseModal';
 import {
   ArrowLeft,
   Calendar,
@@ -46,6 +45,9 @@ import {
   PlayCircle,
   Eye,
   Sparkles,
+  CheckSquare,
+  Square,
+  MinusSquare,
 } from 'lucide-react';
 
 interface TestPlanDetailViewProps {
@@ -61,7 +63,7 @@ interface TestPlanDetailViewProps {
   onDeletePlanSuccess?: (deletedId: string) => void;
 }
 
-type DetailTab = 'SCENARIOS' | 'RUNS' | 'OVERVIEW';
+type DetailTab = 'SCENARIOS' | 'RUNS';
 
 export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
   plan: initialPlan,
@@ -92,30 +94,60 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
   const [isSavingMetadata, setIsSavingMetadata] = useState(false);
 
   // Scenarios In Plan State
-  // We keep track of scenario IDs assigned to this plan (persisted locally / dynamically)
+  // We keep track of scenario IDs assigned to this plan (persisted in DB and synced locally)
   const [planCaseIds, setPlanCaseIds] = useState<string[]>(() => {
+    if (initialPlan.cases && initialPlan.cases.length > 0) {
+      return initialPlan.cases.map((c) => c.testCaseId);
+    }
     try {
       const saved = localStorage.getItem(`tcms_plan_cases_${initialPlan.id}`);
-      if (saved) return JSON.parse(saved);
+      if (saved !== null) return JSON.parse(saved);
     } catch {
       // Ignore
     }
-    // Default to project cases or a portion of them
-    return allCases.slice(0, Math.min(allCases.length, 12)).map((c) => c.id);
+    return [];
   });
 
-  // Selected scenarios in table
+  // Selected scenarios in table (for bulk operations)
   const [selectedCaseIds, setSelectedCaseIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
 
-  // Modals inside detail view
+  // Modal: Add Existing Cases to Plan State & Filters
   const [isAddCasesModalOpen, setIsAddCasesModalOpen] = useState(false);
-  const [isNewCaseModalOpen, setIsNewCaseModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [candidateCaseIdsToAdd, setCandidateCaseIdsToAdd] = useState<string[]>([]);
   const [candidateSearchQuery, setCandidateSearchQuery] = useState('');
+  const [candidateSuiteFilter, setCandidateSuiteFilter] = useState<string>('ALL');
+  const [candidatePriorityFilter, setCandidatePriorityFilter] = useState<string>('ALL');
+  const [candidateTypeFilter, setCandidateTypeFilter] = useState<string>('ALL');
+
+  // Synchronize when initialPlan changes
+  useEffect(() => {
+    setPlan(initialPlan);
+    setEditTitle(initialPlan.title);
+    setEditDescription(initialPlan.description || '');
+    setEditEnvironment(initialPlan.environment || 'STAGING');
+    setEditVersion(initialPlan.version || 'v1.0.0');
+    setEditStatus(initialPlan.status || 'ACTIVE');
+    setEditScope(initialPlan.scope || '');
+    setEditRequirements(initialPlan.requirements || '');
+
+    if (initialPlan.cases && initialPlan.cases.length > 0) {
+      setPlanCaseIds(initialPlan.cases.map((c) => c.testCaseId));
+    } else {
+      try {
+        const saved = localStorage.getItem(`tcms_plan_cases_${initialPlan.id}`);
+        if (saved !== null) {
+          setPlanCaseIds(JSON.parse(saved));
+        } else {
+          setPlanCaseIds([]);
+        }
+      } catch {
+        setPlanCaseIds([]);
+      }
+    }
+  }, [initialPlan]);
 
   // Reload Plan from backend
   const reloadPlan = useCallback(async () => {
@@ -131,6 +163,13 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
         setEditStatus(fresh.status || 'ACTIVE');
         setEditScope(fresh.scope || '');
         setEditRequirements(fresh.requirements || '');
+        if (fresh.cases && fresh.cases.length > 0) {
+          const ids = fresh.cases.map((c) => c.testCaseId);
+          setPlanCaseIds(ids);
+          try {
+            localStorage.setItem(`tcms_plan_cases_${fresh.id}`, JSON.stringify(ids));
+          } catch {}
+        }
       }
     } catch (err) {
       console.error('Failed to reload test plan:', err);
@@ -139,7 +178,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
     }
   }, [plan.id]);
 
-  // Save Plan Case IDs to localStorage
+  // Save Plan Case IDs to server and localStorage
   const updatePlanCaseIds = (newIds: string[]) => {
     setPlanCaseIds(newIds);
     try {
@@ -147,17 +186,18 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
     } catch {
       // Ignore
     }
+    TestPlansService.syncCases(plan.id, newIds).catch((err) => {
+      console.warn('Failed to sync plan cases to server:', err);
+    });
   };
 
   // Scenarios mapped to this plan
   const planCases: TestCase[] = useMemo(() => {
-    if (allCases.length === 0) return [];
-    // Filter cases that are in planCaseIds or if empty, allCases
-    const matched = allCases.filter((c) => planCaseIds.includes(c.id));
-    return matched.length > 0 ? matched : allCases;
+    if (allCases.length === 0 || planCaseIds.length === 0) return [];
+    return allCases.filter((c) => planCaseIds.includes(c.id));
   }, [allCases, planCaseIds]);
 
-  // Filtered Scenarios
+  // Filtered Scenarios in current plan table
   const filteredPlanCases = useMemo(() => {
     return planCases.filter((c) => {
       const matchesSearch = searchQuery
@@ -170,6 +210,90 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
       return matchesSearch && matchesPriority && matchesType;
     });
   }, [planCases, searchQuery, priorityFilter, typeFilter]);
+
+  // Available suites for candidate filtering
+  const availableSuites = useMemo(() => {
+    const suitesMap = new Map<string, string>();
+    allCases.forEach((c) => {
+      if (c.suiteId && c.suite?.name) {
+        suitesMap.set(c.suiteId, c.suite.name);
+      }
+    });
+    return Array.from(suitesMap.entries()).map(([id, name]) => ({ id, name }));
+  }, [allCases]);
+
+  // Candidates for adding to plan (unassigned cases matching modal filters)
+  const candidateCases = useMemo(() => {
+    return allCases.filter((c) => {
+      // Must not already be in this plan
+      if (planCaseIds.includes(c.id)) return false;
+
+      // Search filter
+      if (candidateSearchQuery) {
+        const q = candidateSearchQuery.toLowerCase();
+        const matchTitle = c.title.toLowerCase().includes(q);
+        const matchCode = c.code.toLowerCase().includes(q);
+        const matchDesc = c.description ? c.description.toLowerCase().includes(q) : false;
+        if (!matchTitle && !matchCode && !matchDesc) return false;
+      }
+
+      // Suite filter
+      if (candidateSuiteFilter !== 'ALL' && c.suiteId !== candidateSuiteFilter) {
+        return false;
+      }
+
+      // Priority filter
+      if (candidatePriorityFilter !== 'ALL' && c.priority === candidatePriorityFilter) {
+        return false;
+      }
+
+      // Type filter
+      if (candidateTypeFilter !== 'ALL' && c.type !== candidateTypeFilter) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [allCases, planCaseIds, candidateSearchQuery, candidateSuiteFilter, candidatePriorityFilter, candidateTypeFilter]);
+
+  // Candidate selection helpers
+  const isAllCandidatesSelected = useMemo(() => {
+    if (candidateCases.length === 0) return false;
+    return candidateCases.every((c) => candidateCaseIdsToAdd.includes(c.id));
+  }, [candidateCases, candidateCaseIdsToAdd]);
+
+  const handleSelectAllCandidates = () => {
+    const idsToAdd = candidateCases.map((c) => c.id);
+    setCandidateCaseIdsToAdd((prev) => Array.from(new Set([...prev, ...idsToAdd])));
+  };
+
+  const handleDeselectAllCandidates = () => {
+    const filteredIds = new Set(candidateCases.map((c) => c.id));
+    setCandidateCaseIdsToAdd((prev) => prev.filter((id) => !filteredIds.has(id)));
+  };
+
+  // Table selection helpers in Scenarios Tab
+  const isAllFilteredSelected = useMemo(() => {
+    if (filteredPlanCases.length === 0) return false;
+    return filteredPlanCases.every((c) => selectedCaseIds.includes(c.id));
+  }, [filteredPlanCases, selectedCaseIds]);
+
+  const handleToggleSelectAllPlanCases = () => {
+    if (isAllFilteredSelected) {
+      const filteredSet = new Set(filteredPlanCases.map((c) => c.id));
+      setSelectedCaseIds((prev) => prev.filter((id) => !filteredSet.has(id)));
+    } else {
+      const visibleIds = filteredPlanCases.map((c) => c.id);
+      setSelectedCaseIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  };
+
+  const handleToggleCaseSelection = (caseId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedCaseIds((prev) =>
+      prev.includes(caseId) ? prev.filter((id) => id !== caseId) : [...prev, caseId]
+    );
+  };
 
   // Statistics calculation for this plan
   const stats = useMemo(() => {
@@ -184,36 +308,30 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
       plan.testRuns.forEach((r) => {
         if (r.results) {
           r.results.forEach((res) => {
-            executed++;
-            if (res.status === 'PASSED') passed++;
-            else if (res.status === 'FAILED') failed++;
-            else if (res.status === 'BLOCKED') blocked++;
-            else if (res.status === 'SKIPPED') skipped++;
+            if (total === 0 || planCaseIds.includes(res.testCaseId)) {
+              executed++;
+              if (res.status === 'PASSED') passed++;
+              else if (res.status === 'FAILED') failed++;
+              else if (res.status === 'BLOCKED') blocked++;
+              else if (res.status === 'SKIPPED') skipped++;
+            }
           });
         }
       });
     }
 
-    if (executed === 0 && total > 0) {
-      executed = Math.round(total * 0.8);
-      passed = Math.round(executed * 0.76);
-      failed = Math.max(0, executed - passed - 2);
-      blocked = 2;
-      skipped = 0;
-    }
-
-    const passRate = executed > 0 ? Math.round((passed / executed) * 100) : 76;
+    const passRate = executed > 0 ? Math.round((passed / executed) * 100) : 0;
 
     return {
-      total: total || 144,
-      executed: executed || 110,
-      passed: passed || 84,
-      failed: failed || 22,
-      blocked: blocked || 4,
-      skipped: skipped || 0,
-      passRate: passRate || 76,
+      total,
+      executed,
+      passed,
+      failed,
+      blocked,
+      skipped,
+      passRate,
     };
-  }, [planCases, plan.testRuns]);
+  }, [planCases, plan.testRuns, planCaseIds]);
 
   // Save Inline Metadata
   const handleSaveMetadata = async () => {
@@ -249,10 +367,11 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
     setCandidateCaseIdsToAdd([]);
   };
 
-  // Remove a case from plan
+  // Remove a single case from plan
   const handleRemoveCaseFromPlan = (caseId: string) => {
     const updated = planCaseIds.filter((id) => id !== caseId);
     updatePlanCaseIds(updated);
+    setSelectedCaseIds((prev) => prev.filter((id) => id !== caseId));
   };
 
   // Remove selected cases from plan
@@ -580,7 +699,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                       type="button"
                       disabled={isSavingMetadata}
                       onClick={handleSaveMetadata}
-                      className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] disabled:opacity-50 transition-all shadow-xs cursor-pointer"
+                      className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 disabled:opacity-50 transition-all shadow-xs cursor-pointer"
                     >
                       {isSavingMetadata ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -679,7 +798,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
 
         {/* Executed Scenarios */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
             <PlayCircle className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1">
@@ -690,7 +809,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
               <span className="text-lg font-black text-slate-900 dark:text-slate-100 leading-none">
                 {stats.executed}
               </span>
-              <span className="text-[10px] font-mono font-semibold text-purple-600 dark:text-purple-400">
+              <span className="text-[10px] font-mono font-semibold text-slate-700 dark:text-slate-300">
                 %{Math.round((stats.executed / (stats.total || 1)) * 100)}
               </span>
             </div>
@@ -699,7 +818,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
 
         {/* Pass / Fail Breakdown */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1">
@@ -716,7 +835,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
 
         {/* Pass Rate Progress Bar */}
         <div className="py-2.5 px-3.5 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
@@ -725,7 +844,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                 Başarı Oranı
               </span>
               <span className="text-xs font-black text-slate-900 dark:text-slate-100">
-                %{stats.passRate}
+                {stats.executed > 0 ? `%${stats.passRate}` : '—'}
               </span>
             </div>
             <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
@@ -737,14 +856,13 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                     ? 'bg-amber-500'
                     : 'bg-rose-500'
                 }`}
-                style={{ width: `${stats.passRate}%` }}
+                style={{ width: `${stats.executed > 0 ? stats.passRate : 0}%` }}
               />
             </div>
           </div>
         </div>
       </div>
-
-      {/* 4. Tab Navigation & Content */}
+{/* 4. Tab Navigation & Content */}
       <div className="min-w-0 px-6 pb-6">
         <div className="bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs overflow-hidden">
           {/* Tabs Header */}
@@ -755,12 +873,12 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                 onClick={() => setActiveTab('SCENARIOS')}
                 className={`py-3 border-b-2 transition-all cursor-pointer flex items-center space-x-2 ${
                   activeTab === 'SCENARIOS'
-                    ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
+                    ? 'border-[var(--accent-primary)] text-[var(--accent-primary)] font-bold'
                     : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 <span>Test Senaryoları</span>
-                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] font-bold">
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-bold">
                   {planCases.length}
                 </span>
               </button>
@@ -770,63 +888,27 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                 onClick={() => setActiveTab('RUNS')}
                 className={`py-3 border-b-2 transition-all cursor-pointer flex items-center space-x-2 ${
                   activeTab === 'RUNS'
-                    ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
+                    ? 'border-[var(--accent-primary)] text-[var(--accent-primary)] font-bold'
                     : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
-                <span>Bağlı Test Koşumları</span>
-                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold">
+                <span>Test Koşumları Geçmişi</span>
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                   {plan.testRuns?.length || plan._count?.testRuns || 0}
                 </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('OVERVIEW')}
-                className={`py-3 border-b-2 transition-all cursor-pointer ${
-                  activeTab === 'OVERVIEW'
-                    ? 'border-[#b83a4b] text-[#b83a4b] dark:text-[#d66b7a] font-bold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
-              >
-                Kapsam & Rapor Detayı
               </button>
             </div>
 
             {/* Action buttons inside Scenarios Tab */}
-            {activeTab === 'SCENARIOS' && (
+            {activeTab === 'SCENARIOS' && selectedCaseIds.length > 0 && (
               <div className="flex items-center space-x-2 py-2">
-                {selectedCaseIds.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleRemoveSelectedCases}
-                    className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Seçilenleri Çıkar ({selectedCaseIds.length})</span>
-                  </button>
-                )}
-
                 <button
                   type="button"
-                  onClick={() => {
-                    setCandidateCaseIdsToAdd([]);
-                    setCandidateSearchQuery('');
-                    setIsAddCasesModalOpen(true);
-                  }}
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer border border-slate-200/60 dark:border-slate-700/60 shadow-xs"
+                  onClick={handleRemoveSelectedCases}
+                  className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Mevcut Senaryoları Ekle</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsNewCaseModalOpen(true)}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] transition-all shadow-xs cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Yeni Senaryo Oluştur</span>
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Seçilenleri Plandan Çıkar ({selectedCaseIds.length})</span>
                 </button>
               </div>
             )}
@@ -835,7 +917,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
           {/* Tab 1: Test Scenarios Management */}
           {activeTab === 'SCENARIOS' && (
             <div className="flex-1 flex flex-col min-h-0">
-              {/* Search & Filters */}
+              {/* Search & Filters & Add Scenario Button */}
               <div className="p-2.5 px-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -872,17 +954,38 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                     <option value="API">API</option>
                     <option value="PERFORMANCE">Performance</option>
                   </select>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCandidateCaseIdsToAdd([]);
+                      setIsAddCasesModalOpen(true);
+                    }}
+                    className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 transition-all shadow-xs cursor-pointer active:scale-98"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Test Senaryosu Ekle</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Scenarios Table with Prominent Corporate Headers */}
+              {/* Scenarios Table with Multi-Select Checkboxes */}
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
                     <tr className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                      <th className="py-2.5 px-4 w-28">KOD</th>
+                      <th className="py-2.5 pl-4 pr-1 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isAllFilteredSelected && filteredPlanCases.length > 0}
+                          onChange={handleToggleSelectAllPlanCases}
+                          aria-label="Tümünü seç"
+                          className="rounded border-slate-300 text-[var(--accent-primary)] focus:ring-0 cursor-pointer"
+                        />
+                      </th>
+                      <th className="py-2.5 px-3 w-28">KOD</th>
                       <th className="py-2.5 px-3">SENARYO BAŞLIĞI</th>
-                      <th className="py-2.5 px-3">SÜİT</th>
+                      <th className="py-2.5 px-3">MODÜL</th>
                       <th className="py-2.5 px-3">ÖNCELİK</th>
                       <th className="py-2.5 px-3">TÜR</th>
                       <th className="py-2.5 px-3">ADIM SAYISI</th>
@@ -892,34 +995,50 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                     {filteredPlanCases.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-14 text-center text-slate-400">
+                        <td colSpan={8} className="py-14 text-center text-slate-400">
                           <Folder className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
                           <p className="font-semibold text-slate-700 dark:text-slate-300">
                             Bu test planına henüz senaryo eklenmemiş.
                           </p>
                           <p className="text-[11px] text-slate-400 mt-1 mb-4">
-                            Projedeki mevcut test senaryolarını bu plana dahil edin veya yeni senaryo tanımlayın.
+                            Bu test planı kapsamında kayıtlı test senaryosu bulunmamaktadır.
                           </p>
                           <button
                             type="button"
-                            onClick={() => setIsAddCasesModalOpen(true)}
-                            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs cursor-pointer"
+                            onClick={() => {
+                              setCandidateCaseIdsToAdd([]);
+                              setIsAddCasesModalOpen(true);
+                            }}
+                            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 shadow-xs cursor-pointer transition-all active:scale-98"
                           >
-                            <Plus className="w-4 h-4" />
-                            <span>Senaryo Ekle</span>
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Test Senaryosu Ekle</span>
                           </button>
                         </td>
                       </tr>
                     ) : (
                       filteredPlanCases.map((tc) => {
+                        const isSelected = selectedCaseIds.includes(tc.id);
                         return (
                           <tr
                             key={tc.id}
-                            className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                            className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer ${
+                              isSelected ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''
+                            }`}
                             onClick={() => onSelectCase && onSelectCase(tc)}
                           >
+                            {/* Checkbox */}
+                            <td className="py-2.5 pl-4 pr-1 text-center" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => handleToggleCaseSelection(tc.id, e as any)}
+                                className="rounded border-slate-300 text-[var(--accent-primary)] focus:ring-0 cursor-pointer"
+                              />
+                            </td>
+
                             {/* Code */}
-                            <td className="py-2.5 px-4">
+                            <td className="py-2.5 px-3">
                               <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                                 {tc.code}
                               </span>
@@ -945,11 +1064,11 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                               </div>
                             </td>
 
-                            {/* Suite */}
+                            {/* Module */}
                             <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
                               <div className="flex items-center space-x-1.5">
                                 <Folder className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                <span className="truncate max-w-[130px] font-medium">{tc.suite?.name || 'Kök Dizin'}</span>
+                                <span className="truncate max-w-[130px] font-medium">{tc.suite?.name || 'Ana Modül'}</span>
                               </div>
                             </td>
 
@@ -988,7 +1107,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => onSelectCase && onSelectCase(tc)}
-                                  className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                                   title="Senaryoyu İncele / Düzenle"
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
@@ -996,7 +1115,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveCaseFromPlan(tc.id)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors cursor-pointer"
                                   title="Bu Senaryoyu Plandan Çıkar"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1013,7 +1132,14 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
 
               {/* Table Footer */}
               <div className="p-3 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex items-center justify-between text-xs text-slate-500">
-                <span>Toplam {filteredPlanCases.length} Senaryo</span>
+                <div className="flex items-center space-x-3">
+                  <span>Toplam <strong>{filteredPlanCases.length}</strong> Senaryo</span>
+                  {selectedCaseIds.length > 0 && (
+                    <span className="font-semibold text-blue-600 dark:text-blue-400">
+                      ({selectedCaseIds.length} seçili)
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1049,7 +1175,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                         <button
                           type="button"
                           onClick={() => onStartRunWithPlan(plan)}
-                          className="text-blue-600 dark:text-blue-400 font-bold hover:underline"
+                          className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
                         >
                           Detayları Gör &rarr;
                         </button>
@@ -1078,110 +1204,143 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
               )}
             </div>
           )}
-
-          {/* Tab 3: Overview & Scope Breakdown */}
-          {activeTab === 'OVERVIEW' && (
-            <div className="flex-1 overflow-auto p-6 space-y-6 text-xs">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Scope Coverage */}
-                <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-[#121926]/70 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-blue-500" />
-                    <span>Kapsam Bileşenleri ve Kanallar</span>
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
-                    {plan.scope || 'Web, Mobil, API kanalları ve ilgili tüm fonksiyonel modüller.'}
-                  </p>
-
-                  <div className="pt-2 flex flex-wrap gap-2">
-                    {['Web Portalı', 'Mobil iOS & Android', 'REST API', 'Ödeme & Güvenlik'].map((t) => (
-                      <span
-                        key={t}
-                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Jira / Requirements */}
-                <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-[#121926]/70 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-amber-500" />
-                    <span>Jira Gereksinim ve Issue Eşleşmeleri</span>
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
-                    {plan.requirements || 'Bu test planı Jira issue ve kullanıcı hikayeleri ile doğrudan entegre edilebilir.'}
-                  </p>
-
-                  {plan.requirements && (
-                    <div className="pt-2 flex flex-wrap gap-1.5">
-                      {plan.requirements.split(',').map((req) => (
-                        <span
-                          key={req}
-                          className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-mono font-bold"
-                        >
-                          {req.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Modal: Add Existing Cases to Plan */}
+      {/* Modal: Add Existing Cases to Plan (Multi-Select Supported) */}
       {isAddCasesModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="w-full max-w-3xl bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-4 px-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/40 dark:bg-[#121926]/40">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  Test Planına Senaryo Ekle
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <FolderKanban className="w-4 h-4 text-[var(--accent-primary)]" />
+                  <span>Test Planına Senaryoları Ekle</span>
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Proje havuzundaki test senaryolarından seçerek plana dahil edin.
+                  Proje havuzundaki mevcut test senaryolarını seçerek bu test planına dahil edin.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsAddCasesModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Search Input */}
-            <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-              <div className="relative">
+            {/* Filter Toolbar */}
+            <div className="p-3 px-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-[#121926]/60 flex flex-col sm:flex-row gap-2.5">
+              {/* Search */}
+              <div className="relative flex-1">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Senaryo adı veya kod ile ara..."
+                  placeholder="Senaryo adı, kod veya açıklama ara..."
                   value={candidateSearchQuery}
                   onChange={(e) => setCandidateSearchQuery(e.target.value)}
-                  className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
+              </div>
+
+              {/* Module Filter */}
+              {availableSuites.length > 0 && (
+                <select
+                  value={candidateSuiteFilter}
+                  onChange={(e) => setCandidateSuiteFilter(e.target.value)}
+                  className="bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none font-medium"
+                >
+                  <option value="ALL">Tüm Modüller</option>
+                  {availableSuites.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {/* Priority Filter */}
+              <select
+                value={candidatePriorityFilter}
+                onChange={(e) => setCandidatePriorityFilter(e.target.value)}
+                className="bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none font-medium"
+              >
+                <option value="ALL">Tüm Öncelikler</option>
+                <option value="BLOCKER">Blocker</option>
+                <option value="CRITICAL">Critical</option>
+                <option value="NORMAL">Normal</option>
+                <option value="LOW">Low</option>
+              </select>
+
+              {/* Type Filter */}
+              <select
+                value={candidateTypeFilter}
+                onChange={(e) => setCandidateTypeFilter(e.target.value)}
+                className="bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none font-medium"
+              >
+                <option value="ALL">Tüm Türler</option>
+                <option value="WEB">Web</option>
+                <option value="MOBILE">Mobile</option>
+                <option value="API">API</option>
+                <option value="PERFORMANCE">Performance</option>
+              </select>
+            </div>
+
+            {/* Quick Multi-Select Action Bar */}
+            <div className="px-5 py-2 bg-slate-100/60 dark:bg-[#182234] border-b border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={isAllCandidatesSelected ? handleDeselectAllCandidates : handleSelectAllCandidates}
+                  disabled={candidateCases.length === 0}
+                  className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 transition-colors cursor-pointer shadow-xs"
+                >
+                  {isAllCandidatesSelected ? (
+                    <>
+                      <MinusSquare className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                      <span>Filtrelenenlerin Seçimini Kaldır</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Filtrelenenleri Tümünü Seç ({candidateCases.length})</span>
+                    </>
+                  )}
+                </button>
+
+                {candidateCaseIdsToAdd.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setCandidateCaseIdsToAdd([])}
+                    className="text-xs text-slate-500 hover:text-rose-600 transition-colors cursor-pointer underline ml-2"
+                  >
+                    Tüm Seçimleri Temizle
+                  </button>
+                )}
+              </div>
+
+              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                <strong className="text-blue-600 dark:text-blue-400 font-bold">{candidateCaseIdsToAdd.length}</strong> seçili /{' '}
+                <span>{candidateCases.length} aday</span>
               </div>
             </div>
 
             {/* Candidates List */}
-            <div className="p-2 overflow-y-auto flex-1 max-h-96 space-y-1">
-              {allCases
-                .filter(
-                  (c) =>
-                    !planCaseIds.includes(c.id) &&
-                    (candidateSearchQuery
-                      ? c.title.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
-                        c.code.toLowerCase().includes(candidateSearchQuery.toLowerCase())
-                      : true)
-                )
-                .map((c) => {
+            <div className="p-3 px-5 overflow-y-auto flex-1 max-h-96 space-y-2">
+              {candidateCases.length === 0 ? (
+                <div className="py-12 text-center text-slate-400">
+                  <Folder className="w-7 h-7 mx-auto mb-2 opacity-30" />
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">
+                    Eklenebilecek test senaryosu bulunamadı.
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Tüm mevcut senaryolar zaten plana dahil edilmiş veya arama filtrenizle eşleşen kayıt yok.
+                  </p>
+                </div>
+              ) : (
+                candidateCases.map((c) => {
                   const isChecked = candidateCaseIdsToAdd.includes(c.id);
                   return (
                     <div
@@ -1191,44 +1350,69 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                           prev.includes(c.id) ? prev.filter((id) => id !== c.id) : [...prev, c.id]
                         )
                       }
-                      className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-colors ${
+                      className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
                         isChecked
-                          ? 'bg-blue-50/80 dark:bg-blue-900/20 border-blue-500/40 text-blue-600'
-                          : 'bg-white dark:bg-[#1d232f] border-slate-200/80 dark:border-slate-700/60 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200'
+                          ? 'bg-blue-50/90 dark:bg-blue-950/40 border-blue-500/50 shadow-xs'
+                          : 'bg-white dark:bg-[#1d232f] border-slate-200/80 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50/50 dark:hover:bg-slate-800/50'
                       }`}
                     >
-                      <div className="flex items-center space-x-2.5 min-w-0 flex-1 pr-2">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1 pr-3">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => {}}
-                          className="rounded border-slate-300 text-blue-600 focus:ring-0 cursor-pointer"
+                          className="rounded border-slate-300 text-[var(--accent-primary)] focus:ring-0 cursor-pointer h-4 w-4 shrink-0"
                         />
-                        <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shrink-0">
                           {c.code}
                         </span>
                         <div className="min-w-0 flex-1 truncate">
-                          <p className="text-xs font-bold truncate">{c.title}</p>
-                          <p className="text-[10px] text-slate-400 truncate">
-                            {c.suite?.name || 'Kök'} &bull; {c.priority} &bull; {c.type}
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                            {c.title}
                           </p>
+                          <div className="flex items-center space-x-2 text-[10px] text-slate-400 mt-0.5 truncate">
+                            <span className="font-medium text-slate-600 dark:text-slate-300">
+                              {c.suite?.name || 'Ana Modül'}
+                            </span>
+                            <span>&bull;</span>
+                            <span
+                              className={`font-bold px-1.5 py-0.2 rounded ${
+                                c.priority === 'BLOCKER'
+                                  ? 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60'
+                                  : c.priority === 'CRITICAL'
+                                  ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60'
+                                  : 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800'
+                              }`}
+                            >
+                              {c.priority}
+                            </span>
+                            <span>&bull;</span>
+                            <span className="font-mono text-slate-500">{c.type}</span>
+                            {c.steps && c.steps.length > 0 && (
+                              <>
+                                <span>&bull;</span>
+                                <span>{c.steps.length} adım</span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   );
-                })}
+                })
+              )}
             </div>
 
-            {/* Footer */}
-            <div className="p-3 px-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">
-                {candidateCaseIdsToAdd.length} senaryo seçildi
+            {/* Modal Footer */}
+            <div className="p-3 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-[#121926]/60 flex items-center justify-between text-xs">
+              <span className="text-slate-600 dark:text-slate-400 font-medium">
+                Toplam <strong>{candidateCaseIdsToAdd.length}</strong> senaryo seçildi
               </span>
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsAddCasesModalOpen(false)}
-                  className="px-3.5 py-1.5 rounded-xl font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-3.5 py-1.5 rounded-xl font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   İptal
                 </button>
@@ -1236,35 +1420,16 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                   type="button"
                   disabled={candidateCaseIdsToAdd.length === 0}
                   onClick={handleConfirmAddCases}
-                  className="px-4 py-1.5 rounded-xl font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] disabled:opacity-50 transition-all shadow-xs cursor-pointer"
+                  className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-xl font-bold text-white bg-accent-gradient hover:brightness-110 disabled:opacity-50 transition-all shadow-xs cursor-pointer"
                 >
-                  Seçilenleri Plana Ekle
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Seçilenleri Plana Ekle ({candidateCaseIdsToAdd.length})</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Modal: Create New Case */}
-      <NewCaseModal
-        isOpen={isNewCaseModalOpen}
-        onClose={() => setIsNewCaseModalOpen(false)}
-        projectId={project?.id}
-        projectName={project?.name}
-        suites={tree}
-        onSubmit={async (newCaseData) => {
-          try {
-            const created = await TestCasesService.create(newCaseData);
-            if (created?.id) {
-              updatePlanCaseIds([...planCaseIds, created.id]);
-            }
-            setIsNewCaseModalOpen(false);
-          } catch (err) {
-            console.error('Failed to create new case in plan:', err);
-          }
-        }}
-      />
     </div>
   );
 };

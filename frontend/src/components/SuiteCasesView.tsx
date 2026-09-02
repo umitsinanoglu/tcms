@@ -26,11 +26,18 @@ import {
   Check,
   Filter,
   FileText,
+  FileSpreadsheet,
+  Download,
+  Upload,
 } from 'lucide-react';
+import { ExcelImportModal } from './ExcelImportModal';
+import { downloadTestCaseTemplate, exportTestCasesToExcel } from '@/utils/excelUtils';
 
 interface SuiteCasesViewProps {
   suite: SuiteTreeNode | null;
   allSuites?: SuiteTreeNode[];
+  projectId?: string;
+  projectName?: string;
   onSelectCase: (testCase: TestCase) => void;
   onSelectSuite?: (suite: SuiteTreeNode) => void;
   onAddSubSuite?: (parentSuiteId: string) => void;
@@ -38,6 +45,7 @@ interface SuiteCasesViewProps {
   onRunCase?: (testCase: TestCase, version?: string, environment?: string) => void;
   onClose?: () => void;
   onBack?: () => void;
+  onCasesChange?: () => Promise<void> | void;
 }
 
 type StatusFilter = 'ALL' | 'PASSED' | 'FAILED' | 'BLOCKED' | 'UNTESTED';
@@ -48,6 +56,8 @@ const PRESET_ENVIRONMENTS = ['STAGING', 'DEV', 'TEST', 'UAT', 'PROD'];
 export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
   suite,
   allSuites = [],
+  projectId,
+  projectName,
   onSelectCase,
   onSelectSuite,
   onAddSubSuite,
@@ -55,10 +65,12 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
   onRunCase,
   onClose,
   onBack,
+  onCasesChange,
 }) => {
   const { can, isViewer } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
@@ -125,18 +137,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
   };
 
   const getTypeBadge = (type: TestType) => {
-    switch (type) {
-      case 'WEB':
-        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
-      case 'MOBILE':
-      case 'IOS':
-      case 'ANDROID':
-        return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30';
-      case 'API':
-        return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30';
-      default:
-        return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30';
-    }
+    return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
   };
 
   const renderStatusPill = (tc: TestCase) => {
@@ -232,7 +233,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
             )}
             <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shrink-0 ${
               suite.id === '__root_cases__'
-                ? 'bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#d66b7a] border-[#b83a4b]/20'
+                ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]/20'
                 : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
             }`}>
               {suite.id === '__root_cases__' ? <FileText className="w-6 h-6" /> : <FolderOpen className="w-6 h-6" />}
@@ -258,37 +259,41 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
           </div>
 
           <div className="flex items-center flex-wrap gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                // Client-side quick suite CSV export
-                const BOM = '\uFEFF';
-                const headers = ['Test Kodu', 'Başlık', 'Öncelik', 'Tip', 'Yürütme Türü', 'Son Durum', 'Jira Story', 'Jira Bug'];
-                const rows = (suite.testCases || []).map((tc) => [
-                  `"${tc.code}"`,
-                  `"${(tc.title || '').replace(/"/g, '""')}"`,
-                  `"${tc.priority}"`,
-                  `"${tc.type}"`,
-                  `"${tc.executionType || 'MANUAL'}"`,
-                  `"${tc.results && tc.results.length > 0 ? tc.results[0].status : 'UNTESTED'}"`,
-                  `"${tc.jiraStoryKey || ''}"`,
-                  `"${tc.results && tc.results.length > 0 ? tc.results[0].jiraBugKey || '' : ''}"`,
-                ]);
-                const csvContent = BOM + [headers.map((h) => `"${h}"`).join(','), ...rows.map((r) => r.join(','))].join('\r\n');
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${suite.id === '__root_cases__' ? 'Kok_Test_Caseleri' : `Suite_${suite.name.replace(/[^a-zA-Z0-9_-]/g, '_')}`}_Report.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-              className="flex items-center space-x-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all active:scale-95 cursor-pointer"
-              title="Test Senaryolarını CSV Formatında İndir"
-            >
-              <FileCode2 className="w-4 h-4 text-emerald-500" />
-              <span>Rapor (CSV)</span>
-            </button>
+            {/* Excel Actions Group */}
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700/80">
+              <button
+                type="button"
+                onClick={downloadTestCaseTemplate}
+                className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer"
+                title="Excel İçe Aktarma Şablonunu İndir"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="hidden sm:inline">Şablon</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => exportTestCasesToExcel(testCases, suite.name)}
+                disabled={testCases.length === 0}
+                className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-40 transition-all cursor-pointer"
+                title="Bu Modüldeki Senaryoları Excel'e Aktar"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span className="hidden sm:inline">Excel</span>
+              </button>
+
+              {projectId && can('CREATE_CASE') && (
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer"
+                  title="Excel Dosyasından Senaryo İçe Aktar"
+                >
+                  <Upload className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <span>İçe Aktar</span>
+                </button>
+              )}
+            </div>
 
             {suite.id !== '__root_cases__' && onAddSubSuite && can('CREATE_SUITE') && (
               <button
@@ -305,7 +310,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
               <button
                 type="button"
                 onClick={() => onAddCaseInSuite(suite.id === '__root_cases__' ? '' : suite.id)}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-[#b83a4b] hover:bg-[#a32e3e] text-white text-xs font-semibold rounded-xl shadow-md shadow-[#b83a4b]/20 transition-all active:scale-95 cursor-pointer"
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-accent-gradient hover:brightness-110 text-white text-xs font-semibold rounded-xl shadow-md shadow-[var(--accent-dark)]/20 transition-all active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Yeni Case</span>
@@ -535,20 +540,20 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
       ) : (
         <div className="w-full bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto w-full">
-            <table className="w-full text-left text-xs border-collapse min-w-[920px]">
+            <table className="w-full text-left text-xs border-collapse min-w-full">
               <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
                 <tr className="text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider text-[11px]">
-                  <th className="py-2.5 px-3 text-center w-10">#</th>
-                  <th className="py-2.5 px-3 w-28">Test Kodu</th>
-                  <th className="py-2.5 px-4 min-w-[240px]">Test Case Başlığı ve Detay</th>
-                  <th className="py-2.5 px-3 w-24 text-center">Öncelik</th>
-                  <th className="py-2.5 px-3 w-24 text-center">Tip</th>
-                  <th className="py-2.5 px-3 w-28 text-center">Son Durum</th>
-                  <th className="py-2.5 px-3 w-64 text-center">Koşu Parametreleri</th>
-                  <th className="py-2.5 px-4 w-44 text-right">İşlemler</th>
+                  <th className="py-2.5 px-3 text-center w-10 whitespace-nowrap">#</th>
+                  <th className="py-2.5 px-3 w-28 whitespace-nowrap">Test Kodu</th>
+                  <th className="py-2.5 px-4 min-w-[200px] whitespace-nowrap">Test Case Başlığı ve Detay</th>
+                  <th className="py-2.5 px-3 w-20 text-center whitespace-nowrap">Öncelik</th>
+                  <th className="py-2.5 px-3 w-20 text-center whitespace-nowrap">Tip</th>
+                  <th className="py-2.5 px-3 w-24 text-center whitespace-nowrap">Son Durum</th>
+                  <th className="py-2.5 px-3 w-56 text-center whitespace-nowrap">Koşu Parametreleri</th>
+                  <th className="py-2.5 px-4 w-36 text-right whitespace-nowrap">İşlemler</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200 font-medium">
                 {filteredCases.map((tc, index) => {
                   const currentVersion = getCaseVersion(tc.id);
                   const currentEnv = getCaseEnvironment(tc.id);
@@ -559,12 +564,12 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group"
                     >
                       {/* Index */}
-                      <td className="py-3 px-3 text-center font-mono text-[11px] text-slate-400">
+                      <td className="py-2.5 px-3 text-center font-mono text-[11px] text-slate-400 whitespace-nowrap">
                         {index + 1}
                       </td>
 
                       {/* Test Code */}
-                      <td className="py-3 px-3">
+                      <td className="py-2.5 px-3 whitespace-nowrap">
                         <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 inline-flex items-center space-x-1 shrink-0">
                           <FileCode2 className="w-3 h-3" />
                           <span>{tc.code}</span>
@@ -572,32 +577,33 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                       </td>
 
                       {/* Title & Details */}
-                      <td className="py-3 px-4">
-                        <div className="space-y-1">
+                      <td className="py-2.5 px-4 min-w-0 max-w-xl whitespace-nowrap">
+                        <div className="min-w-0">
                           <div
                             onClick={() => onSelectCase(tc)}
-                            className="font-bold text-slate-900 dark:text-slate-100 hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer transition-colors text-xs leading-snug line-clamp-2"
-                            title="Detayları İncelemek İçin Tıklayın"
+                            className="font-bold text-slate-900 dark:text-slate-100 hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer transition-colors text-xs truncate"
+                            title={tc.description ? `${tc.title}\n\nAçıklama: ${tc.description}` : tc.title}
                           >
                             {tc.title}
                           </div>
 
-                          {tc.description && (
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
-                              {tc.description}
-                            </p>
-                          )}
-
-                          <div className="flex items-center space-x-2 pt-0.5 text-[10px] text-slate-400">
+                          <div className="flex items-center space-x-2 pt-0.5 text-[10px] text-slate-400 truncate">
                             {/* Step Count */}
-                            <span className="flex items-center space-x-1" title={`${tc.steps?.length || 0} Test Adımı`}>
+                            <span className="flex items-center space-x-1 shrink-0" title={`${tc.steps?.length || 0} Test Adımı`}>
                               <ListOrdered className="w-3 h-3" />
                               <span>{tc.steps?.length || 0} Adım</span>
                             </span>
 
+                            {/* Description preview */}
+                            {tc.description && (
+                              <span className="text-slate-400 dark:text-slate-500 truncate" title={tc.description}>
+                                &bull; {tc.description}
+                              </span>
+                            )}
+
                             {/* Screenshot Indicator */}
                             {tc.screenshotUrl && (
-                              <span className="flex items-center space-x-0.5 text-emerald-500 font-semibold" title="Görsel Ekli">
+                              <span className="flex items-center space-x-0.5 text-emerald-500 font-semibold shrink-0" title="Görsel Ekli">
                                 <ImageIcon className="w-3 h-3" />
                                 <span>Görsel</span>
                               </span>
@@ -605,7 +611,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
 
                             {/* Jira Story Indicator */}
                             {tc.jiraStoryKey && (
-                              <span className="flex items-center space-x-0.5 text-blue-500 font-mono font-semibold" title={`Jira: ${tc.jiraStoryKey}`}>
+                              <span className="flex items-center space-x-0.5 text-blue-500 font-mono font-semibold shrink-0" title={`Jira: ${tc.jiraStoryKey}`}>
                                 <Sparkles className="w-2.5 h-2.5" />
                                 <span>{tc.jiraStoryKey}</span>
                               </span>
@@ -615,7 +621,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                       </td>
 
                       {/* Priority */}
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         <span
                           className={`text-[9px] px-2 py-0.5 rounded-full border font-mono font-bold inline-block ${getPriorityBadge(
                             tc.priority
@@ -626,7 +632,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                       </td>
 
                       {/* Type */}
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         <span
                           className={`text-[9px] px-2 py-0.5 rounded-full border font-mono font-semibold inline-block ${getTypeBadge(
                             tc.type
@@ -637,12 +643,12 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                       </td>
 
                       {/* Latest Status */}
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         {renderStatusPill(tc)}
                       </td>
 
                       {/* Run Parameters (Version & Environment) */}
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center space-x-1.5">
                           {/* Version Input/Select */}
                           <div className="relative">
@@ -657,7 +663,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                               }
                               placeholder="v1.0.0"
                               title="Versiyon Numarası"
-                              className="w-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/80 rounded-lg px-2 py-1 text-[11px] font-mono font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500 text-center"
+                              className="w-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/80 rounded-lg px-2 py-0.5 text-[11px] font-mono font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500 text-center"
                             />
                           </div>
 
@@ -672,7 +678,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                                 }))
                               }
                               title="Test Ortamı"
-                              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/80 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
+                              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/80 rounded-lg px-2 py-0.5 text-[11px] font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
                             >
                               {PRESET_ENVIRONMENTS.map((env) => (
                                 <option key={env} value={env}>
@@ -685,13 +691,13 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                       </td>
 
                       {/* Action Buttons ("İncele" & "Koştur") */}
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-2.5 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end space-x-1.5">
                           {/* "İncele" Butonu */}
                           <button
                             type="button"
                             onClick={() => onSelectCase(tc)}
-                            className="inline-flex items-center space-x-1 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 shadow-sm transition-all active:scale-95 cursor-pointer"
+                            className="inline-flex items-center space-x-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 shadow-sm transition-all active:scale-95 cursor-pointer"
                             title="Test Case Detaylarını İncele ve Düzenle"
                           >
                             <Eye className="w-3.5 h-3.5 text-rose-500" />
@@ -703,10 +709,10 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                             <button
                               type="button"
                               onClick={() => handleRunTestCaseRow(tc)}
-                              className="inline-flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
+                              className="inline-flex items-center space-x-1 px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-bold shadow-md shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
                               title={`${currentVersion} versiyonu ve ${currentEnv} ortamında test koşusunu başlat`}
                             >
-                              <Play className="w-3.5 h-3.5 fill-current" />
+                              <Play className="w-3 h-3 fill-current" />
                               <span>Koştur</span>
                             </button>
                           )}
@@ -719,6 +725,22 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
             </table>
           </div>
         </div>
+      )}
+
+      {/* Excel Import Modal */}
+      {projectId && (
+        <ExcelImportModal
+          isOpen={isImportModalOpen}
+          type="TEST_CASES"
+          projectId={projectId}
+          projectName={projectName || suite.name}
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={async () => {
+            if (onCasesChange) {
+              await onCasesChange();
+            }
+          }}
+        />
       )}
     </main>
   );

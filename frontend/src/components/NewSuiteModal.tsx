@@ -96,13 +96,13 @@ export const NewSuiteModal: React.FC<NewSuiteModalProps> = ({
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Bağlı Olduğu Test Planı
+              Bağlı Olduğu Test Projesi
             </label>
             <div className="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
               <span className="text-amber-500 font-mono">🚀</span>
-              <span>{projectKey ? `[${projectKey}] ` : ''}{projectName || 'Aktif Test Planı'}</span>
+              <span>{projectKey ? `[${projectKey}] ` : ''}{projectName || 'Aktif Test Projesi'}</span>
             </div>
-            <p className="text-[10px] text-slate-400">Suite'ler doğrudan Test Planı altında yer almaktadır.</p>
+            <p className="text-[10px] text-slate-400">Suite'ler doğrudan Test Projesi altında yer almaktadır.</p>
           </div>
 
           <div className="flex items-center justify-end space-x-3 pt-3">
@@ -117,7 +117,7 @@ export const NewSuiteModal: React.FC<NewSuiteModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white text-xs font-semibold rounded-xl shadow-md shadow-[#821c2b]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+              className="flex items-center space-x-2 px-5 py-2 bg-accent-gradient hover:brightness-110 text-white text-xs font-semibold rounded-xl shadow-md shadow-[var(--accent-dark)]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
             >
               <FolderPlus className="w-4 h-4" />
               <span>{isSubmitting ? 'Oluşturuluyor...' : 'Suite Oluştur'}</span>

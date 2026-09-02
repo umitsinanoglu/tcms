@@ -17,7 +17,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsRight,
-  X,
   Play,
   Pencil,
   Trash2,
@@ -25,20 +24,28 @@ import {
   CheckCircle2,
   FolderKanban,
   Check,
-  ArrowRight,
   AlertTriangle,
-  PlayCircle,
   SlidersHorizontal,
+  FileSpreadsheet,
+  Download,
+  Upload,
 } from 'lucide-react';
+import { ExcelImportModal } from './ExcelImportModal';
+import { downloadTestPlanTemplate, exportTestPlansToExcel } from '@/utils/excelUtils';
+import { useCustomization } from '@/context/CustomizationContext';
+import { ColumnCustomizerMenu } from './ColumnCustomizerMenu';
+import { useNavigation } from '@/context/NavigationContext';
 
 interface TestPlansViewProps {
   project: Project | null;
   projects?: Project[];
   allCases?: TestCase[];
+  testPlans?: TestPlan[];
   onStartRunWithPlan: (plan: TestPlan) => void;
   onSelectPlanToView?: (plan: TestPlan) => void;
   onNavigateToRuns?: () => void;
   onOpenNewPlan?: () => void;
+  onPlansChange?: () => Promise<void>;
 }
 
 type TabType = 'ALL' | 'ACTIVE' | 'IN_PROGRESS' | 'COMPLETED' | 'PASSIVE';
@@ -47,19 +54,25 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   project,
   projects = [],
   allCases = [],
+  testPlans,
   onStartRunWithPlan,
   onSelectPlanToView,
   onNavigateToRuns,
   onOpenNewPlan,
+  onPlansChange,
 }) => {
   const { can } = useAuth();
-  const [plans, setPlans] = useState<TestPlan[]>([]);
+  const { pushState } = useNavigation();
+  const { getVisibleColumns, getModuleConfig, getDensityClasses } = useCustomization();
+  const visibleCols = getVisibleColumns('test-plans');
+  const moduleConfig = getModuleConfig('test-plans');
+  const densityCls = getDensityClasses(moduleConfig.density);
+
+  const [plans, setPlans] = useState<TestPlan[]>(testPlans || []);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('ALL');
   const [statusDropdownFilter, setStatusDropdownFilter] = useState<string>('ALL');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [isInspectorActionsOpen, setIsInspectorActionsOpen] = useState(false);
 
   // Pagination State
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
@@ -69,39 +82,55 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   const [isNewPlanOpen, setIsNewPlanOpen] = useState(false);
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
   const [selectedPlanForEdit, setSelectedPlanForEdit] = useState<TestPlan | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  // Synchronize when testPlans prop changes
+  useEffect(() => {
+    if (testPlans !== undefined) {
+      setPlans(testPlans);
+    }
+  }, [testPlans]);
 
   // Load Plans
   const loadPlans = useCallback(async () => {
     if (!project?.id) return;
+    if (onPlansChange) {
+      await onPlansChange();
+      return;
+    }
     setIsLoading(true);
     try {
       const data = await TestPlansService.getAllByProject(project.id);
       setPlans(data || []);
-      // Auto select the first plan if none selected
-      if (data && data.length > 0 && !selectedPlanId) {
-        setSelectedPlanId(data[0].id);
-      }
     } catch (err) {
       console.error('Failed to load test plans:', err);
       setPlans([]);
     } finally {
       setIsLoading(false);
     }
-  }, [project?.id, selectedPlanId]);
+  }, [project?.id, onPlansChange]);
 
   useEffect(() => {
-    loadPlans();
-  }, [loadPlans]);
+    if (testPlans === undefined) {
+      loadPlans();
+    }
+  }, [loadPlans, testPlans]);
 
   // Handle plan create
-  const handleCreatePlan = async (data: CreateTestPlanDto) => {
+  const handleCreatePlan = async (data: CreateTestPlanDto & { caseIds?: string[] }) => {
     const created = await TestPlansService.create(data);
+    if (created?.id) {
+      try {
+        localStorage.setItem(`tcms_plan_cases_${created.id}`, JSON.stringify(data.caseIds || []));
+      } catch {
+        // Ignore
+      }
+    }
     await loadPlans();
-    if (created?.id) setSelectedPlanId(created.id);
   };
 
   // Handle plan update
-  const handleUpdatePlan = async (id: string, data: UpdateTestPlanDto) => {
+  const handleUpdatePlan = async (id: string, data: UpdateTestPlanDto & { caseIds?: string[] }) => {
     await TestPlansService.update(id, data);
     await loadPlans();
   };
@@ -110,7 +139,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
   const handleDeletePlan = async (id: string) => {
     if (!confirm('Bu test planını silmek istediğinize emin misiniz?')) return;
     await TestPlansService.delete(id);
-    if (selectedPlanId === id) setSelectedPlanId(null);
     await loadPlans();
   };
 
@@ -154,19 +182,8 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         inferredType = 'Regression';
       }
 
-      // Color mapping for type badge
-      let typeColor = { bg: 'bg-blue-500/10 dark:bg-blue-500/15', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/25' };
-      if (inferredType === 'Smoke') {
-        typeColor = { bg: 'bg-purple-500/10 dark:bg-purple-500/15', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/25' };
-      } else if (inferredType === 'Functional') {
-        typeColor = { bg: 'bg-emerald-500/10 dark:bg-emerald-500/15', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/25' };
-      } else if (inferredType === 'API') {
-        typeColor = { bg: 'bg-amber-500/10 dark:bg-amber-500/15', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/25' };
-      } else if (inferredType === 'Security') {
-        typeColor = { bg: 'bg-rose-500/10 dark:bg-rose-500/15', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/25' };
-      } else if (inferredType === 'Performance') {
-        typeColor = { bg: 'bg-teal-500/10 dark:bg-teal-500/15', text: 'text-teal-600 dark:text-teal-400', border: 'border-teal-500/25' };
-      }
+      // Clean neutral slate type badge
+      const typeColor = { bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-700 dark:text-slate-300', border: 'border-slate-200 dark:border-slate-700' };
 
       // 2. Scope
       let scopeText = plan.scope || 'Web, Mobil';
@@ -178,59 +195,56 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         else scopeText = 'Web, Mobil';
       }
 
-      // 3. Runs & Results metrics calculation
-      let totalScenarios = allCases.length > 0 ? Math.min(210, Math.max(allCases.length, 36)) : 144;
+      // 3. Runs & Results metrics calculation from actual plan cases
+      let planCaseIds: string[] = [];
+      if (plan.cases && plan.cases.length > 0) {
+        planCaseIds = plan.cases.map((c) => c.testCaseId);
+      } else {
+        try {
+          const saved = localStorage.getItem(`tcms_plan_cases_${plan.id}`);
+          if (saved !== null) {
+            planCaseIds = JSON.parse(saved);
+          }
+        } catch {
+          planCaseIds = [];
+        }
+      }
+
+      let totalScenarios = plan._count?.cases !== undefined ? plan._count.cases : planCaseIds.length;
+      if (totalScenarios === 0 && planCaseIds.length > 0) {
+        totalScenarios = planCaseIds.length;
+      }
       let executedScenarios = 0;
       let passed = 0;
       let failed = 0;
       let blocked = 0;
       let skipped = 0;
-      let lastRunDate = '';
+      let lastRunDate = '—';
 
       if (plan.testRuns && plan.testRuns.length > 0) {
         const latestRun = plan.testRuns[0];
-        lastRunDate = latestRun.createdAt
-          ? new Date(latestRun.createdAt).toLocaleString('tr-TR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          : '';
+        if (latestRun.createdAt) {
+          lastRunDate = new Date(latestRun.createdAt).toLocaleString('tr-TR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+        }
 
         plan.testRuns.forEach((r) => {
           if (r.results) {
             r.results.forEach((res: any) => {
-              executedScenarios++;
-              if (res.status === 'PASSED') passed++;
-              else if (res.status === 'FAILED') failed++;
-              else if (res.status === 'BLOCKED') blocked++;
-              else if (res.status === 'SKIPPED') skipped++;
+              if (totalScenarios === 0 || planCaseIds.includes(res.testCaseId)) {
+                executedScenarios++;
+                if (res.status === 'PASSED') passed++;
+                else if (res.status === 'FAILED') failed++;
+                else if (res.status === 'BLOCKED') blocked++;
+                else if (res.status === 'SKIPPED') skipped++;
+              }
             });
           }
-        });
-      }
-
-      // If no run data yet, compute sensible realistic metrics
-      if (executedScenarios === 0) {
-        const scenarioSeeds = [210, 72, 144, 162, 98, 54, 36, 120, 85];
-        totalScenarios = scenarioSeeds[idx % scenarioSeeds.length];
-        const passRates = [76, 100, 64, 62, 85, 40, 90, 80, 95];
-        const assignedRate = passRates[idx % passRates.length];
-        executedScenarios = Math.round(totalScenarios * 0.75);
-        passed = Math.round((executedScenarios * assignedRate) / 100);
-        failed = Math.max(0, executedScenarios - passed - 4);
-        blocked = executedScenarios > 50 ? 4 : 0;
-        skipped = 0;
-
-        const dateObj = new Date(plan.createdAt || Date.now());
-        lastRunDate = dateObj.toLocaleString('tr-TR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
         });
       }
 
@@ -240,13 +254,10 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
       let statusKey: 'ACTIVE' | 'IN_PROGRESS' | 'COMPLETED' | 'PASSIVE' = 'ACTIVE';
       if (plan.status === 'COMPLETED') {
         statusKey = 'COMPLETED';
-      } else if (plan.status === 'ARCHIVED') {
-        statusKey = 'PASSIVE';
-      } else if (plan.status === 'DRAFT') {
+      } else if (plan.status === 'ARCHIVED' || plan.status === 'DRAFT') {
         statusKey = 'PASSIVE';
       } else {
-        // Plan status is ACTIVE
-        if (idx === 2 || plan.title.toLowerCase().includes('ödeme') || plan.title.toLowerCase().includes('devam')) {
+        if (plan.title.toLowerCase().includes('ödeme') || plan.title.toLowerCase().includes('devam')) {
           statusKey = 'IN_PROGRESS';
         } else {
           statusKey = 'ACTIVE';
@@ -269,7 +280,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         blocked,
         skipped,
         passRate,
-        lastRunDate: lastRunDate || '25.05.2024 14:30',
+        lastRunDate,
         statusKey,
         dateRange,
       });
@@ -286,6 +297,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
     let completedCount = 0;
     let passiveCount = 0;
     let totalRates = 0;
+    let plansWithRuns = 0;
 
     plans.forEach((p) => {
       const stats = planStatsMap.get(p.id);
@@ -294,19 +306,23 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         else if (stats.statusKey === 'IN_PROGRESS') inProgressCount++;
         else if (stats.statusKey === 'COMPLETED') completedCount++;
         else if (stats.statusKey === 'PASSIVE') passiveCount++;
-        totalRates += stats.passRate;
+
+        if (stats.executedScenarios > 0) {
+          totalRates += stats.passRate;
+          plansWithRuns++;
+        }
       }
     });
 
-    const avgPassRate = totalPlans > 0 ? Math.round(totalRates / totalPlans) : 76;
+    const avgPassRate = plansWithRuns > 0 ? Math.round(totalRates / plansWithRuns) : null;
 
     return {
-      totalPlans: totalPlans || 15,
-      activeCount: activeCount || 9,
-      passiveCount: passiveCount || 6,
-      inProgressCount: inProgressCount || 4,
-      completedCount: completedCount || 23,
-      avgPassRate: avgPassRate || 76,
+      totalPlans,
+      activeCount,
+      passiveCount,
+      inProgressCount,
+      completedCount,
+      avgPassRate,
     };
   }, [plans, planStatsMap]);
 
@@ -337,20 +353,12 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
 
   const totalPages = Math.ceil(filteredPlans.length / rowsPerPage) || 1;
 
-  // Selected plan object for inspector
-  const activeSelectedPlan = useMemo(() => {
-    if (!selectedPlanId) return filteredPlans[0] || plans[0] || null;
-    return plans.find((p) => p.id === selectedPlanId) || filteredPlans[0] || null;
-  }, [selectedPlanId, plans, filteredPlans]);
-
-  const activeSelectedStats = activeSelectedPlan ? planStatsMap.get(activeSelectedPlan.id) : null;
-
   if (!project) {
     return (
       <div className="flex-1 flex items-center justify-center p-6 text-slate-400">
         <div className="text-center space-y-3">
           <FolderKanban className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600" />
-          <p className="text-sm font-medium">Lütfen sol menüden çalışılacak bir Test Projesi seçin.</p>
+          <p className="text-sm font-medium">Lütfen üst menüden çalışılacak bir Test Projesi seçin.</p>
         </div>
       </div>
     );
@@ -369,7 +377,43 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center flex-wrap gap-2 shrink-0">
+          {/* Excel Actions Group */}
+          <div className="flex items-center bg-white dark:bg-[#161f30] p-0.5 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+            <button
+              type="button"
+              onClick={downloadTestPlanTemplate}
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+              title="Test Planı Excel Şablonunu İndir"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="hidden sm:inline">Şablon</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => exportTestPlansToExcel(plans, project?.name || 'Proje')}
+              disabled={plans.length === 0}
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 transition-all cursor-pointer"
+              title="Test Planlarını Excel'e Aktar"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span className="hidden sm:inline">Excel</span>
+            </button>
+
+            {project && can('CREATE_PLAN') && (
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(true)}
+                className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                title="Excel Dosyasından Test Planı İçe Aktar"
+              >
+                <Upload className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>İçe Aktar</span>
+              </button>
+            )}
+          </div>
+
           {/* Status Filter Dropdown */}
           <div className="relative">
             <button
@@ -410,23 +454,37 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                     }}
                     className={`w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
                       statusDropdownFilter === item.key
-                        ? 'font-bold text-[#b83a4b] dark:text-[#d66b7a]'
+                        ? 'font-bold text-[var(--accent-primary)]'
                         : 'text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     <span>{item.label}</span>
-                    {statusDropdownFilter === item.key && <Check className="w-3.5 h-3.5 text-[#b83a4b]" />}
+                    {statusDropdownFilter === item.key && <Check className="w-3.5 h-3.5 text-[var(--accent-primary)]" />}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
+          {/* Column Customizer Dropdown */}
+          <ColumnCustomizerMenu
+            moduleId="test-plans"
+            onOpenAdvancedSettings={() =>
+              pushState({
+                tab: 'SETTINGS',
+                projectId: project?.id || null,
+                suiteId: null,
+                caseId: null,
+                label: 'Alan Özelleştirme',
+              })
+            }
+          />
+
           {/* New Test Plan Button */}
           <button
             type="button"
             onClick={() => (onOpenNewPlan ? onOpenNewPlan() : setIsNewPlanOpen(true))}
-            className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] transition-all shadow-md shadow-[#821c2b]/25 active:scale-98 cursor-pointer"
+            className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 transition-all shadow-md shadow-[var(--accent-dark)]/25 active:scale-98 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Yeni Test Planı</span>
@@ -501,29 +559,28 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                 Ort. Başarı Oranı
               </span>
               <span className="text-xs font-black text-slate-900 dark:text-slate-100">
-                %{kpiData.avgPassRate}
+                {kpiData.avgPassRate !== null ? `%${kpiData.avgPassRate}` : '—'}
               </span>
             </div>
             <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
               <div
                 className={`h-full rounded-full ${
-                  kpiData.avgPassRate >= 75
+                  (kpiData.avgPassRate || 0) >= 75
                     ? 'bg-emerald-500'
-                    : kpiData.avgPassRate >= 50
+                    : (kpiData.avgPassRate || 0) >= 50
                     ? 'bg-amber-500'
                     : 'bg-rose-500'
                 }`}
-                style={{ width: `${kpiData.avgPassRate}%` }}
+                style={{ width: `${kpiData.avgPassRate || 0}%` }}
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Main Split View: Left Data Grid Table + Right Detail Drawer */}
-      <div className="min-w-0 px-6 pb-6 flex flex-col lg:flex-row gap-4">
-        {/* Left Side: Table & Tabs */}
-        <div className="flex-1 min-w-0 bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs overflow-hidden flex flex-col">
+      {/* 3. Main Data Grid Table (Full Width) */}
+      <div className="min-w-0 px-6 pb-6 w-full flex-1 flex flex-col">
+        <div className="w-full bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs overflow-hidden flex flex-col flex-1">
           {/* Tab Navigation */}
           <div className="flex items-center space-x-6 px-5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold">
             {[
@@ -544,7 +601,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                   }}
                   className={`py-3 border-b-2 transition-all cursor-pointer ${
                     isActive
-                      ? 'border-[#2563eb] text-[#2563eb] dark:text-[#3b82f6] font-bold'
+                      ? 'border-[var(--accent-primary)] text-[var(--accent-primary)] font-bold'
                       : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
                   }`}
                 >
@@ -555,31 +612,32 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           </div>
 
           {/* Table Container */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left text-xs border-collapse min-w-full">
               <thead className="sticky top-0 z-10 bg-slate-100/90 dark:bg-[#1a2333] border-b border-slate-200 dark:border-slate-700/80 shadow-xs">
                 <tr className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                  <th className="py-2.5 px-4">TEST PLANI</th>
-                  <th className="py-2.5 px-3">TÜR</th>
-                  <th className="py-2.5 px-3">KAPSAM</th>
-                  <th className="py-2.5 px-3 text-center">SENARYO</th>
-                  <th className="py-2.5 px-3">BAŞARI ORANI</th>
-                  <th className="py-2.5 px-3">DURUM</th>
-                  <th className="py-2.5 px-3">SON ÇALIŞTIRMA</th>
-                  <th className="py-2.5 px-4 text-right">İŞLEMLER</th>
+                  {visibleCols.map((col) => (
+                    <th
+                      key={col.id}
+                      style={{ width: col.width || 'auto' }}
+                      className={`${densityCls.pyTh} whitespace-nowrap text-${col.align || 'left'}`}
+                    >
+                      {col.label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="py-14 text-center text-slate-400">
-                      <div className="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
+                    <td colSpan={visibleCols.length || 8} className="py-14 text-center text-slate-400">
+                      <div className="w-6 h-6 border-2 border-[var(--accent-primary)]/20 border-t-[var(--accent-primary)] rounded-full animate-spin mx-auto mb-2" />
                       <span>Yükleniyor...</span>
                     </td>
                   </tr>
                 ) : paginatedPlans.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-14 text-center text-slate-400">
+                    <td colSpan={visibleCols.length || 8} className="py-14 text-center text-slate-400">
                       <ClipboardList className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
                       <p>Kayıtlı test planı bulunamadı.</p>
                     </td>
@@ -587,151 +645,195 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                 ) : (
                   paginatedPlans.map((p) => {
                     const stats = planStatsMap.get(p.id);
-                    const isSelected = activeSelectedPlan?.id === p.id;
 
                     return (
                       <tr
                         key={p.id}
-                        onClick={() => setSelectedPlanId(p.id)}
-                        className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group ${
-                          isSelected
-                            ? 'bg-blue-50/60 dark:bg-blue-900/10'
-                            : ''
-                        }`}
+                        onClick={() => {
+                          if (onSelectPlanToView) {
+                            onSelectPlanToView(p);
+                          } else {
+                            setSelectedPlanForEdit(p);
+                            setIsEditPlanOpen(true);
+                          }
+                        }}
+                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
                       >
-                        {/* Test Plan Name + Subtitle */}
-                        <td className="py-2.5 px-4">
-                          <div className="flex items-center space-x-2.5">
-                            <div className="w-7 h-7 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                              <Calendar className="w-3.5 h-3.5" />
-                            </div>
-                            <div className="min-w-0 max-w-[260px]">
-                              <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                {p.title}
-                              </p>
-                              {p.description && (
-                                <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5" title={p.description}>
-                                  {p.description}
+                        {visibleCols.map((col) => {
+                          const alignClass = `text-${col.align || 'left'}`;
+
+                          if (col.id === 'title') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} min-w-0 max-w-[260px] whitespace-nowrap ${alignClass}`}>
+                                <div className="flex items-center space-x-2.5 min-w-0">
+                                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                    <Calendar className="w-3.5 h-3.5" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-[var(--accent-primary)] transition-colors text-xs" title={p.title}>
+                                      {p.title}
+                                    </p>
+                                    {p.description && (
+                                      <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5" title={p.description}>
+                                        {p.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            );
+                          }
+
+                          if (col.id === 'type') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[84px] min-w-[84px] whitespace-nowrap ${alignClass}`}>
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-xs ${
+                                    stats?.typeColor.bg || 'bg-slate-100 dark:bg-slate-800'
+                                  } ${stats?.typeColor.text || 'text-slate-700 dark:text-slate-300'} ${
+                                    stats?.typeColor.border || 'border-slate-200 dark:border-slate-700'
+                                  }`}
+                                >
+                                  {stats?.type || 'Regression'}
+                                </span>
+                              </td>
+                            );
+                          }
+
+                          if (col.id === 'scope') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} min-w-0 max-w-[180px] whitespace-nowrap ${alignClass}`} title={stats?.scope || 'Web, Mobil'}>
+                                <p className="truncate text-xs text-slate-600 dark:text-slate-400 font-medium">
+                                  {stats?.scope || 'Web, Mobil'}
                                 </p>
-                              )}
-                            </div>
-                          </div>
-                        </td>
+                              </td>
+                            );
+                          }
 
-                        {/* Type Badge */}
-                        <td className="py-2.5 px-3">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-xs ${
-                              stats?.typeColor.bg || 'bg-blue-500/10'
-                            } ${stats?.typeColor.text || 'text-blue-600'} ${
-                              stats?.typeColor.border || 'border-blue-500/20'
-                            }`}
-                          >
-                            {stats?.type || 'Regression'}
-                          </span>
-                        </td>
+                          if (col.id === 'scenariosCount') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[76px] min-w-[76px] text-center font-bold text-slate-800 dark:text-slate-200 font-mono whitespace-nowrap`}>
+                                {stats ? stats.totalScenarios : 0}
+                              </td>
+                            );
+                          }
 
-                        {/* Scope */}
-                        <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 font-medium">
-                          {stats?.scope || 'Web, Mobil'}
-                        </td>
+                          if (col.id === 'passRate') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[120px] min-w-[120px] whitespace-nowrap ${alignClass}`}>
+                                {stats && stats.executedScenarios > 0 ? (
+                                  <div className="flex items-center space-x-2 w-full">
+                                    <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-[11px] shrink-0 w-8">
+                                      %{stats.passRate}
+                                    </span>
+                                    <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full ${
+                                          stats.passRate >= 75
+                                            ? 'bg-emerald-500'
+                                            : stats.passRate >= 50
+                                            ? 'bg-amber-500'
+                                            : 'bg-rose-500'
+                                        }`}
+                                        style={{ width: `${stats.passRate}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 font-mono text-[11px]">—</span>
+                                )}
+                              </td>
+                            );
+                          }
 
-                        {/* Scenario Count */}
-                        <td className="py-2.5 px-3 text-center font-bold text-slate-800 dark:text-slate-200 font-mono">
-                          {stats?.totalScenarios || 144}
-                        </td>
+                          if (col.id === 'status') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[100px] min-w-[100px] whitespace-nowrap ${alignClass}`}>
+                                {stats?.statusKey === 'ACTIVE' ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
+                                    Aktif
+                                  </span>
+                                ) : stats?.statusKey === 'IN_PROGRESS' ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs">
+                                    Devam Eden
+                                  </span>
+                                ) : stats?.statusKey === 'COMPLETED' ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 shadow-xs">
+                                    Tamamlandı
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs">
+                                    Pasif
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          }
 
-                        {/* Success Rate & Progress Bar */}
-                        <td className="py-2.5 px-3">
-                          <div className="flex items-center space-x-2 w-28">
-                            <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-[11px]">
-                              %{stats?.passRate || 76}
-                            </span>
-                            <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${
-                                  (stats?.passRate || 76) >= 75
-                                    ? 'bg-emerald-500'
-                                    : (stats?.passRate || 76) >= 50
-                                    ? 'bg-amber-500'
-                                    : 'bg-rose-500'
-                                }`}
-                                style={{ width: `${stats?.passRate || 76}%` }}
-                              />
-                            </div>
-                          </div>
-                        </td>
+                          if (col.id === 'lastRun') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[130px] min-w-[130px] text-slate-500 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap ${alignClass}`}>
+                                {stats?.lastRunDate || '—'}
+                              </td>
+                            );
+                          }
 
-                        {/* Status - High Contrast Badges */}
-                        <td className="py-2.5 px-3">
-                          {stats?.statusKey === 'ACTIVE' ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
-                              Aktif
-                            </span>
-                          ) : stats?.statusKey === 'IN_PROGRESS' ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs">
-                              Devam Eden
-                            </span>
-                          ) : stats?.statusKey === 'COMPLETED' ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 shadow-xs">
-                              Tamamlandı
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs">
-                              Pasif
-                            </span>
-                          )}
-                        </td>
+                          if (col.id === 'actions') {
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} w-[90px] min-w-[90px] text-right whitespace-nowrap`} onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end space-x-1">
+                                  {/* Koşum Başlat */}
+                                  <button
+                                    type="button"
+                                    onClick={() => onStartRunWithPlan(p)}
+                                    className="p-1 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
+                                    title="Koşum Başlat"
+                                    aria-label="Koşum Başlat"
+                                  >
+                                    <Play className="w-3.5 h-3.5 fill-current text-emerald-600 dark:text-emerald-400" />
+                                  </button>
 
-                        {/* Last Run Date */}
-                        <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap">
-                          {stats?.lastRunDate || '25.05.2024 14:30'}
-                        </td>
+                                  {/* Düzenle */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (onSelectPlanToView) {
+                                        onSelectPlanToView(p);
+                                      } else {
+                                        setSelectedPlanForEdit(p);
+                                        setIsEditPlanOpen(true);
+                                      }
+                                    }}
+                                    className="p-1 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                    title="Planı Düzenle"
+                                    aria-label="Planı Düzenle"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
 
-                        {/* Action Icons: Koşum Başlat, Düzenle, Sil */}
-                        <td className="py-2.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end space-x-1">
-                            {/* Koşum Başlat */}
-                            <button
-                              type="button"
-                              onClick={() => onStartRunWithPlan(p)}
-                              className="p-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
-                              title="Koşum Başlat"
-                              aria-label="Koşum Başlat"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-current text-emerald-600 dark:text-emerald-400" />
-                            </button>
+                                  {/* Sil */}
+                                  {can('DELETE_PLAN') && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeletePlan(p.id)}
+                                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                      title="Planı Sil"
+                                      aria-label="Planı Sil"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          }
 
-                            {/* Düzenle */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (onSelectPlanToView) {
-                                  onSelectPlanToView(p);
-                                } else {
-                                  setSelectedPlanForEdit(p);
-                                  setIsEditPlanOpen(true);
-                                }
-                              }}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              title="Planı Düzenle"
-                              aria-label="Planı Düzenle"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Sil */}
-                            <button
-                              type="button"
-                              onClick={() => handleDeletePlan(p.id)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors cursor-pointer"
-                              title="Planı Sil"
-                              aria-label="Planı Sil"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
+                          return (
+                            <td key={col.id} className={`${densityCls.pyTd} whitespace-nowrap ${alignClass}`}>
+                              —
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })
@@ -741,7 +843,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           </div>
 
           {/* Table Footer: Total Count + Rows Per Page + Pagination Controls */}
-          <div className="p-3.5 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="p-3.5 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-[#121926]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 shrink-0">
             <span className="font-medium">
               Toplam {filteredPlans.length} kayıt
             </span>
@@ -782,9 +884,10 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
                     onClick={() => setCurrentPage(i + 1)}
                     className={`w-6 h-6 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
                       currentPage === i + 1
-                        ? 'bg-gradient-to-r from-[#b83a4b] to-[#821c2b] text-white'
+                        ? 'bg-accent-gradient text-white shadow-xs'
                         : 'bg-white dark:bg-[#161f30] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
+                    style={currentPage === i + 1 ? { background: 'var(--accent-gradient)' } : undefined}
                   >
                     {i + 1}
                   </button>
@@ -809,225 +912,6 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Right Side: Inspector / Detail Drawer ("Test Planı Detayları") */}
-        {activeSelectedPlan && (
-          <div className="w-80 lg:w-92 shrink-0 bg-white dark:bg-[#161f30] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-xs flex flex-col overflow-hidden animate-in fade-in duration-150">
-            {/* Inspector Header */}
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                Test Planı Detayları
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedPlanId(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Inspector Scrollable Body */}
-            <div className="p-4 space-y-4 flex-1 overflow-y-auto text-xs">
-              {/* Title & Status */}
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  {activeSelectedPlan.title}
-                </h3>
-                {activeSelectedStats?.statusKey === 'ACTIVE' ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs shrink-0">
-                    Aktif
-                  </span>
-                ) : activeSelectedStats?.statusKey === 'IN_PROGRESS' ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs shrink-0">
-                    Devam Eden
-                  </span>
-                ) : activeSelectedStats?.statusKey === 'COMPLETED' ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 shadow-xs shrink-0">
-                    Tamamlandı
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shadow-xs shrink-0">
-                    Pasif
-                  </span>
-                )}
-              </div>
-
-              {/* Metadata Key-Values */}
-              <div className="space-y-2.5 pt-1">
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 block">Proje</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    {activeSelectedPlan.project?.name || project.name}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 block">Tür</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
-                    {activeSelectedStats?.type || 'Regression'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 block">Kapsam</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
-                    {activeSelectedStats?.scope || 'Web, Mobil'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 block">Tarih Aralığı</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300 font-mono text-[11px]">
-                    {activeSelectedStats?.dateRange || '13.05.2024 - 31.05.2024'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 block">Açıklama</span>
-                  <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed mt-0.5">
-                    {activeSelectedPlan.description ||
-                      'Bu test planı kapsamındaki tüm fonksiyonel alanların test senaryolarını ve regresyon adımlarını içerir.'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Özet (Summary Metrics) */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                <span className="text-[11px] font-bold text-slate-900 dark:text-slate-100 block">
-                  Özet
-                </span>
-
-                <div className="space-y-1.5 text-xs font-medium">
-                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                    <span>Toplam Senaryo</span>
-                    <span className="font-bold text-slate-900 dark:text-slate-100">
-                      {activeSelectedStats?.totalScenarios || 210}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                    <span>Çalıştırılan Senaryo</span>
-                    <span className="font-bold text-slate-900 dark:text-slate-100">
-                      {activeSelectedStats?.executedScenarios || 150}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-                    <span>Başarılı</span>
-                    <span className="font-bold">{activeSelectedStats?.passed || 114}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
-                    <span>Başarısız</span>
-                    <span className="font-bold">{activeSelectedStats?.failed || 29}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                    <span>Bloke</span>
-                    <span className="font-bold">{activeSelectedStats?.blocked || 7}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                    <span>Atlandı</span>
-                    <span className="font-bold">{activeSelectedStats?.skipped || 0}</span>
-                  </div>
-
-                  <div className="pt-1.5 flex items-center justify-between font-bold text-slate-900 dark:text-slate-100">
-                    <span>Başarı Oranı</span>
-                    <span className="font-mono">%{activeSelectedStats?.passRate || 76}</span>
-                  </div>
-
-                  {/* Visual Progress Bar */}
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden mt-1">
-                    <div
-                      className={`h-full rounded-full ${
-                        (activeSelectedStats?.passRate || 76) >= 75
-                          ? 'bg-emerald-500'
-                          : (activeSelectedStats?.passRate || 76) >= 50
-                          ? 'bg-amber-500'
-                          : 'bg-rose-500'
-                      }`}
-                      style={{ width: `${activeSelectedStats?.passRate || 76}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Inspector Footer Actions */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-[#121926]/50 space-y-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (onSelectPlanToView && activeSelectedPlan) {
-                    onSelectPlanToView(activeSelectedPlan);
-                  } else if (activeSelectedPlan) {
-                    onStartRunWithPlan(activeSelectedPlan);
-                  }
-                }}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#2563eb] hover:bg-[#1d4ed8] dark:bg-[#3b82f6] dark:hover:bg-[#2563eb] shadow-md shadow-blue-500/20 flex items-center justify-center space-x-2 transition-all cursor-pointer"
-              >
-                <span>Planı Görüntüle</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsInspectorActionsOpen((prev) => !prev)}
-                  className="w-full py-2 px-4 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#161f30] border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between transition-all cursor-pointer"
-                >
-                  <span>İşlemler</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                </button>
-
-                {isInspectorActionsOpen && (
-                  <div className="absolute bottom-full mb-1.5 left-0 right-0 rounded-xl bg-white dark:bg-[#161f30] border border-slate-200 dark:border-slate-700 shadow-xl z-50 py-1 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsInspectorActionsOpen(false);
-                        onStartRunWithPlan(activeSelectedPlan);
-                      }}
-                      className="w-full text-left px-3 py-2 flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold cursor-pointer"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current text-emerald-600 dark:text-emerald-400" />
-                      <span>Yeni Koşum Başlat</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsInspectorActionsOpen(false);
-                        if (onSelectPlanToView && activeSelectedPlan) {
-                          onSelectPlanToView(activeSelectedPlan);
-                        } else if (activeSelectedPlan) {
-                          setSelectedPlanForEdit(activeSelectedPlan);
-                          setIsEditPlanOpen(true);
-                        }
-                      }}
-                      className="w-full text-left px-3 py-2 flex items-center space-x-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      <span>Planı Düzenle</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsInspectorActionsOpen(false);
-                        handleDeletePlan(activeSelectedPlan.id);
-                      }}
-                      className="w-full text-left px-3 py-2 flex items-center space-x-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Planı Sil</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Modals */}
@@ -1037,6 +921,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
         projectId={project.id}
         projectName={project.name}
         projectKey={project.key}
+        allCases={allCases}
         onSubmit={handleCreatePlan}
       />
 
@@ -1047,9 +932,24 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           setSelectedPlanForEdit(null);
         }}
         plan={selectedPlanForEdit}
+        allCases={allCases}
         onUpdate={handleUpdatePlan}
         onDelete={handleDeletePlan}
       />
+
+      {/* Excel Import Modal */}
+      {project && (
+        <ExcelImportModal
+          isOpen={isImportModalOpen}
+          type="TEST_PLANS"
+          projectId={project.id}
+          projectName={project.name}
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={async () => {
+            await loadPlans();
+          }}
+        />
+      )}
     </div>
   );
 };
