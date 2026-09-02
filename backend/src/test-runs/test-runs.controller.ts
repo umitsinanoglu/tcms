@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { TestRunsService } from './test-runs.service';
 import { CreateAutomationRunDto } from './dto/automation-run-result.dto';
@@ -17,8 +17,8 @@ export class TestRunsController {
   constructor(private readonly testRunsService: TestRunsService) {}
 
   @Post('projects/:projectId/runs')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
-  @ApiOperation({ summary: 'Manuel Test Run Koşusu Başlat (Admin, Lead, Tester)' })
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
+  @ApiOperation({ summary: 'Manuel Test Run Koşusu Başlat (Admin, Lead, Tester, Automation)' })
   @ApiParam({ name: 'projectId', description: 'Proje UUID' })
   @ApiResponse({ status: 201, description: 'IN_PROGRESS durumunda TestRun oluşturuldu' })
   createRun(
@@ -29,8 +29,8 @@ export class TestRunsController {
   }
 
   @Post('projects/:projectId/runs/:runId/results')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
-  @ApiOperation({ summary: 'Test Koşusu Senaryo Sonuçlarını Kaydet (TestCase Level) (Admin, Lead, Tester)' })
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
+  @ApiOperation({ summary: 'Test Koşusu Senaryo Sonuçlarını Kaydet (TestCase Level) (Admin, Lead, Tester, Automation)' })
   @ApiParam({ name: 'projectId', description: 'Proje UUID' })
   @ApiParam({ name: 'runId', description: 'TestRun UUID' })
   saveResults(
@@ -42,8 +42,8 @@ export class TestRunsController {
   }
 
   @Patch('runs/:runId/complete')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
-  @ApiOperation({ summary: 'Test Koşusunu Tamamla (COMPLETED veya ABORTED yap) (Admin, Lead, Tester)' })
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
+  @ApiOperation({ summary: 'Test Koşusunu Tamamla (COMPLETED veya ABORTED yap) (Admin, Lead, Tester, Automation)' })
   @ApiParam({ name: 'runId', description: 'TestRun UUID' })
   completeRun(
     @Param('runId') runId: string,
@@ -53,8 +53,8 @@ export class TestRunsController {
   }
 
   @Patch('projects/:projectId/runs/:runId/complete')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
-  @ApiOperation({ summary: 'Test Koşusunu Tamamla (Proje parametreli route) (Admin, Lead, Tester)' })
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
+  @ApiOperation({ summary: 'Test Koşusunu Tamamla (Proje parametreli route) (Admin, Lead, Tester, Automation)' })
   completeRunScoped(
     @Param('runId') runId: string,
     @Body() dto: CompleteRunDto,
@@ -63,8 +63,8 @@ export class TestRunsController {
   }
 
   @Post('projects/:projectId/quick-run')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
-  @ApiOperation({ summary: 'Tekil Test Case için Hızlı Koşu ve Sonuç Kaydı (Admin, Lead, Tester)' })
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
+  @ApiOperation({ summary: 'Tekil Test Case için Hızlı Koşu ve Sonuç Kaydı (Admin, Lead, Tester, Automation)' })
   @ApiParam({ name: 'projectId', description: 'Proje UUID' })
   quickRun(
     @Param('projectId') projectId: string,
@@ -74,7 +74,7 @@ export class TestRunsController {
   }
 
   @Post('projects/:projectId/runs/automation')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Otomasyon Koşu Sonuçlarını Kaydet (CLI / Automation Ingestion)' })
   createAutomationRun(
     @Param('projectId') projectId: string,
@@ -95,6 +95,14 @@ export class TestRunsController {
   @ApiParam({ name: 'runId', description: 'TestRun UUID' })
   findOne(@Param('runId') runId: string) {
     return this.testRunsService.findOne(runId);
+  }
+
+  @Delete('runs/:runId')
+  @Roles(Role.ADMIN, Role.TEST_LEAD)
+  @ApiOperation({ summary: 'Test Koşusunu Sil (Admin, Lead)' })
+  @ApiParam({ name: 'runId', description: 'TestRun UUID' })
+  deleteRun(@Param('runId') runId: string) {
+    return this.testRunsService.deleteRun(runId);
   }
 }
 

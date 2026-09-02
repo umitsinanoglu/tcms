@@ -150,8 +150,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-400 dark:text-slate-500">
         <FileText className="w-16 h-16 mb-4 opacity-30 animate-pulse" />
-        <p className="text-lg font-medium">Lütfen bir Test Planı seçin</p>
-        <p className="text-sm text-slate-500 mt-1">Raporları ve analitik dökümleri görüntülemek için soldan bir test planı seçin.</p>
+        <p className="text-lg font-medium">Lütfen bir Test Projesi seçin</p>
+        <p className="text-sm text-slate-500 mt-1">Raporları ve analitik dökümleri görüntülemek için üst menüden bir test projesi seçin.</p>
       </div>
     );
   }
@@ -212,7 +212,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2.5">
-              <span className="px-2 py-0.5 text-xs font-mono font-bold bg-[#b83a4b]/10 text-[#b83a4b] dark:text-[#f87171] border border-[#b83a4b]/30 rounded-md">
+              <span className="px-2 py-0.5 text-xs font-mono font-bold bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30 rounded-md">
                 {project.key}
               </span>
               <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -234,7 +234,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
-              <TrendingUp className="w-3.5 h-3.5 text-[#b83a4b]" />
+              <TrendingUp className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
               <span>👔 Yönetici Özeti</span>
             </button>
 
@@ -255,7 +255,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <div className="flex items-center flex-wrap gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:from-[#c54859] hover:to-[#962534] text-white shadow-sm transition-all active:scale-95"
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-accent-gradient hover:brightness-110 text-white shadow-sm transition-all active:scale-95 cursor-pointer"
               title="Resmi Yönetici Raporunu Yazdır veya PDF Olarak Kaydet"
             >
               <Printer className="w-3.5 h-3.5" />

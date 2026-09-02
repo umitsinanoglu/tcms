@@ -3,10 +3,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 export interface NavigationState {
-  tab: 'DASHBOARD' | 'PLANS' | 'EXPLORER' | 'RUNS' | 'REPORTS';
+  tab: 'DASHBOARD' | 'PLANS' | 'EXPLORER' | 'RUNS' | 'DEFECTS' | 'REPORTS' | 'SETTINGS';
   projectId: string | null;
   suiteId: string | null;
   caseId: string | null;
+  runId?: string | null;
+  planId?: string | null;
   label: string;
   timestamp?: number;
 }
@@ -44,7 +46,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // canGoBack is true if there is a previous history item OR if we are currently deep in Explorer/Suite/Case/Runs and can navigate back to Dashboard
   const canGoBack =
     currentIndex > 0 ||
-    Boolean(currentState && (currentState.tab !== 'DASHBOARD' || currentState.suiteId || currentState.caseId));
+    Boolean(currentState && (currentState.tab !== 'DASHBOARD' || currentState.suiteId || currentState.caseId || currentState.runId));
 
   const canGoForward = currentIndex >= 0 && currentIndex < history.length - 1;
   const previousState = currentIndex > 0 ? history[currentIndex - 1] : null;
@@ -101,7 +103,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       currentItem.tab === newState.tab &&
       currentItem.projectId === newState.projectId &&
       currentItem.suiteId === newState.suiteId &&
-      currentItem.caseId === newState.caseId
+      currentItem.caseId === newState.caseId &&
+      currentItem.runId === newState.runId &&
+      currentItem.planId === newState.planId
     ) {
       // If only the label updated (e.g. project name loaded), update current in place
       if (currentItem.label !== newState.label) {
@@ -163,15 +167,17 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
     }
 
-    // 2. Smart Contextual Fallback (e.g. after refresh when in Suite, Case, or non-Dashboard tab)
+    // 2. Smart Contextual Fallback (e.g. after refresh when in Suite, Case, Plan, or non-Dashboard tab)
     const current = currentIdx >= 0 && currentIdx < prevHistory.length ? prevHistory[currentIdx] : null;
     if (navigationHandlerRef.current) {
       const fallbackState: NavigationState = {
-        tab: 'DASHBOARD',
+        tab: current?.tab || 'DASHBOARD',
         projectId: current?.projectId || null,
         suiteId: null,
         caseId: null,
-        label: 'Dashboard',
+        runId: null,
+        planId: null,
+        label: current?.tab === 'PLANS' ? 'Test Planları' : current?.tab === 'EXPLORER' ? 'Test Senaryoları' : current?.tab === 'RUNS' ? 'Test Koşumları' : 'Dashboard',
         timestamp: Date.now(),
       };
 

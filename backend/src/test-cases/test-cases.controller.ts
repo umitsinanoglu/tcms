@@ -4,6 +4,7 @@ import { TestCasesService } from './test-cases.service';
 import { CreateTestCaseDto } from './dto/create-test-case.dto';
 import { UpdateTestCaseDto } from './dto/update-test-case.dto';
 import { LinkJiraStoryDto } from './dto/jira-link.dto';
+import { BulkCreateTestCasesDto } from './dto/bulk-create-test-case.dto';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '@prisma/client';
@@ -14,8 +15,16 @@ import { Role } from '@prisma/client';
 export class TestCasesController {
   constructor(private readonly testCasesService: TestCasesService) {}
 
+  @Post('bulk')
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
+  @ApiOperation({ summary: 'Excel / CSV ile toplu test senaryoları ve adımlarını içeri aktar' })
+  @ApiResponse({ status: 201, description: 'Test senaryoları toplu olarak oluşturuldu' })
+  createBulk(@Body() bulkDto: BulkCreateTestCasesDto) {
+    return this.testCasesService.createBulk(bulkDto);
+  }
+
   @Post()
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Yeni Test Case ve adımlarını oluştur (Admin, Lead, Tester)' })
   @ApiResponse({ status: 201, description: 'Test Case başarıyla oluşturuldu' })
   create(@Body() createTestCaseDto: CreateTestCaseDto) {
@@ -44,7 +53,7 @@ export class TestCasesController {
   }
 
   @Patch(':id/jira-link')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Test Case ile Jira Story ID eşleştir (Admin, Lead, Tester)' })
   @ApiParam({ name: 'id', description: 'TestCase UUID' })
   linkJiraStory(@Param('id') id: string, @Body() dto: LinkJiraStoryDto) {
@@ -52,7 +61,7 @@ export class TestCasesController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Test Case ve adımlarını güncelle (Admin, Lead, Tester)' })
   @ApiParam({ name: 'id', description: 'TestCase UUID' })
   update(@Param('id') id: string, @Body() updateTestCaseDto: UpdateTestCaseDto) {
@@ -60,7 +69,7 @@ export class TestCasesController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER)
+  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
   @ApiOperation({ summary: 'Test Case\'i sil (Admin, Lead, Tester)' })
   @ApiParam({ name: 'id', description: 'TestCase UUID' })
   remove(@Param('id') id: string) {

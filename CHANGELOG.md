@@ -10,9 +10,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Removed
+- Defects modulunden artik islevsiz olan Kosumlardan Aktar butonu kaldirildi.
+- Test Planı detay sayfasındaki 'Test Senaryoları Ekle' butonları kaldırıldı
+- Test Senaryoları / Test Case detay sayfasındaki test koşum geçmişi ve ilgili bileşenler kaldırıldı
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- Test Planı koşumu tamamlandığında 'Kapat ve Koşum Geçmişine Dön' butonunun Test Koşumları sayfasına yönlendirmesi sağlandı ve Test Koşumları tablosundaki Ortam ve Sürüm kolonları düzeltildi
+- Test Planı ile Koşum Başlat modalı doğrudan Senaryo Düzenleme & Seçim modunda açılacak ve Koşumu Başlat ile hemen yürütmeye geçecek şekilde sadeleştirildi
+- Test Planı ile Koşum Başlatıldığında plana ait senaryoların otomatik seçili gelmesi ve doğrudan/hızlı koşum başlatma desteği eklendi
+- ManualRunModal kosu tamamlandiginda verilerin yenilenmesi sirasinda modalin basa sarip tekrar acilmasina neden olan useEffect re-trigger hatasi duzeltildi
+- Test kosumu tamamlandiginda Test Kosumlari sayfasinin otomatik ve aninda guncellenmesi saglandi.
+- Kosum detay sayfasinda kosum sirasinda defect olusturulan senaryolara (Defect Edildi) rozeti ve defect detay tiklama destegi eklendi.
+- Manuel coklu senaryo kosumunda adim seviyesinde fail isaretlendiginde de Defect Olustur butonunun aninda tetiklenmesi saglandi.
+- Hot Module Replacement (HMR) watch options and clean socket shutdown for seamless dev updates
+- Fixed active menu items, top-right user avatar and gradient buttons contrast by ensuring CSS linear-gradient and solid color fallbacks
+- DefectsView re-render ve sonsuz döngü sorunu giderildi (useRef ve callback stabilizasyonu)
+- Global arama kutusuna Defect detayına ve Test Koşumlarına doğrudan gitme desteği eklendi
+- Modül silindiğinde test senaryolarının korunması (SetNull) ve silinme engeli
+- Header dikey ayraç konumu sidebar'ın sağ kenar çizgisi (x = 280px) ile tam hizalandı
+- Test Planları tablosunda sabit kolonlar (Tür, Senaryo, Başarı Oranı, Durum, Son Çalıştırma, İşlemler) kilitlendi; Test Planı ve Kapsam kolonları esnek oranlandı
+- Test Planları tablosu aşırı sıkışmayı önleyecek akıllı minimum genişlik eşiği (980px) ve yatay kaydırma ile güncellendi
+- Test Planları tablosunda Test Planı kolonu ve diğer kolonlar responsive/table-fixed ile oranlandı
+- Düzeltme: Yeni test planında senaryo ve başarı oranı mock veri temizlendi; yeni test senaryosu oluşturulduğunda liste ve sayaçların anında güncellenmesi sağlandı.
+- **Test Planı Liste Reaktivitesi ve Anında Güncelleme Düzeltmesi**: `TestPlansView` bileşeni `page.tsx`'teki `testPlans` state'i ile tam senkronize hale getirildi; yeni bir test planı oluşturulduğunda veya güncellendiğinde sayfa yenilemeye gerek kalmadan listenin anında güncellenmesi ve yeni planın otomatik seçilmesi sağlandı.
+- **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
+
+### Added
+- Ayarlar bölümüne Alan & Kolon Özelleştirme (Field Customization) modülü ve grid popover entegrasyonu eklendi
+- Created 'IOS Mobile Banking Automation' project and imported 111 iOS Cucumber test scenarios across 18 feature modules with 5 linked test plans
+- Imported Core Banking Cucumber real test suites (701 cases across 31 feature modules) and initialized 5 structured Test Plans
+- Test Otomasyon ve entegrasyonlar için Otomasyon Uzmanı (AUTOMATION_ENGINEER) rolü ve yetkilendirmesi eklendi; yetkisiz rollerde otomasyon butonları gizlendi.
+- Tekli ve coklu kosum modallarinda defect olusturuldugunda olusturulan Defect Key ve basari durum rozetinin aninda gosterilmesi saglandi.
+- Test kosumu FAILED durumunda Jira alani yanina Defect Olusturma butonu ve otomatik form doldurma destegi eklendi.
+- Azure Mavisi (Jira/Atlassian style single dominant color scheme) theme and dynamic accent variable refactoring across all views
+- Mimari Altyapı, OOP & Concurrency Refactor: Atomic Sequence Pattern, DB composite indexes, N+1 query elimination, Facade/Strategy exporters, DRY UI tokens
+- Test Automation Center (TAC) cift yonlu entegrasyonu: TACService, canli WebSocket log terminali, cihaz taramasi ve otomasyon tetikleme paneli eklendi
+- Kapsamlı Ayarlar Sayfası (Kullanıcılar, Oturumlar, Rol Matrisi, LDAP Entegrasyonu, API Anahtarları, Webhook'lar, Proje & Sistem Parametreleri)
+- Test Otomasyon Merkezi entegrasyonu için Webhook tetikleme altyapısı ve API_AUTOMATION_GUIDE.md kılavuzu eklendi
+- Merkezi Defect & Hata Takibi (Defects Hub, Kanban Pano, İstatistikler, Koşum Senkronizasyonu) modülü eklendi
+- BANK-MOB project expanded with 5 Test Plans, 40 detailed Test Cases (8 per plan), and 10 realistic Test Runs with diverse execution accuracy
+- Database cleared and re-seeded exclusively with 100% Digital Banking SDLC test data (Mobile, Corporate, API Gateway, Cyber Security & AML)
+- Excel import/export and downloadable template system for test cases, test plans, and test runs
+- Yeni Test Senaryosu Oluştur modalına modül oluşturma ve yönetimi entegrasyonu, DB boş/dummy modül temizliği
+- Test Planı ile Koşum Başlat modalı (ManualRunModal), Hızlı Koşum modalındaki modern kart yapısı, senaryo geçiş çubuğu, adım bazlı pass/fail bayrakları ve canlı süre sayacı ile güncellendi
+- Test koşumlarında iki farklı yöntem (Test Planı ile Kapsamlı Koşum vs Hızlı Test Koşumu), adım bazlı pass/fail bayrakları, canlı süre sayacı ve etiket parametreleri arayüzü eklendi
+- Kurumsal Platin & Gri açık tema (corporate-light) eklendi; sade, göz yormayan kurumsal kırmızı ve antrasit-gri tonları uygulandı
+- Test koşumu canlı süre sayacı (stopwatch), tüm görsel etiketler (Ortam, Platform, Sürüm, Cihaz, User Profili, Müşteri Tipi, Zaman, Süre, Flaky) ve kart görünümü eklendi
+- Test Koşumu Detay Sayfası (TestRunDetailView), anlık durum kaydı, her durum için yorum & ekran görüntüsü ekleme ve hata bulguları (defects) takip sekmesi eklendi
+- **Test Planı Oluşturma & Düzenleme Modallarında Senaryo Seçim Paneli**: `NewTestPlanModal` ve `EditTestPlanModal` bileşenlerine arama filtreli, süit isimli, Tümünü Seç / Seçimi Temizle aksiyonlu test senaryosu seçim alanı eklendi; plan oluştururken veya düzenlerken istenen senaryoların plana dahil edilmesi / çıkarılması sağlandı.
 - **Yeni Test Planı Sol Menü Ağacı İzolasyonu Düzeltmesi**: Yeni bir Test Planı oluşturulduğunda sol menüde (`AppSidebar`) önceki/ilk plana ait klasör ve senaryoların kalması engellendi; oluşturulan yeni plan anında seçilerek ağaç yapısı temizlendi, otomatik genişletildi ve içi tamamen boş ("Henüz suite veya case eklenmedi.") olarak listelenmesi sağlandı.
 - Top navigation sağ üst alana Swagger Docs butonu eklendi
 - **Değişiklikleri Kaydet & Koşum Geçmişi Koruma Düzeltmesi**: `TestCasesService.update` backend metoduna `results` ve `testRun` ilişkileri dahil edildi ve `page.tsx`'teki `handleSaveCase`, `handleQuickRunSuccess` ile `ManualRunModal` `onClose` akışları iyileştirildi; böylece bir test senaryosunda değişiklik kaydedildiğinde veya yeni bir koşu yapıldığında tüm önceki koşum kayıtları, test notları ve ekran görüntüleri eksiksiz korunarak anında güncellenmesi sağlandı.
@@ -23,6 +69,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Linked all 701 test scenarios to the 5 Core Banking Test Plans based on file path hierarchies and module domains
+- Hiyerarsi en tepesine Test Projesi yerlestirildi, veri olmadiginda ilk islem olarak yeni proje olusturma akisi ve sifir veri karsilama ekrani duzenlendi
+- Local veritabanındaki dummy veriler temizlendi, kullanıcı ve sistem konfigürasyonları korundu
+- Test kosum ekranlarinda PASSED secildiginde tum adimlarin otomatik passed isaretlenmesi, baslangicta hicbir sonucun on secili gelmemesi ve genel sayfa scroll duzenlemesi
+- Test kosumu silindiginde kosumla ve test sonuclariyla iliskili defectlerin de veritabanindan otomatik olarak silinmesi (Cascade Delete) saglandi.
+- Ana Sayfa 'Yeni Test Suite' butonu kaldırıldı, Suite modalları sistemden temizlendi ve Dashboard ID kolonu wrap text sorunu düzeltildi.
+- Test Planları ve Test Senaryoları sayfalarındaki grid kolonları wrap-text yapmadan esnek sığdırıldı, plan başlığı ve kapsam kolonları daraltıldı
+- Test koşumu detay sayfası modernleştirildi ve yeni UI tasarımına uyarlandı
+- Test Planı detayında Test Senaryosu Ekle butonu, Modül öz niteliği, Test Koşumları Geçmişi başlığı ve sekme sadeleştirmeleri
+- Remove executionType, test type, and priority attributes from Test Scenario creation and editor for single-definition reusable template model
+- Refactor Test Case Editor: remove run controls, status badges, and step attachments, align metadata attributes, and enhance plan-to-case back/forward navigation history
+- Logo alanı güncellendi: SVG/Amblem boyutu büyütüldü, 'Test Yönetim Sistemi' kaldırıldı, altına TCMS yerleştirildi ve sidebar ile tam hizalandı
+- Sidebar gezinmelerinde ve sekme geçişlerinde her zaman kök dizine yönlendirme sağlandı
+- Top navigasyon hiyerarşik breadcrumb yapısı, tek harfli kullanıcı avatarı, kompakt arama ve sağa yaslı proje seçici güncellendi
+- Top navigasyon ve sol menü yapısı güncellendi: RBAC ikonu sol alt köşeye taşındı, bildirimler kaldırıldı, arama esnetildi ve site ağacı sol menüye entegre edildi
+- Sidebar genişliği ve Header logo/ayraç hizalaması 280px olarak eşitlendi
+- Sol navigasyon menüsü daraltıldı ve Test Planları sağ detay kartı kaldırılarak tablo tam genişliğe genişletildi
+- Kurumsal Platin & Gri temada %80 gri tonları uygulandı; etiketler, statü kartları ve butonlar sade kurumsal standartlara getirildi
+- Test Planı detayında yeni senaryo oluşturma kaldırıldı, çoklu mevcut senaryo seçimi ve ekleme özelliği güçlendirildi
 - Enhanced UI information density, collapsible test plan summary, compact metric cards, prominent table headers, and high-contrast badges across views
 - Test Suite ve Test Case kavramları tamamen kaldırılarak 'Test Senaryosu' (Test Scenario) modeli altında birleştirildi; 1 kez yazıp N kez koşma yeteneği, modern TestScenariosView çalışma alanı, sadeleştirilmiş AppSidebar ve tekil/toplu koşum desteği entegre edildi
 - Test Planları gridindeki ve sağ çekmecedeki Düzenle (Pencil) butonları doğrudan ilgili Test Planının detay sayfasına yönlendirecek şekilde güncellendi
@@ -49,6 +114,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manual Execution Dashboard (Manuel Test Koşum Paneli) modalı Türkçe diline çevrildi ve tema ile tam uyumlu hale getirildi.
 
 ### Added
+- Test adımlarına Ctrl+V ile panodan doğrudan görsel yapıştırma ve sürükle-bırak desteği eklendi
+- Test adımlarına görsel yükleme/ekleme ve boş durum kutusuna Adım Ekle butonu eklendi
 - Kurumsal karşılama ve login sayfası güncellendi: Sol tarafta proje tanıtımı ve yetenekler, sağ tarafta giriş formu ve hızlı kullanıcı seçimi
 - NeoBank dijital bankacilik projesi, FAST 7/24 transfer, dinamik CVV kredi karti, Findeks kredi, canli FX, QR ATM ve zengin SVG ekran goruntuleri eklendi.
 - Kapsamlı Test Planı Detay Sayfası (TestPlanDetailView) eklendi; Test Planı Görüntüle butonu ile detay sayfasına geçiş, inline metadata düzenleme (başlık, hedef ortam, sürüm, durum, kapsam, gereksinimler), plana senaryo ekleme/çıkarma/oluşturma, bağlı koşumlar ve özet KPI kartları entegre edildi

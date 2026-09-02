@@ -57,10 +57,12 @@ export interface TestPlan {
     key: string;
   };
   testRuns?: TestRun[];
+  cases?: Array<{ id: string; testCaseId: string; testCase?: TestCase }>;
   createdAt: string;
   updatedAt: string;
   _count?: {
     testRuns: number;
+    cases?: number;
   };
 }
 
@@ -73,6 +75,7 @@ export interface CreateTestPlanDto {
   scope?: string;
   requirements?: string;
   projectId: string;
+  caseIds?: string[];
 }
 
 export interface UpdateTestPlanDto {
@@ -83,6 +86,7 @@ export interface UpdateTestPlanDto {
   status?: PlanStatus;
   scope?: string;
   requirements?: string;
+  caseIds?: string[];
 }
 
 export interface StepAttachment {
@@ -166,9 +170,24 @@ export interface TestResult {
   errorMessage?: string;
   executedBy?: string;
   testerEmail?: string;
+  environment?: string;
+  platform?: string;
+  appVersion?: string;
+  device?: string;
+  userProfile?: string;
+  customerType?: string;
+  flakyStatus?: string;
+  retries?: number;
   jiraBugKey?: string;
   jiraBugUrl?: string;
   screenshotUrl?: string;
+  defects?: {
+    id: string;
+    key: string;
+    title: string;
+    status: DefectStatus;
+    severity: DefectSeverity;
+  }[];
   executedAt?: string;
 }
 
@@ -215,7 +234,43 @@ export interface SaveResultsDto {
     jiraBugKey?: string;
     jiraBugUrl?: string;
     screenshotUrl?: string;
+    environment?: string;
+    platform?: string;
+    appVersion?: string;
+    device?: string;
+    userProfile?: string;
+    customerType?: string;
+    flakyStatus?: string;
+    retries?: number;
   }[];
+}
+
+export interface BulkTestCaseItemInput {
+  code?: string;
+  title: string;
+  description?: string;
+  suiteName?: string;
+  suiteId?: string;
+  executionType?: ExecutionType;
+  type?: TestType;
+  priority?: Priority;
+  precondition?: string;
+  jiraStoryKey?: string;
+  steps?: {
+    stepNumber?: number;
+    action: string;
+    expectedResult?: string;
+  }[];
+}
+
+export interface BulkTestPlanItemInput {
+  title: string;
+  description?: string;
+  version?: string;
+  environment?: string;
+  status?: PlanStatus;
+  scope?: string;
+  requirements?: string;
 }
 
 // API Services
@@ -237,8 +292,16 @@ export const TestPlansService = {
   getOne: (id: string) => api.get<TestPlan>(`/test-plans/${id}`).then((res) => res.data),
   create: (data: CreateTestPlanDto) =>
     api.post<TestPlan>('/test-plans', data).then((res) => res.data),
+  createBulk: (projectId: string, items: BulkTestPlanItemInput[]) =>
+    api.post<{ success: boolean; count: number; data: TestPlan[] }>('/test-plans/bulk', { projectId, items }).then((res) => res.data),
   update: (id: string, data: UpdateTestPlanDto) =>
     api.patch<TestPlan>(`/test-plans/${id}`, data).then((res) => res.data),
+  syncCases: (id: string, caseIds: string[]) =>
+    api.post<TestPlan>(`/test-plans/${id}/cases/sync`, { caseIds }).then((res) => res.data),
+  addCases: (id: string, caseIds: string[]) =>
+    api.post<TestPlan>(`/test-plans/${id}/cases`, { caseIds }).then((res) => res.data),
+  removeCase: (id: string, caseId: string) =>
+    api.delete<{ success: boolean }>(`/test-plans/${id}/cases/${caseId}`).then((res) => res.data),
   delete: (id: string) => api.delete(`/test-plans/${id}`).then((res) => res.data),
 };
 
@@ -255,6 +318,8 @@ export const SuitesService = {
 export const TestCasesService = {
   getOne: (id: string) => api.get<TestCase>(`/test-cases/${id}`).then((res) => res.data),
   create: (data: Partial<TestCase>) => api.post<TestCase>('/test-cases', data).then((res) => res.data),
+  createBulk: (projectId: string, items: BulkTestCaseItemInput[]) =>
+    api.post<{ success: boolean; count: number; data: TestCase[] }>('/test-cases/bulk', { projectId, items }).then((res) => res.data),
   update: (id: string, data: Partial<TestCase>) =>
     api.patch<TestCase>(`/test-cases/${id}`, data).then((res) => res.data),
   linkJiraStory: (id: string, jiraStoryKey?: string, jiraIssueUrl?: string) =>
@@ -269,12 +334,14 @@ export const TestRunsService = {
     api.post<TestRun>(`/projects/${projectId}/runs/${runId}/results`, data).then((res) => res.data),
   completeRun: (runId: string, status: RunStatus = 'COMPLETED') =>
     api.patch<TestRun>(`/runs/${runId}/complete`, { status }).then((res) => res.data),
-  quickRun: (projectId: string, data: { testCaseId: string; status: ResultStatus; version?: string; environment?: string; errorMessage?: string; jiraBugKey?: string; jiraBugUrl?: string; screenshotUrl?: string; executedBy?: string }) =>
+  quickRun: (projectId: string, data: { testCaseId: string; status: ResultStatus; version?: string; environment?: string; platform?: string; appVersion?: string; device?: string; userProfile?: string; customerType?: string; flakyStatus?: string; errorMessage?: string; jiraBugKey?: string; jiraBugUrl?: string; screenshotUrl?: string; executedBy?: string }) =>
     api.post<TestResult>(`/projects/${projectId}/quick-run`, data).then((res) => res.data),
   getRuns: (projectId: string) =>
     api.get<TestRun[]>(`/projects/${projectId}/runs`).then((res) => res.data),
   getRunDetails: (runId: string) =>
     api.get<TestRun>(`/runs/${runId}`).then((res) => res.data),
+  deleteRun: (runId: string) =>
+    api.delete(`/runs/${runId}`).then((res) => res.data),
 };
 
 export interface ProjectReportSummary {
@@ -489,7 +556,7 @@ export const ReportsService = {
   },
 };
 
-export type UserRole = 'ADMIN' | 'TEST_LEAD' | 'TESTER' | 'VIEWER';
+export type UserRole = 'ADMIN' | 'TEST_LEAD' | 'TESTER' | 'AUTOMATION_ENGINEER' | 'VIEWER';
 
 export interface User {
   id: string;
@@ -528,6 +595,455 @@ export const UsersService = {
   updateUser: (id: string, data: UpdateUserInput) => api.patch<User>(`/users/${id}`, data).then((res) => res.data),
   deleteUser: (id: string) => api.delete<{ message: string }>(`/users/${id}`).then((res) => res.data),
 };
+
+export type DefectSeverity = 'BLOCKER' | 'CRITICAL' | 'MAJOR' | 'MINOR' | 'TRIVIAL';
+export type DefectStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'REOPENED' | 'WONT_FIX';
+
+export interface Defect {
+  id: string;
+  key: string;
+  title: string;
+  description?: string | null;
+  severity: DefectSeverity;
+  status: DefectStatus;
+  projectId: string;
+  project?: {
+    id: string;
+    name: string;
+    key: string;
+  };
+  testCaseId?: string | null;
+  testCase?: {
+    id: string;
+    code: string;
+    title: string;
+    priority: Priority;
+    type: TestType;
+    suite?: { id: string; name: string };
+    steps?: TestStep[];
+  } | null;
+  testRunId?: string | null;
+  testRun?: {
+    id: string;
+    title: string;
+    version: string;
+    environment: string;
+  } | null;
+  testResultId?: string | null;
+  testResult?: {
+    id: string;
+    status: ResultStatus;
+    errorMessage?: string | null;
+    screenshotUrl?: string | null;
+  } | null;
+  assignedTo?: string | null;
+  reportedBy?: string | null;
+  environment?: string;
+  channel?: string;
+  jiraBugKey?: string | null;
+  jiraBugUrl?: string | null;
+  resolutionNotes?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDefectDto {
+  projectId: string;
+  title: string;
+  description?: string;
+  severity?: DefectSeverity;
+  status?: DefectStatus;
+  testCaseId?: string;
+  testRunId?: string;
+  testResultId?: string;
+  assignedTo?: string;
+  reportedBy?: string;
+  environment?: string;
+  channel?: string;
+  jiraBugKey?: string;
+  jiraBugUrl?: string;
+  resolutionNotes?: string;
+}
+
+export interface UpdateDefectDto {
+  title?: string;
+  description?: string;
+  severity?: DefectSeverity;
+  status?: DefectStatus;
+  testCaseId?: string | null;
+  testRunId?: string | null;
+  testResultId?: string | null;
+  assignedTo?: string;
+  reportedBy?: string;
+  environment?: string;
+  channel?: string;
+  jiraBugKey?: string;
+  jiraBugUrl?: string;
+  resolutionNotes?: string;
+  resolvedAt?: string;
+}
+
+export interface DefectStats {
+  projectId: string;
+  projectName: string;
+  projectKey: string;
+  metrics: {
+    total: number;
+    active: number;
+    open: number;
+    inProgress: number;
+    resolved: number;
+    closed: number;
+    reopened: number;
+    wontFix: number;
+    activeBlockerCritical: number;
+    resolutionRate: number;
+  };
+  distributions: {
+    bySeverity: Record<string, number>;
+    byStatus: Record<string, number>;
+    byEnvironment: Record<string, number>;
+    byChannel: Record<string, number>;
+    byAssignee: Record<string, number>;
+  };
+  recentDefects: Defect[];
+}
+
+export const DefectsService = {
+  getAllByProject: (
+    projectId: string,
+    filters?: {
+      status?: DefectStatus;
+      severity?: DefectSeverity;
+      environment?: string;
+      assignedTo?: string;
+      search?: string;
+    },
+  ) =>
+    api.get<Defect[]>(`/defects/project/${projectId}`, { params: filters }).then((res) => res.data),
+  getStatsByProject: (projectId: string) =>
+    api.get<DefectStats>(`/defects/stats/project/${projectId}`).then((res) => res.data),
+  getOne: (id: string) =>
+    api.get<Defect>(`/defects/${id}`).then((res) => res.data),
+  create: (data: CreateDefectDto) =>
+    api.post<Defect>('/defects', data).then((res) => res.data),
+  update: (id: string, data: UpdateDefectDto) =>
+    api.put<Defect>(`/defects/${id}`, data).then((res) => res.data),
+  updateStatus: (id: string, status: DefectStatus, resolutionNotes?: string) =>
+    api.patch<Defect>(`/defects/${id}/status`, { status, resolutionNotes }).then((res) => res.data),
+  syncFromFailed: (projectId: string) =>
+    api.post<{ syncedCount: number; createdDefects: Defect[] }>(`/defects/sync-failed/project/${projectId}`).then((res) => res.data),
+  delete: (id: string) =>
+    api.delete(`/defects/${id}`).then((res) => res.data),
+};
+
+export type TriggerTargetScope = 'ALL' | 'SMOKE' | 'REGRESSION' | 'SELECTED_CASES' | 'SUITE';
+
+export interface TriggerAutomationWebhookDto {
+  webhookUrl: string;
+  title?: string;
+  environment?: string;
+  version?: string;
+  scope?: TriggerTargetScope;
+  suiteId?: string;
+  caseCodes?: string[];
+  platform?: 'iOS' | 'Android';
+  deviceAlias?: string;
+  specs?: string[];
+  secretToken?: string;
+  triggeredBy?: string;
+}
+
+export interface WebhookTriggerResponse {
+  success: boolean;
+  message: string;
+  testRun: TestRun;
+  targetCaseCount: number;
+  outboundPayload: any;
+  remoteResponse: {
+    status: number | null;
+    body: any;
+    error: string | null;
+  };
+}
+
+export const WebhooksService = {
+  triggerAutomation: (projectId: string, dto: TriggerAutomationWebhookDto) =>
+    api.post<WebhookTriggerResponse>(`/projects/${projectId}/webhooks/trigger`, dto).then((res) => res.data),
+  testWebhook: (projectId: string, webhookUrl: string, secretToken?: string) =>
+    api.post<{ success: boolean; status?: number; response?: string; error?: string }>(
+      `/projects/${projectId}/webhooks/ping`,
+      { webhookUrl, secretToken },
+    ).then((res) => res.data),
+};
+
+// TAC (Test Automation Center) Interfaces & Service
+export interface TACDevice {
+  udid: string;
+  name: string;
+  platform: 'iOS' | 'Android';
+  state: string;
+  isConfigured: boolean;
+  alias: string;
+  appiumPort?: number;
+  wdaPort?: number;
+  mjpegPort?: number;
+}
+
+export interface TACSpecCase {
+  title: string;
+  code: string;
+  line: number;
+}
+
+export interface TACSpecItem {
+  name: string;
+  relativePath: string;
+  category: string;
+  suites: string[];
+  cases: TACSpecCase[];
+}
+
+export interface TACRunDetails {
+  id: string;
+  title: string;
+  platform: 'iOS' | 'Android';
+  deviceAlias: string;
+  environment: string;
+  status: 'RUNNING' | 'PASSED' | 'FAILED' | 'STOPPED';
+  startTime: string;
+  endTime?: string;
+  durationMs?: number;
+  summary: {
+    total: number;
+    passed: number;
+    failed: number;
+    skipped: number;
+  };
+  results: {
+    caseCode: string;
+    status: 'PASSED' | 'FAILED' | 'SKIPPED';
+    durationMs?: number;
+    errorMessage?: string;
+  }[];
+  tcmsSynced?: boolean;
+  tcmsRunId?: string;
+}
+
+export const TACService = {
+  checkHealth: () =>
+    api.get<{ online: boolean; data?: any; error?: string }>('/tac/health').then((res) => res.data),
+  getDevices: () =>
+    api.get<{ success: boolean; data: TACDevice[]; error?: string }>('/tac/devices').then((res) => res.data),
+  scanDevices: () =>
+    api.get<{ success: boolean; scannedCount: number; data: TACDevice[]; error?: string }>('/tac/devices/scan').then((res) => res.data),
+  getSpecs: () =>
+    api.get<{ success: boolean; count: number; data: TACSpecItem[]; error?: string }>('/tac/specs').then((res) => res.data),
+  getPlans: () =>
+    api.get<{ success: boolean; data: any[]; error?: string }>('/tac/specs/plans').then((res) => res.data),
+  getRuns: () =>
+    api.get<{ success: boolean; data: any[]; error?: string }>('/tac/runs').then((res) => res.data),
+  getRunDetails: (runId: string) =>
+    api.get<{ success: boolean; data: TACRunDetails; error?: string }>(`/tac/runs/${runId}`).then((res) => res.data),
+  stopRun: (runId: string) =>
+    api.post<{ success: boolean; message: string; error?: string }>(`/tac/runs/${runId}/stop`, {}).then((res) => res.data),
+  checkAppiumHealth: (port?: number, url?: string) =>
+    api.post<{ success: boolean; error?: string }>('/tac/devices/health', { port, url }).then((res) => res.data),
+};
+
+export function subscribeToTACLogs(
+  wsUrl: string = 'ws://localhost:8000/ws/logs',
+  onLog: (logText: string, isError?: boolean, runId?: string) => void,
+  onStatusChange?: (data: any) => void,
+  onConnected?: () => void,
+  onDisconnected?: () => void,
+): { close: () => void } {
+  let ws: WebSocket | null = null;
+  let isClosedManually = false;
+
+  try {
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      if (onConnected) onConnected();
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'LOG' && msg.text) {
+          onLog(msg.text, msg.isError, msg.runId);
+        } else if (msg.type === 'RUN_STARTED' || msg.type === 'RUN_FINISHED' || msg.type === 'RUN_UPDATED') {
+          if (onStatusChange) onStatusChange(msg);
+        } else if (msg.type === 'CONNECTED') {
+          onLog(`⚡ [TAC] ${msg.message || 'Connected to Live Test Logs Stream'}\n`);
+        }
+      } catch {
+        onLog(event.data);
+      }
+    };
+
+    ws.onerror = (err) => {
+      onLog(`⚠️ [TAC WS ERROR] Canlı log sunucusuna ulaşılamadı (${wsUrl})\n`, true);
+      if (onDisconnected) onDisconnected();
+    };
+
+    ws.onclose = () => {
+      if (!isClosedManually && onDisconnected) {
+        onDisconnected();
+      }
+    };
+  } catch (err: any) {
+    onLog(`⚠️ [TAC WS INIT ERROR] ${err.message}\n`, true);
+  }
+
+  return {
+    close: () => {
+      isClosedManually = true;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    },
+  };
+}
+
+export interface SystemSettings {
+  systemTitle: string;
+  defaultEnvironment: string;
+  defaultTestType: string;
+  runTimeoutMinutes: number;
+  logRetentionDays: number;
+  sessionTimeoutHours: number;
+  allowMultipleSessions: boolean;
+  version: string;
+  updatedAt: string;
+}
+
+export interface LdapConfig {
+  serverUrl: string;
+  baseDn: string;
+  bindDn: string;
+  bindPassword?: string;
+  hasPassword?: boolean;
+  userFilter?: string;
+  useSsl?: boolean;
+  isEnabled?: boolean;
+  syncIntervalHours?: number;
+  groupMappings?: { ldapGroup: string; tcmsRole: string }[];
+  lastSyncedAt?: string;
+  lastSyncStatus?: string;
+}
+
+export interface ApiKeyItem {
+  id: string;
+  name: string;
+  keyPreview: string;
+  fullKey?: string;
+  scope: string;
+  createdBy: string;
+  createdAt: string;
+  expiresAt: string | null;
+  lastUsedAt: string | null;
+  isActive: boolean;
+}
+
+export interface ActiveSessionItem {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  ipAddress: string;
+  userAgent: string;
+  device: string;
+  location: string;
+  loginTime: string;
+  lastActiveTime: string;
+  isCurrent?: boolean;
+}
+
+export interface LdapTestResult {
+  success: boolean;
+  message: string;
+  latencyMs: number;
+  details?: any;
+}
+
+export interface LdapSyncResult {
+  success: boolean;
+  message: string;
+  syncedAt: string;
+  stats: {
+    totalScanned: number;
+    usersAdded: number;
+    usersUpdated: number;
+    usersUnchanged: number;
+    rolesMapped: Record<string, number>;
+  };
+}
+
+export const SettingsService = {
+  getSystemSettings: () => api.get<SystemSettings>('/settings/system').then((res) => res.data),
+  updateSystemSettings: (data: Partial<SystemSettings>) =>
+    api.patch<SystemSettings>('/settings/system', data).then((res) => res.data),
+
+  getLdapConfig: () => api.get<LdapConfig>('/settings/ldap').then((res) => res.data),
+  updateLdapConfig: (data: LdapConfig) => api.patch<LdapConfig>('/settings/ldap', data).then((res) => res.data),
+  testLdap: (data: Partial<LdapConfig>) => api.post<LdapTestResult>('/settings/ldap/test', data).then((res) => res.data),
+  syncLdap: () => api.post<LdapSyncResult>('/settings/ldap/sync').then((res) => res.data),
+
+  getApiKeys: () => api.get<ApiKeyItem[]>('/settings/api-keys').then((res) => res.data),
+  createApiKey: (data: { name: string; scope: string; expiresInDays?: number }) =>
+    api.post<ApiKeyItem>('/settings/api-keys', data).then((res) => res.data),
+  revokeApiKey: (id: string) => api.delete<{ success: boolean; message: string }>(`/settings/api-keys/${id}`).then((res) => res.data),
+
+  getActiveSessions: () => api.get<ActiveSessionItem[]>('/settings/sessions').then((res) => res.data),
+  terminateSession: (id: string) => api.delete<{ success: boolean; message: string }>(`/settings/sessions/${id}`).then((res) => res.data),
+  terminateAllOtherSessions: () =>
+    api.post<{ success: boolean; message: string }>('/settings/sessions/terminate-all-others').then((res) => res.data),
+
+  getFieldCustomizations: () => api.get<FieldCustomizationState>('/settings/field-customizations').then((res) => res.data),
+  updateFieldCustomizations: (data: Partial<FieldCustomizationState>) =>
+    api.patch<FieldCustomizationState>('/settings/field-customizations', data).then((res) => res.data),
+  resetFieldCustomizations: (moduleId?: string) =>
+    api.post<FieldCustomizationState>('/settings/field-customizations/reset', { moduleId }).then((res) => res.data),
+};
+
+export type TableDensity = 'comfortable' | 'normal' | 'compact';
+
+export interface GridColumnConfig {
+  id: string;
+  label: string;
+  defaultLabel?: string;
+  visible: boolean;
+  order: number;
+  width?: string;
+  align?: 'left' | 'center' | 'right';
+  sortable?: boolean;
+  isSticky?: 'left' | 'right' | 'none';
+  isSystem?: boolean;
+  description?: string;
+}
+
+export interface ModuleGridConfig {
+  moduleId: string;
+  moduleName: string;
+  density: TableDensity;
+  defaultSortBy?: string;
+  defaultSortOrder?: 'asc' | 'desc';
+  columns: GridColumnConfig[];
+}
+
+export interface FieldCustomizationState {
+  modules: Record<string, ModuleGridConfig>;
+  customTags: string[];
+  updatedAt: string;
+}
+
+
+
+
 
 
 

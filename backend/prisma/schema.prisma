@@ -21,6 +21,23 @@ enum TestType {
   OTHER
 }
 
+enum DefectSeverity {
+  BLOCKER
+  CRITICAL
+  MAJOR
+  MINOR
+  TRIVIAL
+}
+
+enum DefectStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  REOPENED
+  WONT_FIX
+}
+
 enum Priority {
   BLOCKER
   CRITICAL
@@ -52,6 +69,7 @@ enum Role {
   ADMIN
   TEST_LEAD
   TESTER
+  AUTOMATION_ENGINEER
   VIEWER
 }
 
@@ -81,8 +99,23 @@ model Project {
   suites         Suite[]
   testCases      TestCase[]
   testRuns       TestRun[]
+  defects        Defect[]
+  sequences      ProjectSequence[]
 
   @@map("projects")
+}
+
+model ProjectSequence {
+  id         String   @id @default(uuid())
+  projectId  String
+  entityType String   // "TC" | "DEF" | "RUN"
+  lastValue  Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, entityType])
+  @@map("project_sequences")
 }
 
 model TestPlan {
@@ -99,11 +132,28 @@ model TestPlan {
   project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   testRuns     TestRun[]
+  cases        TestPlanCase[]
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  @@index([projectId, status])
   @@map("test_plans")
+}
+
+model TestPlanCase {
+  id         String   @id @default(uuid())
+  testPlanId String
+  testCaseId String
+  createdAt  DateTime @default(now())
+
+  testPlan   TestPlan @relation(fields: [testPlanId], references: [id], onDelete: Cascade)
+  testCase   TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([testPlanId, testCaseId])
+  @@index([testPlanId])
+  @@index([testCaseId])
+  @@map("test_plan_cases")
 }
 
 model Suite {
@@ -119,6 +169,7 @@ model Suite {
   cases      TestCase[]
   orderIndex Int        @default(0)
 
+  @@index([projectId, parentId, orderIndex])
   @@map("suites")
 }
 
@@ -136,10 +187,12 @@ model TestCase {
   project      Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   suiteId      String?
-  suite        Suite?       @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  suite        Suite?       @relation(fields: [suiteId], references: [id], onDelete: SetNull)
 
   steps        TestStep[]
   results      TestResult[]
+  defects      Defect[]
+  testPlanCases TestPlanCase[]
 
   // Jira Ready
   jiraStoryKey String?
@@ -150,6 +203,10 @@ model TestCase {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
+  @@index([projectId, suiteId])
+  @@index([projectId, type])
+  @@index([projectId, priority])
+  @@index([createdAt])
   @@map("test_cases")
 }
 
@@ -163,6 +220,7 @@ model TestStep {
   testCaseId     String
   testCase       TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
 
+  @@index([testCaseId, stepNumber])
   @@map("test_steps")
 }
 
@@ -183,9 +241,13 @@ model TestRun {
   testPlan    TestPlan?  @relation(fields: [testPlanId], references: [id], onDelete: SetNull)
 
   results     TestResult[]
+  defects     Defect[]
 
   createdAt   DateTime   @default(now())
 
+  @@index([projectId, createdAt])
+  @@index([projectId, status])
+  @@index([testPlanId])
   @@map("test_runs")
 }
 
@@ -206,14 +268,74 @@ model TestResult {
   executedBy   String?
   testerEmail  String?
 
+  // Extended Execution Metadata (Platform, Device, User Profile, Flaky, etc.)
+  environment  String?
+  platform     String?
+  appVersion   String?
+  device       String?
+  userProfile  String?
+  customerType String?
+  flakyStatus  String?
+  retries      Int?         @default(0)
+
   // Jira Ready
   jiraBugKey   String?
   jiraBugUrl   String?
 
   screenshotUrl String?
 
+  defects      Defect[]
+
   executedAt   DateTime     @default(now())
 
+  @@index([testRunId, status])
+  @@index([testCaseId, executedAt])
+  @@index([status])
+  @@index([executedAt])
   @@map("test_results")
 }
+
+model Defect {
+  id              String         @id @default(uuid())
+  key             String         @unique // e.g. DEF-101
+  title           String
+  description     String?
+  severity        DefectSeverity @default(MAJOR)
+  status          DefectStatus   @default(OPEN)
+
+  projectId       String
+  project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  testCaseId      String?
+  testCase        TestCase?      @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
+
+  testRunId       String?
+  testRun         TestRun?       @relation(fields: [testRunId], references: [id], onDelete: Cascade)
+
+  testResultId    String?
+  testResult      TestResult?    @relation(fields: [testResultId], references: [id], onDelete: Cascade)
+
+  assignedTo      String?
+  reportedBy      String?
+  environment     String?        @default("STAGING")
+  channel         String?        @default("WEB")
+
+  jiraBugKey      String?
+  jiraBugUrl      String?
+
+  resolutionNotes String?
+  resolvedAt      DateTime?
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([projectId, status, severity])
+  @@index([testCaseId])
+  @@index([testRunId])
+  @@index([testResultId])
+  @@index([createdAt])
+  @@map("defects")
+}
+
+
 

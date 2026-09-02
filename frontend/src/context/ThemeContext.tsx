@@ -20,10 +20,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     setMounted(true);
     const savedTheme = localStorage.getItem('tcms_theme') as ThemeId | null;
-    if (savedTheme === 'crimson-dark' || savedTheme === 'crimson-light') {
+    if (
+      savedTheme === 'azure-blue' ||
+      savedTheme === 'crimson-dark' ||
+      savedTheme === 'crimson-light' ||
+      savedTheme === 'corporate-light'
+    ) {
       setThemeState(savedTheme);
     } else {
-      setThemeState('crimson-dark');
+      setThemeState('azure-blue');
     }
   }, []);
 
@@ -32,15 +37,26 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const root = document.documentElement;
 
     // Reset classes & attributes
-    root.classList.remove('dark', 'theme-crimson', 'theme-light');
+    root.classList.remove(
+      'dark',
+      'theme-crimson',
+      'theme-light',
+      'theme-corporate-light',
+      'theme-crimson-light',
+      'theme-azure-blue'
+    );
     root.removeAttribute('data-theme');
 
     root.setAttribute('data-theme', theme);
 
     if (theme === 'crimson-dark') {
       root.classList.add('dark', 'theme-crimson');
+    } else if (theme === 'corporate-light') {
+      root.classList.add('theme-light', 'theme-corporate-light');
+    } else if (theme === 'azure-blue') {
+      root.classList.add('theme-light', 'theme-azure-blue');
     } else {
-      root.classList.add('theme-light');
+      root.classList.add('theme-light', 'theme-crimson-light');
     }
 
     localStorage.setItem('tcms_theme', theme);

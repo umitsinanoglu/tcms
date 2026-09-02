@@ -44,11 +44,11 @@ export const ProjectsSidebar: React.FC<ProjectsSidebarProps> = ({
           <div className="flex items-center space-x-2">
             <FolderKanban className="w-4 h-4 text-rose-500" />
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-              Test Planları Navigasyonu
+              Test Projeleri Navigasyonu
             </h2>
           </div>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold border border-slate-200 dark:border-slate-700">
-            {projects.length} Test Planı
+            {projects.length} Test Projesi
           </span>
         </div>
 
@@ -57,7 +57,7 @@ export const ProjectsSidebar: React.FC<ProjectsSidebarProps> = ({
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Test planı veya anahtar ara..."
+            placeholder="Test projesi veya anahtar ara..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-rose-500 transition-colors"
@@ -70,7 +70,7 @@ export const ProjectsSidebar: React.FC<ProjectsSidebarProps> = ({
         {filteredProjects.length === 0 ? (
           <div className="text-center py-10 px-4 text-slate-400 dark:text-slate-500 text-xs">
             <Layers className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
-            <p>Test planı bulunamadı.</p>
+            <p>Test projesi bulunamadı.</p>
           </div>
         ) : (
           filteredProjects.map((p) => {
@@ -103,7 +103,7 @@ export const ProjectsSidebar: React.FC<ProjectsSidebarProps> = ({
                           onEditProject(p);
                         }}
                         className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded transition-all"
-                        title="Test Planını Düzenle / Sil"
+                        title="Test Projesini Düzenle / Sil"
                       >
                         <FolderKanban className="w-3.5 h-3.5" />
                       </button>
@@ -141,7 +141,7 @@ export const ProjectsSidebar: React.FC<ProjectsSidebarProps> = ({
           className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl transition-all shadow-sm"
         >
           <PlusCircle className="w-4 h-4 text-rose-500" />
-          <span>+ Yeni Test Planı Ekle</span>
+          <span>+ Yeni Test Projesi Ekle</span>
         </button>
       </div>
     </aside>

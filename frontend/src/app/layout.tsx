@@ -3,6 +3,7 @@ import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { NavigationProvider } from '@/context/NavigationContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { CustomizationProvider } from '@/context/CustomizationContext';
 
 export const metadata: Metadata = {
   title: 'Türk Ticaret Bankası - Test Case Management System (TCMS)',
@@ -24,7 +25,9 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             <NavigationProvider>
-              {children}
+              <CustomizationProvider>
+                {children}
+              </CustomizationProvider>
             </NavigationProvider>
           </ThemeProvider>
         </AuthProvider>
@@ -32,5 +35,6 @@ export default function RootLayout({
     </html>
   );
 }
+
 
 
