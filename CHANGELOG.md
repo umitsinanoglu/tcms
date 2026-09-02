@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- Test Planı koşumu tamamlandığında 'Kapat ve Koşum Geçmişine Dön' butonunun Test Koşumları sayfasına yönlendirmesi sağlandı ve Test Koşumları tablosundaki Ortam ve Sürüm kolonları düzeltildi
 - Test Planı ile Koşum Başlat modalı doğrudan Senaryo Düzenleme & Seçim modunda açılacak ve Koşumu Başlat ile hemen yürütmeye geçecek şekilde sadeleştirildi
 - Test Planı ile Koşum Başlatıldığında plana ait senaryoların otomatik seçili gelmesi ve doğrudan/hızlı koşum başlatma desteği eklendi
 - ManualRunModal kosu tamamlandiginda verilerin yenilenmesi sirasinda modalin basa sarip tekrar acilmasina neden olan useEffect re-trigger hatasi duzeltildi
