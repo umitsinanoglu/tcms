@@ -371,6 +371,23 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                             );
                           }
 
+                          if (col.id === 'module') {
+                            const parentName = (tc.suite as any)?.parent?.name;
+                            const suiteTitle = tc.suite?.name;
+                            const displaySuite = suiteTitle || 'Genel Test Havuzu';
+
+                            return (
+                              <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium ${alignClass}`}>
+                                <div className="flex items-center space-x-1.5 truncate max-w-[180px]" title={parentName ? `${parentName} → ${displaySuite}` : displaySuite}>
+                                  <Folder className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                  <span className="truncate font-medium text-slate-700 dark:text-slate-300">
+                                    {displaySuite}
+                                  </span>
+                                </div>
+                              </td>
+                            );
+                          }
+
                           if (col.id === 'type') {
                             return (
                               <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>

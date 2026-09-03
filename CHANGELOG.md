@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Test Senaryoları için Bankacılık (Mobil/Web Omnichannel & Core Banking) modül yapısı ve otomatik eşleme görevi eklendi
 - Ayarlar bölümüne Alan & Kolon Özelleştirme (Field Customization) modülü ve grid popover entegrasyonu eklendi
 - Created 'IOS Mobile Banking Automation' project and imported 111 iOS Cucumber test scenarios across 18 feature modules with 5 linked test plans
 - Imported Core Banking Cucumber real test suites (701 cases across 31 feature modules) and initialized 5 structured Test Plans
