@@ -385,18 +385,7 @@ export const DefectsView: React.FC<DefectsViewProps> = ({
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-2 flex-wrap">
-            <ColumnCustomizerMenu
-              moduleId="defects"
-              onOpenAdvancedSettings={() =>
-                pushState({
-                  tab: 'SETTINGS',
-                  projectId: selectedProject?.id || null,
-                  suiteId: null,
-                  caseId: null,
-                  label: 'Alan Özelleştirme',
-                })
-              }
-            />
+            <ColumnCustomizerMenu moduleId="defects" />
 
             <button
               type="button"

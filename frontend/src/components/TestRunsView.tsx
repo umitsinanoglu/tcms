@@ -528,18 +528,7 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
             </>
           )}
 
-          <ColumnCustomizerMenu
-            moduleId="test-runs"
-            onOpenAdvancedSettings={() =>
-              pushState({
-                tab: 'SETTINGS',
-                projectId: projectId || null,
-                suiteId: null,
-                caseId: null,
-                label: 'Alan Özelleştirme',
-              })
-            }
-          />
+          <ColumnCustomizerMenu moduleId="test-runs" />
 
           {/* Yöntem 1: Hızlı Test Koşumu (Tekil Senaryo) */}
           <button

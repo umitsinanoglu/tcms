@@ -156,18 +156,7 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
             </button>
             
             {/* Column Customizer Dropdown */}
-            <ColumnCustomizerMenu
-              moduleId="test-cases"
-              onOpenAdvancedSettings={() =>
-                pushState({
-                  tab: 'SETTINGS',
-                  projectId: project?.id || null,
-                  suiteId: null,
-                  caseId: null,
-                  label: 'Alan Özelleştirme',
-                })
-              }
-            />
+            <ColumnCustomizerMenu moduleId="test-cases" />
 
             {/* Import Cases */}
             <button

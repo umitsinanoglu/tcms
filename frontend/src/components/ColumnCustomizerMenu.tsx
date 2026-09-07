@@ -19,6 +19,7 @@ import {
   Minimize2,
   Grid,
 } from 'lucide-react';
+import { AdvancedFieldCustomizationModal } from './AdvancedFieldCustomizationModal';
 
 interface ColumnCustomizerMenuProps {
   moduleId: string;
@@ -44,6 +45,7 @@ export const ColumnCustomizerMenu: React.FC<ColumnCustomizerMenuProps> = ({
   } = useCustomization();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdvancedModalOpen, setIsAdvancedModalOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -262,24 +264,33 @@ export const ColumnCustomizerMenu: React.FC<ColumnCustomizerMenuProps> = ({
             })}
           </div>
 
-          {/* Footer with link to Settings */}
-          {onOpenAdvancedSettings && (
-            <div className="p-2.5 bg-slate-50 dark:bg-[#141b29] border-t border-slate-100 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsOpen(false);
+          {/* Footer with Gelişmiş Alan Yapılandırması button */}
+          <div className="p-2.5 bg-slate-50 dark:bg-[#141b29] border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                if (onOpenAdvancedSettings) {
                   onOpenAdvancedSettings();
-                }}
-                className="w-full flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded-xl bg-slate-200/80 dark:bg-slate-800 hover:bg-[var(--accent-primary)] hover:text-white dark:hover:bg-[var(--accent-primary)] text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer group"
-              >
-                <Settings2 className="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-colors" />
-                <span>Gelişmiş Alan Yapılandırması</span>
-              </button>
-            </div>
-          )}
+                } else {
+                  setIsAdvancedModalOpen(true);
+                }
+              }}
+              className="w-full flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded-xl bg-slate-200/80 dark:bg-slate-800 hover:bg-[var(--accent-primary)] hover:text-white dark:hover:bg-[var(--accent-primary)] text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer group"
+            >
+              <Settings2 className="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-colors" />
+              <span>Gelişmiş Alan Yapılandırması</span>
+            </button>
+          </div>
         </div>
       )}
+
+      {/* Advanced Field & Table Customization Modal */}
+      <AdvancedFieldCustomizationModal
+        isOpen={isAdvancedModalOpen}
+        initialModuleId={moduleId}
+        onClose={() => setIsAdvancedModalOpen(false)}
+      />
     </div>
   );
 };

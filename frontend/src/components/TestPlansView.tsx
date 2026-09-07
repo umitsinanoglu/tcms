@@ -467,18 +467,7 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
           </div>
 
           {/* Column Customizer Dropdown */}
-          <ColumnCustomizerMenu
-            moduleId="test-plans"
-            onOpenAdvancedSettings={() =>
-              pushState({
-                tab: 'SETTINGS',
-                projectId: project?.id || null,
-                suiteId: null,
-                caseId: null,
-                label: 'Alan Özelleştirme',
-              })
-            }
-          />
+          <ColumnCustomizerMenu moduleId="test-plans" />
 
           {/* New Test Plan Button */}
           <button
