@@ -17,6 +17,8 @@ import {
   WebhooksService,
   TACService,
   CreateUserInput,
+  SuitesService,
+  SuiteTreeNode,
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -67,11 +69,17 @@ import {
   Layers,
   Move,
   CheckCircle,
+  FolderTree,
+  Folder,
+  FolderPlus,
+  ChevronRight,
+  Search,
 } from 'lucide-react';
 import { useCustomization } from '@/context/CustomizationContext';
 
 export type SettingsTab =
   | 'PROJECTS_SYSTEM'
+  | 'MODULES'
   | 'FIELD_CUSTOMIZATION'
   | 'USERS'
   | 'SESSIONS'
@@ -132,6 +140,88 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const showToast = (type: 'SUCCESS' | 'ERROR', msg: string) => {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  // Modules State
+  const [modulesProjectId, setModulesProjectId] = useState<string>(selectedProject?.id || projects[0]?.id || '');
+  const [modulesList, setModulesList] = useState<SuiteTreeNode[]>([]);
+  const [isLoadingModules, setIsLoadingModules] = useState<boolean>(false);
+  const [moduleSearchQuery, setModuleSearchQuery] = useState<string>('');
+  const [isNewModuleModalOpen, setIsNewModuleModalOpen] = useState<boolean>(false);
+  const [newModuleName, setNewModuleName] = useState<string>('');
+  const [newModuleParentId, setNewModuleParentId] = useState<string>('');
+  const [editingModule, setEditingModule] = useState<{ id: string; name: string } | null>(null);
+  const [editModuleName, setEditModuleName] = useState<string>('');
+
+  const loadModules = useCallback(async (pId: string) => {
+    if (!pId) return;
+    setIsLoadingModules(true);
+    try {
+      const data = await SuitesService.getAllByProject(pId);
+      setModulesList(data || []);
+    } catch (err) {
+      console.error('Failed to load modules:', err);
+      setModulesList([]);
+    } finally {
+      setIsLoadingModules(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'MODULES' && modulesProjectId) {
+      loadModules(modulesProjectId);
+    }
+  }, [activeTab, modulesProjectId, loadModules]);
+
+  const handleCreateModule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newModuleName.trim() || !modulesProjectId) return;
+    try {
+      await SuitesService.create({
+        name: newModuleName.trim(),
+        projectId: modulesProjectId,
+        parentId: newModuleParentId || undefined,
+      });
+      setNewModuleName('');
+      setNewModuleParentId('');
+      setIsNewModuleModalOpen(false);
+      await loadModules(modulesProjectId);
+      await onRefreshProjects();
+      showToast('SUCCESS', 'Yeni modül başarıyla oluşturuldu.');
+    } catch (err: any) {
+      showToast('ERROR', err?.response?.data?.message || 'Modül oluşturulamadı.');
+    }
+  };
+
+  const handleUpdateModule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingModule || !editModuleName.trim()) return;
+    try {
+      await SuitesService.update(editingModule.id, {
+        name: editModuleName.trim(),
+      });
+      setEditingModule(null);
+      setEditModuleName('');
+      await loadModules(modulesProjectId);
+      await onRefreshProjects();
+      showToast('SUCCESS', 'Modül adı güncellendi.');
+    } catch (err: any) {
+      showToast('ERROR', err?.response?.data?.message || 'Modül güncellenemedi.');
+    }
+  };
+
+  const handleDeleteModule = async (module: SuiteTreeNode) => {
+    if (!confirm(`"${module.name}" modülünü silmek istediğinize emin misiniz? Altındaki senaryolar ana havuza aktarılacaktır.`)) {
+      return;
+    }
+    try {
+      await SuitesService.delete(module.id);
+      await loadModules(modulesProjectId);
+      await onRefreshProjects();
+      showToast('SUCCESS', 'Modül başarıyla silindi.');
+    } catch (err: any) {
+      showToast('ERROR', err?.response?.data?.message || 'Modül silinemedi.');
+    }
   };
 
   // 1. System Settings State
@@ -517,6 +607,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   // Nav Items config
   const navTabs = [
     { id: 'PROJECTS_SYSTEM' as SettingsTab, label: 'Projeler & Sistem', icon: Building2, desc: 'Proje ID, İsim ve Genel Ayarlar' },
+    { id: 'MODULES' as SettingsTab, label: 'Modül Yönetimi', icon: FolderTree, desc: 'Proje Modül Ağacı, Ekleme ve Düzenleme', count: modulesList.length > 0 ? modulesList.length : undefined },
     { id: 'FIELD_CUSTOMIZATION' as SettingsTab, label: 'Alan Özelleştirme', icon: SlidersHorizontal, desc: 'Grid Kolonları, Başlıklar, Yoğunluk & Etiketler' },
     { id: 'USERS' as SettingsTab, label: 'Kullanıcı Yönetimi', icon: Users, desc: 'Kullanıcılar, Departman ve Durumlar', count: users.length },
     { id: 'SESSIONS' as SettingsTab, label: 'Oturumlar & Güvenlik', icon: Lock, desc: 'Aktif Oturumlar ve İstemciler', count: sessions.length },
@@ -808,6 +899,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                   <div className="space-y-1.5">
                     <label className="font-semibold text-slate-700 dark:text-slate-300">
+                      Varsayılan Test Platformu / Tipi
+                    </label>
+                    <select
+                      value={systemSettings.defaultTestType || 'WEB'}
+                      onChange={(e) => setSystemSettings({ ...systemSettings, defaultTestType: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] font-medium"
+                    >
+                      <option value="DESKTOP">🖥️ DESKTOP (Core Bankacılık Desktop İstemcisi)</option>
+                      <option value="WEB">🌐 WEB (İnternet Şubesi / Web)</option>
+                      <option value="IOS">🍏 IOS (Mobil Şube - iOS)</option>
+                      <option value="ANDROID">🤖 ANDROID (Mobil Şube - Android)</option>
+                      <option value="API">⚡ API (Core Servisler & Gateway)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">
                       Koşum Zaman Aşımı (Timeout - Dakika)
                     </label>
                     <input
@@ -857,6 +965,332 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </form>
             </div>
           )}
+
+          {/* ========================================================================= */}
+          {/* 1.2. MODULES & SUITES MANAGEMENT TAB                                      */}
+          {/* ========================================================================= */}
+          {activeTab === 'MODULES' && (() => {
+            const currentProj = projects.find((p) => p.id === modulesProjectId) || projects[0];
+            const filteredModules = modulesList.filter((m) => {
+              if (!moduleSearchQuery.trim()) return true;
+              return m.name.toLowerCase().includes(moduleSearchQuery.toLowerCase());
+            });
+
+            return (
+              <div className="p-4 sm:p-6 space-y-6 max-w-6xl">
+                {/* Header with Project Selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+                  <div>
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
+                      <FolderTree className="w-4 h-4 text-amber-500" />
+                      <span>Test Modülleri (Suites) Yönetimi</span>
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      İş alanları (Domain), modüller ve alt fonksiyonları hiyerarşik olarak yönetin.
+                    </p>
+                  </div>
+
+                  {/* Project Selector & Actions */}
+                  <div className="flex items-center flex-wrap gap-2.5">
+                    <div className="flex items-center space-x-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                      <span className="text-xs font-semibold text-slate-500">Proje:</span>
+                      <select
+                        value={modulesProjectId}
+                        onChange={(e) => {
+                          setModulesProjectId(e.target.value);
+                          loadModules(e.target.value);
+                        }}
+                        className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                      >
+                        {projects.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            [{p.key}] {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewModuleName('');
+                        setNewModuleParentId('');
+                        setIsNewModuleModalOpen(true);
+                      }}
+                      className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-accent-gradient text-white text-xs font-semibold rounded-xl shadow-sm hover:brightness-110 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Yeni Modül Ekle</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => loadModules(modulesProjectId)}
+                      disabled={isLoadingModules}
+                      className="p-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                      title="Yenile"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isLoadingModules ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Metrics Banner */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-white dark:bg-[#1d232f] p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Aktif Proje</span>
+                    <div className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 truncate">
+                      {currentProj?.name || 'Seçilmedi'}
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-[#1d232f] p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Toplam Modül</span>
+                    <div className="text-sm font-bold text-amber-500 mt-1">
+                      {modulesList.length} Modül
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-[#1d232f] p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ana Modüller</span>
+                    <div className="text-sm font-bold text-blue-500 mt-1">
+                      {modulesList.filter((m) => !m.parentId).length}
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-[#1d232f] p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alt Modüller</span>
+                    <div className="text-sm font-bold text-emerald-500 mt-1">
+                      {modulesList.filter((m) => m.parentId).length}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Search Box */}
+                <div className="flex items-center space-x-2 bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs">
+                  <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                  <input
+                    type="text"
+                    value={moduleSearchQuery}
+                    onChange={(e) => setModuleSearchQuery(e.target.value)}
+                    placeholder="Modül adı ara (Örn: Para Transferi, Vadesiz Hesaplar, Kredi...)"
+                    className="w-full bg-transparent text-xs font-medium focus:outline-none"
+                  />
+                  {moduleSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setModuleSearchQuery('')}
+                      className="text-slate-400 hover:text-slate-600 text-[11px]"
+                    >
+                      Temizle
+                    </button>
+                  )}
+                </div>
+
+                {/* Modules Table */}
+                <div className="bg-white dark:bg-[#1d232f] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          <th className="py-3 px-4">Modül / İş Alanı</th>
+                          <th className="py-3 px-3">Hiyerarşi</th>
+                          <th className="py-3 px-3">Sıra</th>
+                          <th className="py-3 px-4 text-right">İşlemler</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                        {isLoadingModules ? (
+                          <tr>
+                            <td colSpan={4} className="py-8 text-center text-slate-500">
+                              <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-amber-500" />
+                              <span>Modüller yükleniyor...</span>
+                            </td>
+                          </tr>
+                        ) : filteredModules.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="py-8 text-center text-slate-400">
+                              Bu projede tanımlı modül bulunamadı veya arama kriterine uymuyor.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredModules.map((m) => {
+                            const isEditing = editingModule?.id === m.id;
+                            const isChild = !!m.parentId;
+                            const parentModule = isChild ? modulesList.find((p) => p.id === m.parentId) : null;
+
+                            return (
+                              <tr key={m.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                                <td className="py-2.5 px-4 font-medium">
+                                  {isEditing ? (
+                                    <form onSubmit={handleUpdateModule} className="flex items-center space-x-2">
+                                      <input
+                                        type="text"
+                                        value={editModuleName}
+                                        onChange={(e) => setEditModuleName(e.target.value)}
+                                        className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                        autoFocus
+                                      />
+                                      <button
+                                        type="submit"
+                                        className="px-2 py-1 bg-amber-500 text-white rounded-lg text-[11px] font-bold hover:bg-amber-600"
+                                      >
+                                        Kaydet
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingModule(null)}
+                                        className="px-2 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-[11px]"
+                                      >
+                                        İptal
+                                      </button>
+                                    </form>
+                                  ) : (
+                                    <div className="flex items-center space-x-2">
+                                      {isChild ? (
+                                        <span className="text-slate-400 font-mono text-xs pl-3">↳</span>
+                                      ) : null}
+                                      <Folder className={`w-4 h-4 shrink-0 ${isChild ? 'text-amber-400' : 'text-amber-500'}`} />
+                                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                        {m.name}
+                                      </span>
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  {isChild ? (
+                                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                      <span>Alt Modül:</span>
+                                      <strong className="text-slate-800 dark:text-slate-200">{parentModule?.name || 'Üst Modül'}</strong>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                                      Ana Modül
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3 font-mono text-slate-500 text-xs">
+                                  {m.orderIndex ?? 0}
+                                </td>
+                                <td className="py-2.5 px-4 text-right">
+                                  <div className="flex items-center justify-end space-x-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setNewModuleName('');
+                                        setNewModuleParentId(m.id);
+                                        setIsNewModuleModalOpen(true);
+                                      }}
+                                      className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-colors cursor-pointer"
+                                      title="Bu modüle Alt Modül ekle"
+                                    >
+                                      <FolderPlus className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingModule({ id: m.id, name: m.name });
+                                        setEditModuleName(m.name);
+                                      }}
+                                      className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors cursor-pointer"
+                                      title="Yeniden Adlandır"
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteModule(m)}
+                                      className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                                      title="Modülü Sil"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Create / Sub-module Modal */}
+                {isNewModuleModalOpen && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
+                    <div className="bg-white dark:bg-[#1d232f] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 w-full max-w-md space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div className="flex items-center space-x-2">
+                          <FolderPlus className="w-5 h-5 text-amber-500" />
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                            {newModuleParentId ? 'Yeni Alt Modül Tanımla' : 'Yeni Ana Modül Tanımla'}
+                          </h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsNewModuleModalOpen(false)}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleCreateModule} className="space-y-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Modül / Domain Adı
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={newModuleName}
+                            onChange={(e) => setNewModuleName(e.target.value)}
+                            placeholder="Örn: 12_Para_Transferi veya Vadesiz Hesaplar"
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+                            autoFocus
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Bağlı Olduğu Üst Modül
+                          </label>
+                          <select
+                            value={newModuleParentId}
+                            onChange={(e) => setNewModuleParentId(e.target.value)}
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
+                          >
+                            <option value="">📁 Ana Modül (Root - Bağımsız Modül)</option>
+                            {modulesList
+                              .filter((m) => !m.parentId)
+                              .map((m) => (
+                                <option key={m.id} value={m.id}>
+                                  ↳ {m.name}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => setIsNewModuleModalOpen(false)}
+                            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            İptal
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-4 py-2 rounded-xl bg-accent-gradient text-white text-xs font-semibold hover:brightness-110 shadow-sm"
+                          >
+                            Modülü Oluştur
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ========================================================================= */}
           {/* 1.5. FIELD & COLUMN CUSTOMIZATION TAB                                     */}

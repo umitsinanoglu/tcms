@@ -7,7 +7,11 @@ export function getAllCasesInTree(nodes: SuiteTreeNode[]): TestCase[] {
   let cases: TestCase[] = [];
   for (const node of nodes) {
     if (node.testCases && node.testCases.length > 0) {
-      cases = cases.concat(node.testCases);
+      const enrichedCases = node.testCases.map((tc) => ({
+        ...tc,
+        suite: tc.suite || { id: node.id, name: node.name, parentId: node.parentId },
+      }));
+      cases = cases.concat(enrichedCases);
     }
     if (node.children && node.children.length > 0) {
       cases = cases.concat(getAllCasesInTree(node.children));

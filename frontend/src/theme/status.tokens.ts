@@ -129,3 +129,72 @@ export const DEFECT_SEVERITY_CONFIG: Record<DefectSeverity, { label: string; col
     bg: 'rgba(148, 163, 184, 0.15)',
   },
 };
+
+export interface TestTypeConfig {
+  label: string;
+  icon: string;
+  color: string;
+  bg: string;
+  border: string;
+  badgeClass: string;
+}
+
+export const TEST_TYPE_CONFIG: Record<string, TestTypeConfig> = {
+  DESKTOP: {
+    label: 'DESKTOP',
+    icon: '🖥️',
+    color: '#818cf8',
+    bg: 'rgba(99, 102, 241, 0.12)',
+    border: 'rgba(99, 102, 241, 0.3)',
+    badgeClass: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/30',
+  },
+  WEB: {
+    label: 'WEB',
+    icon: '🌐',
+    color: '#38bdf8',
+    bg: 'rgba(56, 189, 248, 0.12)',
+    border: 'rgba(56, 189, 248, 0.3)',
+    badgeClass: 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30',
+  },
+  IOS: {
+    label: 'IOS',
+    icon: '🍏',
+    color: '#a78bfa',
+    bg: 'rgba(167, 139, 250, 0.12)',
+    border: 'rgba(167, 139, 250, 0.3)',
+    badgeClass: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/30',
+  },
+  ANDROID: {
+    label: 'ANDROID',
+    icon: '🤖',
+    color: '#34d399',
+    bg: 'rgba(52, 211, 153, 0.12)',
+    border: 'rgba(52, 211, 153, 0.3)',
+    badgeClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
+  },
+  API: {
+    label: 'API',
+    icon: '⚡',
+    color: '#f59e0b',
+    bg: 'rgba(245, 158, 11, 0.12)',
+    border: 'rgba(245, 158, 11, 0.3)',
+    badgeClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30',
+  },
+  PERFORMANCE: {
+    label: 'PERF',
+    icon: '⏱️',
+    color: '#ec4899',
+    bg: 'rgba(236, 72, 153, 0.12)',
+    border: 'rgba(236, 72, 153, 0.3)',
+    badgeClass: 'bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/30',
+  },
+  OTHER: {
+    label: 'OTHER',
+    icon: '⚙️',
+    color: '#94a3b8',
+    bg: 'rgba(148, 163, 184, 0.12)',
+    border: 'rgba(148, 163, 184, 0.3)',
+    badgeClass: 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/30',
+  },
+};
+

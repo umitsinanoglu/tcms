@@ -1029,6 +1029,7 @@ export default function Home() {
                     await loadProjectData(selectedProject.id);
                   }
                 }}
+                onOpenAutomationModal={() => handleTabChange('RUNS')}
               />
             )
           )}

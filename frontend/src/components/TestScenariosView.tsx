@@ -21,11 +21,39 @@ import {
   Download,
   Upload,
 } from 'lucide-react';
-import { ExcelImportModal } from './ExcelImportModal';
 import { downloadTestCaseTemplate, exportTestCasesToExcel } from '@/utils/excelUtils';
 import { useCustomization } from '@/context/CustomizationContext';
 import { ColumnCustomizerMenu } from './ColumnCustomizerMenu';
 import { useNavigation } from '@/context/NavigationContext';
+import { ScenarioImportSyncModal, SyncTab } from './ScenarioImportSyncModal';
+import { TEST_TYPE_CONFIG } from '@/theme/status.tokens';
+
+export function formatShortModuleName(fullName?: string | null): string {
+  if (!fullName || !fullName.trim()) return 'Genel Havuz';
+  let name = fullName.trim();
+
+  // Strip leading emojis or bullet numbers like "📱 1. " or "💸 3. "
+  name = name.replace(/^[\p{Emoji}\p{Symbol}\s\d\.\-_]+/u, '').trim() || name;
+
+  // Pattern: "12_Para_Transferi - Para Transferi Senaryoları" -> extract clean label
+  if (name.includes(' - ')) {
+    const parts = name.split(' - ');
+    let candidate = parts[1].trim();
+    candidate = candidate.replace(/\s*(Senaryoları|Testleri|Modülü|İşlemleri|Akışı)$/i, '').trim();
+    if (candidate.length >= 3) {
+      return candidate;
+    }
+    return parts[0].replace(/^\d+[\_\-\.]\s*/, '').trim();
+  }
+
+  // Remove trailing "Senaryoları", "Modülü", "Testleri"
+  name = name.replace(/\s*(Senaryoları|Testleri|Modülü)$/i, '').trim();
+
+  // If starts with "XX_Word"
+  name = name.replace(/^\d+[\_\-\.]\s*/, '').trim();
+
+  return name || fullName;
+}
 
 interface TestScenariosViewProps {
   project: Project | null;
@@ -39,6 +67,7 @@ interface TestScenariosViewProps {
   onRunMultipleCases?: (testCases: TestCase[]) => void;
   onDeleteCase: (caseId: string) => void;
   onCasesChange?: () => Promise<void> | void;
+  onOpenAutomationModal?: () => void;
 }
 
 export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
@@ -52,6 +81,7 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
   onRunSingleCase,
   onDeleteCase,
   onCasesChange,
+  onOpenAutomationModal,
 }) => {
   const { can } = useAuth();
   const { pushState } = useNavigation();
@@ -62,6 +92,12 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [syncModalTab, setSyncModalTab] = useState<SyncTab>('CUCUMBER');
+
+  const openSyncModal = (tab: SyncTab) => {
+    setSyncModalTab(tab);
+    setIsImportModalOpen(true);
+  };
 
   // Pagination
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
@@ -130,7 +166,7 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
         </div>
 
         <div className="flex items-center flex-wrap gap-2 shrink-0">
-          {/* Excel Actions Group */}
+          {/* Excel & Customizer Group */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700/80">
             {/* Download Template */}
             <button
@@ -140,7 +176,7 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
               title="Excel İçe Aktarma Şablonunu İndir"
             >
               <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span className="hidden sm:inline">Şablon İndir</span>
+              <span className="hidden sm:inline">Şablon</span>
             </button>
 
             {/* Export Cases */}
@@ -152,29 +188,66 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
               title="Mevcut Test Senaryolarını Excel'e Aktar"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span className="hidden sm:inline">Excel'e Aktar</span>
+              <span className="hidden sm:inline">Excel</span>
             </button>
             
             {/* Column Customizer Dropdown */}
             <ColumnCustomizerMenu moduleId="test-cases" />
+          </div>
 
-            {/* Import Cases */}
+          {/* Multi-Channel Sync & Import Group */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700/80">
+            {/* Cucumber .feature Quick Trigger */}
             <button
               type="button"
-              onClick={() => setIsImportModalOpen(true)}
+              onClick={() => openSyncModal('CUCUMBER')}
               className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer"
-              title="Excel Dosyasından Senaryo İçe Aktar"
+              title="Cucumber (.feature) dosyasından senaryo içe aktar veya güncelle"
             >
-              <Upload className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span>İçe Aktar</span>
+              <span className="text-xs">🥒</span>
+              <span className="hidden md:inline">Cucumber</span>
+            </button>
+
+            {/* Playwright .spec.ts Quick Trigger */}
+            <button
+              type="button"
+              onClick={() => openSyncModal('PLAYWRIGHT')}
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer"
+              title="Playwright (.spec.ts) dosyasından senaryo içe aktar veya güncelle"
+            >
+              <span className="text-xs">🎭</span>
+              <span className="hidden md:inline">Playwright</span>
+            </button>
+
+            {/* TAC Service Live Sync Quick Trigger */}
+            <button
+              type="button"
+              onClick={() => openSyncModal('TAC')}
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer"
+              title="TAC (Port 8000) servisi ile senkronize et ve koşum başlat"
+            >
+              <span className="text-xs">⚡</span>
+              <span className="hidden md:inline">TAC Sync</span>
+            </button>
+
+            {/* General Import / Hub Modal */}
+            <button
+              type="button"
+              onClick={() => openSyncModal('CUCUMBER')}
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-700 shadow-2xs transition-all cursor-pointer"
+              title="Tüm içe aktarma ve güncelleme kanalları merkezi"
+            >
+              <Upload className="w-3.5 h-3.5 text-[#b83a4b]" />
+              <span>İçe Aktar & Güncelle</span>
             </button>
           </div>
 
-          {/* New Test Scenario Button */}
+          {/* New Test Scenario Button (Manual Creation) */}
           <button
             type="button"
             onClick={onOpenNewCase}
             className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 transition-all shadow-sm shadow-[var(--accent-dark)]/20 active:scale-98 cursor-pointer"
+            title="Manuel olarak yeni bir Test Senaryosu oluştur"
           >
             <Plus className="w-4 h-4" />
             <span>Yeni Test Senaryosu</span>
@@ -363,14 +436,18 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                           if (col.id === 'module') {
                             const parentName = (tc.suite as any)?.parent?.name;
                             const suiteTitle = tc.suite?.name;
-                            const displaySuite = suiteTitle || 'Genel Test Havuzu';
+                            const shortName = formatShortModuleName(suiteTitle);
+                            const fullHierarchy = parentName && suiteTitle ? `${parentName} → ${suiteTitle}` : (suiteTitle || 'Genel Havuz');
 
                             return (
                               <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium ${alignClass}`}>
-                                <div className="flex items-center space-x-1.5 truncate max-w-[180px]" title={parentName ? `${parentName} → ${displaySuite}` : displaySuite}>
-                                  <Folder className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                  <span className="truncate font-medium text-slate-700 dark:text-slate-300">
-                                    {displaySuite}
+                                <div
+                                  className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 max-w-[190px] truncate"
+                                  title={`Modül: ${fullHierarchy}`}
+                                >
+                                  <Folder className="w-3 h-3 text-amber-500 shrink-0" />
+                                  <span className="truncate font-semibold text-[11px]">
+                                    {shortName}
                                   </span>
                                 </div>
                               </td>
@@ -378,26 +455,51 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                           }
 
                           if (col.id === 'type') {
+                            const typeCfg = TEST_TYPE_CONFIG[tc.type];
                             return (
                               <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                  {tc.type || 'WEB'}
+                                <span
+                                  className={`text-[9px] px-2 py-0.5 rounded-full border font-mono font-semibold inline-flex items-center gap-1 ${
+                                    typeCfg?.badgeClass ||
+                                    'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                  }`}
+                                >
+                                  <span>{typeCfg?.icon || '⚙️'}</span>
+                                  <span>{tc.type || 'WEB'}</span>
                                 </span>
                               </td>
                             );
                           }
 
                           if (col.id === 'executionType') {
+                            const isAuto = tc.executionType === 'AUTOMATION' || (tc.executionType as string) === 'AUTOMATED';
+                            const desc = (tc.description || '').toLowerCase();
+                            const code = (tc.code || '').toLowerCase();
+                            const isCucumber = desc.includes('cucumber') || desc.includes('gherkin') || code.includes('mob-tc');
+                            const isPlaywright = desc.includes('playwright') || desc.includes('.spec');
+                            const isTac = desc.includes('tac');
+
+                            let badgeLabel: string = tc.executionType || 'MANUAL';
+                            let badgeStyle = 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+
+                            if (isCucumber) {
+                              badgeLabel = '🥒 CUCUMBER';
+                              badgeStyle = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+                            } else if (isPlaywright) {
+                              badgeLabel = '🎭 PLAYWRIGHT';
+                              badgeStyle = 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
+                            } else if (isTac) {
+                              badgeLabel = '⚡ TAC SYNC';
+                              badgeStyle = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+                            } else if (isAuto) {
+                              badgeLabel = '🤖 AUTOMATED';
+                              badgeStyle = 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20';
+                            }
+
                             return (
                               <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap ${alignClass}`}>
-                                <span
-                                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                                    tc.executionType === 'AUTOMATION' || (tc.executionType as string) === 'AUTOMATED'
-                                      ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
-                                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                                  }`}
-                                >
-                                  {tc.executionType || 'MANUAL'}
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${badgeStyle}`}>
+                                  {badgeLabel}
                                 </span>
                               </td>
                             );
@@ -592,19 +694,21 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
         </div>
       </div>
 
-      {/* Excel Import Modal */}
+      {/* Multi-Channel Scenario Import & Sync Modal (Cucumber, Playwright, TAC, Excel) */}
       {project && (
-        <ExcelImportModal
+        <ScenarioImportSyncModal
           isOpen={isImportModalOpen}
-          type="TEST_CASES"
+          initialTab={syncModalTab}
           projectId={project.id}
           projectName={project.name}
+          existingCases={testCases}
           onClose={() => setIsImportModalOpen(false)}
           onSuccess={async () => {
             if (onCasesChange) {
               await onCasesChange();
             }
           }}
+          onOpenAutomationModal={onOpenAutomationModal}
         />
       )}
     </div>

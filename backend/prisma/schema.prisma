@@ -12,10 +12,11 @@ datasource db {
 
 enum TestType {
   WEB
-  MOBILE
+  DESKTOP
   IOS
   ANDROID
   API
+  MOBILE
   MANUAL
   PERFORMANCE
   OTHER

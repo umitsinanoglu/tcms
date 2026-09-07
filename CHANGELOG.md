@@ -37,6 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Desktop (Core Bankacilik) platform destegi eklendi ve test tipi mimarisi optimize edildi
+- Test senaryoları için 4 kanallı güncelleme ve içe aktarma sistemi (Manuel, Cucumber .feature, TAC Servisi Canlı Senkronizasyon, Playwright .spec.ts) ve zenginleştirilmiş kullanıcı dostu arayüz eklendi
 - Gelişmiş Alan Yapılandırması butonu için açılır modal ve anında konfigürasyon desteği eklendi
 - Test Senaryoları için Bankacılık (Mobil/Web Omnichannel & Core Banking) modül yapısı ve otomatik eşleme görevi eklendi
 - Ayarlar bölümüne Alan & Kolon Özelleştirme (Field Customization) modülü ve grid popover entegrasyonu eklendi
@@ -71,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- Modul kisaltma gosterimi, Ayarlar sayfasinda Modul Yonetimi ve import sirasinda akilli modul tespiti eklendi
 - Linked all 701 test scenarios to the 5 Core Banking Test Plans based on file path hierarchies and module domains
 - Hiyerarsi en tepesine Test Projesi yerlestirildi, veri olmadiginda ilk islem olarak yeni proje olusturma akisi ve sifir veri karsilama ekrani duzenlendi
 - Local veritabanındaki dummy veriler temizlendi, kullanıcı ve sistem konfigürasyonları korundu

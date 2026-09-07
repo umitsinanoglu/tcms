@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SuiteTreeNode, TestCase, Priority, TestType } from '@/services/api';
+import { TEST_TYPE_CONFIG } from '@/theme/status.tokens';
 import { useAuth } from '@/context/AuthContext';
 import {
   FolderOpen,
@@ -137,6 +138,10 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
   };
 
   const getTypeBadge = (type: TestType) => {
+    const config = TEST_TYPE_CONFIG[type];
+    if (config) {
+      return config.badgeClass;
+    }
     return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
   };
 
@@ -441,17 +446,18 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
               <option value="LOW">⚪ LOW</option>
             </select>
 
-            {/* Type Filter */}
+            {/* Type / Platform Filter */}
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
             >
-              <option value="ALL">Tüm Tipler</option>
+              <option value="ALL">Tüm Platformlar</option>
+              <option value="DESKTOP">🖥️ DESKTOP</option>
               <option value="WEB">🌐 WEB</option>
-              <option value="MOBILE">📱 MOBILE</option>
+              <option value="IOS">🍏 IOS</option>
+              <option value="ANDROID">🤖 ANDROID</option>
               <option value="API">⚡ API</option>
-              <option value="MANUAL">📋 MANUAL</option>
             </select>
           </div>
         </div>
@@ -634,11 +640,12 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                       {/* Type */}
                       <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         <span
-                          className={`text-[9px] px-2 py-0.5 rounded-full border font-mono font-semibold inline-block ${getTypeBadge(
+                          className={`text-[9px] px-2.5 py-0.5 rounded-full border font-mono font-semibold inline-flex items-center gap-1 ${getTypeBadge(
                             tc.type
                           )}`}
                         >
-                          {tc.type}
+                          <span>{TEST_TYPE_CONFIG[tc.type]?.icon || '⚙️'}</span>
+                          <span>{tc.type}</span>
                         </span>
                       </td>
 

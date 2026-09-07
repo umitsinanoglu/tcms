@@ -14,6 +14,7 @@ import {
   UpdateTestPlanDto,
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import { TEST_TYPE_CONFIG } from '@/theme/status.tokens';
 import { EditTestPlanModal } from './EditTestPlanModal';
 import {
   ArrowLeft,
@@ -1091,8 +1092,14 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
 
                             {/* Type */}
                             <td className="py-2.5 px-3">
-                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400 font-semibold">
-                                {tc.type}
+                              <span
+                                className={`text-[9px] px-2 py-0.5 rounded-full border font-mono font-semibold inline-flex items-center gap-1 ${
+                                  TEST_TYPE_CONFIG[tc.type]?.badgeClass ||
+                                  'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                }`}
+                              >
+                                <span>{TEST_TYPE_CONFIG[tc.type]?.icon || '⚙️'}</span>
+                                <span>{tc.type}</span>
                               </span>
                             </td>
 

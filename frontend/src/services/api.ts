@@ -103,8 +103,8 @@ export interface TestStep {
   attachments?: StepAttachment[];
 }
 
-export type ExecutionType = 'MANUAL' | 'AUTOMATION';
-export type TestType = 'WEB' | 'IOS' | 'ANDROID' | 'API' | 'PERFORMANCE' | 'OTHER' | 'MANUAL' | 'MOBILE';
+export type ExecutionType = 'MANUAL' | 'AUTOMATION' | 'AUTOMATED';
+export type TestType = 'DESKTOP' | 'WEB' | 'IOS' | 'ANDROID' | 'API' | 'PERFORMANCE' | 'OTHER' | 'MANUAL' | 'MOBILE';
 export type Priority = 'BLOCKER' | 'CRITICAL' | 'NORMAL' | 'LOW';
 export type RunStatus = 'IN_PROGRESS' | 'COMPLETED' | 'ABORTED';
 export type ResultStatus = 'PASSED' | 'FAILED' | 'SKIPPED' | 'BLOCKED';
@@ -306,6 +306,10 @@ export const TestPlansService = {
 };
 
 export const SuitesService = {
+  getAllByProject: (projectId: string) =>
+    api.get<SuiteTreeNode[]>('/suites', { params: { projectId } }).then((res) => res.data),
+  getOne: (id: string) =>
+    api.get<SuiteTreeNode>(`/suites/${id}`).then((res) => res.data),
   create: (data: { name: string; projectId: string; parentId?: string; orderIndex?: number }) =>
     api.post('/suites', data).then((res) => res.data),
   update: (id: string, data: { name?: string; parentId?: string }) =>
@@ -318,8 +322,8 @@ export const SuitesService = {
 export const TestCasesService = {
   getOne: (id: string) => api.get<TestCase>(`/test-cases/${id}`).then((res) => res.data),
   create: (data: Partial<TestCase>) => api.post<TestCase>('/test-cases', data).then((res) => res.data),
-  createBulk: (projectId: string, items: BulkTestCaseItemInput[]) =>
-    api.post<{ success: boolean; count: number; data: TestCase[] }>('/test-cases/bulk', { projectId, items }).then((res) => res.data),
+  createBulk: (projectId: string, items: BulkTestCaseItemInput[], updateIfExists?: boolean) =>
+    api.post<{ success: boolean; count: number; createdCount?: number; updatedCount?: number; data: TestCase[] }>('/test-cases/bulk', { projectId, items, updateIfExists }).then((res) => res.data),
   update: (id: string, data: Partial<TestCase>) =>
     api.patch<TestCase>(`/test-cases/${id}`, data).then((res) => res.data),
   linkJiraStory: (id: string, jiraStoryKey?: string, jiraIssueUrl?: string) =>

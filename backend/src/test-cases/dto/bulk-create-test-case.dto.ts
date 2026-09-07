@@ -69,7 +69,11 @@ export class BulkCreateTestCasesDto {
   @IsNotEmpty()
   projectId: string;
 
-  @ApiProperty({ type: [BulkTestCaseItemDto], description: 'Eklenecek Test Senaryoları Listesi' })
+  @ApiProperty({ example: true, description: 'Var olan senaryoları kod veya başlığa göre güncelle', required: false })
+  @IsOptional()
+  updateIfExists?: boolean;
+
+  @ApiProperty({ type: [BulkTestCaseItemDto], description: 'Eklenecek / Güncellenecek Test Senaryoları Listesi' })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => BulkTestCaseItemDto)

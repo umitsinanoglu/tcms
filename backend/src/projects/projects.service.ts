@@ -95,6 +95,19 @@ export class ProjectsService {
         ],
       },
       include: {
+        suite: {
+          select: {
+            id: true,
+            name: true,
+            parentId: true,
+            parent: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
         steps: {
           orderBy: { stepNumber: 'asc' },
         },

@@ -343,7 +343,7 @@ export async function parseTestCasesExcel(file: File): Promise<ParseTestCasesRes
 
             // Parse TestType
             let rawType = (idxType >= 0 && row[idxType] ? String(row[idxType]).trim().toUpperCase() : 'WEB') as TestType;
-            const validTypes: TestType[] = ['WEB', 'MOBILE', 'IOS', 'ANDROID', 'API', 'MANUAL', 'PERFORMANCE', 'OTHER'];
+            const validTypes: TestType[] = ['DESKTOP', 'WEB', 'IOS', 'ANDROID', 'API', 'MOBILE', 'MANUAL', 'PERFORMANCE', 'OTHER'];
             if (!validTypes.includes(rawType)) {
               rawType = 'WEB';
             }
