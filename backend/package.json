@@ -19,7 +19,8 @@
     "prisma:studio": "node prisma/run-prisma.js studio",
     "prisma:seed": "ts-node prisma/seed.ts",
     "prisma:clean": "ts-node prisma/clean-dummy-data.ts",
-    "sync:supabase": "ts-node prisma/sync-to-supabase.ts"
+    "sync:supabase": "ts-node prisma/sync-to-supabase.ts",
+    "export:sync-sql": "ts-node prisma/export-sync-sql.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
