@@ -106,7 +106,7 @@ export interface TestStep {
 export type ExecutionType = 'MANUAL' | 'AUTOMATION' | 'AUTOMATED';
 export type TestType = 'DESKTOP' | 'WEB' | 'IOS' | 'ANDROID' | 'API' | 'PERFORMANCE' | 'OTHER' | 'MANUAL' | 'MOBILE';
 export type Priority = 'BLOCKER' | 'CRITICAL' | 'NORMAL' | 'LOW';
-export type RunStatus = 'IN_PROGRESS' | 'COMPLETED' | 'ABORTED';
+export type RunStatus = 'IN_PROGRESS' | 'COMPLETED' | 'ABORTED' | 'ARCHIVED';
 export type ResultStatus = 'PASSED' | 'FAILED' | 'SKIPPED' | 'BLOCKED';
 
 export interface TestCase {
@@ -134,6 +134,53 @@ export interface TestCase {
   results?: TestResult[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface TestCaseStats {
+  testCaseId: string;
+  totalRuns: number;
+  passRate: number | null;
+  failRate: number | null;
+  skipRate: number | null;
+  blockedRate: number | null;
+  flakyScore: number | null;
+  avgDurationMs: number | null;
+  lastExecutedAt: string | null;
+}
+
+export interface TestCaseHistoryItem {
+  id: string;
+  status: ResultStatus;
+  executionMs: number | null;
+  errorMessage: string | null;
+  flakyStatus: string | null;
+  retries: number | null;
+  environment: string | null;
+  platform: string | null;
+  appVersion: string | null;
+  device: string | null;
+  userProfile: string | null;
+  customerType: string | null;
+  screenshotUrl: string | null;
+  jiraBugKey: string | null;
+  jiraBugUrl: string | null;
+  executedBy: string | null;
+  executedAt: string;
+  testRun: {
+    id: string;
+    title: string;
+    version: string;
+    environment: string;
+    status: RunStatus;
+    executedBy: string;
+    createdAt: string;
+  };
+}
+
+export interface TestCaseHistory {
+  testCaseId: string;
+  total: number;
+  history: TestCaseHistoryItem[];
 }
 
 export interface SuiteTreeNode {
@@ -321,6 +368,9 @@ export const SuitesService = {
 
 export const TestCasesService = {
   getOne: (id: string) => api.get<TestCase>(`/test-cases/${id}`).then((res) => res.data),
+  getStats: (id: string) => api.get<TestCaseStats>(`/test-cases/${id}/stats`).then((res) => res.data),
+  getHistory: (id: string, limit = 20) =>
+    api.get<TestCaseHistory>(`/test-cases/${id}/history?limit=${limit}`).then((res) => res.data),
   create: (data: Partial<TestCase>) => api.post<TestCase>('/test-cases', data).then((res) => res.data),
   createBulk: (projectId: string, items: BulkTestCaseItemInput[], updateIfExists?: boolean) =>
     api.post<{ success: boolean; count: number; createdCount?: number; updatedCount?: number; data: TestCase[] }>('/test-cases/bulk', { projectId, items, updateIfExists }).then((res) => res.data),
@@ -330,6 +380,7 @@ export const TestCasesService = {
     api.patch<TestCase>(`/test-cases/${id}/jira-link`, { jiraStoryKey, jiraIssueUrl }).then((res) => res.data),
   delete: (id: string) => api.delete(`/test-cases/${id}`).then((res) => res.data),
 };
+
 
 export const TestRunsService = {
   createRun: (projectId: string, data: CreateRunDto) =>

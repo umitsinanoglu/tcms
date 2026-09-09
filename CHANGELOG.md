@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- TestRun detay modalındaki kaydet butonu kurumsal kırmızı gradyan rengine çekildi ve &amp; metin hatası giderildi
+- TestRunDetailView read-only kilidi tamamlandi: handleInstantStatusChange, handleSaveDrawerResult, handleBulkStatusChange ve handleMarkAllPassed fonksiyonlarina run.status kontrolu eklendi. COMPLETED/ABORTED kosumda PASS/FAIL/BLOCK butonlari disabled ve opacity-30 gorunu uyle kilitlenir, tiklama toast hatasiyla engellenir
+- TestCase static template ihlali duzeltildi: saveResults, createAutomationRun ve quickRun icindeki screenshotUrl->TestCase otomatik yazimi kaldirildi. Screenshot artik sadece TestCase editor uzerinden guncellenir
+- Test sonuçları modalında ekli ekran görüntülerinin arka planda kalma z-index sorunu çözüldü (lightbox z-[100] ve Esc desteği eklendi)
 - Test Planı koşumu tamamlandığında 'Kapat ve Koşum Geçmişine Dön' butonunun Test Koşumları sayfasına yönlendirmesi sağlandı ve Test Koşumları tablosundaki Ortam ve Sürüm kolonları düzeltildi
 - Test Planı ile Koşum Başlat modalı doğrudan Senaryo Düzenleme & Seçim modunda açılacak ve Koşumu Başlat ile hemen yürütmeye geçecek şekilde sadeleştirildi
 - Test Planı ile Koşum Başlatıldığında plana ait senaryoların otomatik seçili gelmesi ve doğrudan/hızlı koşum başlatma desteği eklendi
@@ -37,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- TestCase kalite metrikleri: GET /test-cases/:id/stats ve GET /test-cases/:id/history endpointleri eklendi. TestCaseEditor'a Kosum Kalite Metrikleri paneli (pass rate, flakiness, avg sure, kosup gecmisi tablosu) eklendi
 - Desktop (Core Bankacilik) platform destegi eklendi ve test tipi mimarisi optimize edildi
 - Test senaryoları için 4 kanallı güncelleme ve içe aktarma sistemi (Manuel, Cucumber .feature, TAC Servisi Canlı Senkronizasyon, Playwright .spec.ts) ve zenginleştirilmiş kullanıcı dostu arayüz eklendi
 - Gelişmiş Alan Yapılandırması butonu için açılır modal ve anında konfigürasyon desteği eklendi
@@ -73,6 +78,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sol navigasyon tree klasör sürükle-bırak marifetleri iyileştirildi: Kök seviyeye (ana dizine) taşıma alanı eklendi ve döngüsel sürükleme koruması sağlandı.
 
 ### Changed
+- TestRun detay modalında kilitli durum butonları canlı tematik renkleriyle (yeşil, kırmızı, kehribar vb.) korunarak kilit simgesi eklendi
+- TestRun salt-okunur modunda statü ve ortam kilitlendi, yalnızca inceleme yorumu ve ekran görüntüsü eklenebilir hale getirildi
+- TestRun read-only kilidi: COMPLETED veya ABORTED statusundeki kosuma sonuc eklemek artik 403 ForbiddenException donduruyor. Otomasyon engine COMPLETED run'a append etmek yerine yeni run acar
 - Modul kisaltma gosterimi, Ayarlar sayfasinda Modul Yonetimi ve import sirasinda akilli modul tespiti eklendi
 - Linked all 701 test scenarios to the 5 Core Banking Test Plans based on file path hierarchies and module domains
 - Hiyerarsi en tepesine Test Projesi yerlestirildi, veri olmadiginda ilk islem olarak yeni proje olusturma akisi ve sifir veri karsilama ekrani duzenlendi

@@ -154,6 +154,7 @@ function findSmartSuiteId(targetName: string, existingSuites: { id: string; name
               precondition: item.precondition !== undefined ? item.precondition : existingCase.precondition,
               jiraStoryKey: item.jiraStoryKey !== undefined ? item.jiraStoryKey : existingCase.jiraStoryKey,
               suiteId: finalSuiteId !== undefined ? finalSuiteId : existingCase.suiteId,
+              updatedAt: new Date(),
               steps: item.steps && item.steps.length > 0 ? {
                 create: item.steps.map((step, idx) => ({
                   stepNumber: step.stepNumber || idx + 1,
@@ -390,6 +391,7 @@ function findSmartSuiteId(targetName: string, existingSuites: { id: string; name
         where: { id },
         data: {
           ...caseData,
+          updatedAt: new Date(),
           steps: steps ? {
             create: steps.map((step, idx) => ({
               stepNumber: step.stepNumber || idx + 1,
@@ -433,8 +435,128 @@ function findSmartSuiteId(targetName: string, existingSuites: { id: string; name
       data: {
         jiraStoryKey: jiraStoryKey || null,
         jiraIssueUrl: generatedUrl,
+        updatedAt: new Date(),
       },
     });
+  }
+
+  /**
+   * Kalite İstatistikleri: Bir test senaryosunun tüm koşum geçmişinden
+   * pass rate, flakiness skoru, ortalama süre ve son koşum bilgilerini türetir.
+   * TestCase modeli mutate edilmez — tüm veriler TestResult join'inden hesaplanır.
+   */
+  async getStats(id: string) {
+    await this.findOne(id); // existence check
+
+    const results = await this.prisma.testResult.findMany({
+      where: { testCaseId: id },
+      select: {
+        status: true,
+        executionMs: true,
+        flakyStatus: true,
+        executedAt: true,
+        testRun: {
+          select: { environment: true, version: true },
+        },
+      },
+    });
+
+    const total = results.length;
+
+    if (total === 0) {
+      return {
+        testCaseId: id,
+        totalRuns: 0,
+        passRate: null,
+        failRate: null,
+        skipRate: null,
+        blockedRate: null,
+        flakyScore: null,
+        avgDurationMs: null,
+        lastExecutedAt: null,
+      };
+    }
+
+    const passed  = results.filter((r) => r.status === 'PASSED').length;
+    const failed  = results.filter((r) => r.status === 'FAILED').length;
+    const skipped = results.filter((r) => r.status === 'SKIPPED').length;
+    const blocked = results.filter((r) => r.status === 'BLOCKED').length;
+    const flaky   = results.filter((r) => r.flakyStatus === 'FLAKY').length;
+
+    const durations = results
+      .map((r) => r.executionMs)
+      .filter((ms): ms is number => ms !== null && ms !== undefined);
+
+    const avgDurationMs =
+      durations.length > 0
+        ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+        : null;
+
+    const sortedDates = results
+      .map((r) => r.executedAt)
+      .sort((a, b) => b.getTime() - a.getTime());
+
+    return {
+      testCaseId: id,
+      totalRuns: total,
+      passRate:    parseFloat(((passed  / total) * 100).toFixed(1)),
+      failRate:    parseFloat(((failed  / total) * 100).toFixed(1)),
+      skipRate:    parseFloat(((skipped / total) * 100).toFixed(1)),
+      blockedRate: parseFloat(((blocked / total) * 100).toFixed(1)),
+      flakyScore:  parseFloat(((flaky   / total) * 100).toFixed(1)),
+      avgDurationMs,
+      lastExecutedAt: sortedDates[0] ?? null,
+    };
+  }
+
+  /**
+   * Koşum Geçmişi: Bir test senaryosuna ait son N koşumun özetini döner.
+   * Her kayıt hangi TestRun kapsamında çalıştığını ve sonucunu içerir.
+   */
+  async getHistory(id: string, limit = 20) {
+    await this.findOne(id); // existence check
+
+    const results = await this.prisma.testResult.findMany({
+      where: { testCaseId: id },
+      orderBy: { executedAt: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        status: true,
+        executionMs: true,
+        errorMessage: true,
+        flakyStatus: true,
+        retries: true,
+        environment: true,
+        platform: true,
+        appVersion: true,
+        device: true,
+        userProfile: true,
+        customerType: true,
+        screenshotUrl: true,
+        jiraBugKey: true,
+        jiraBugUrl: true,
+        executedBy: true,
+        executedAt: true,
+        testRun: {
+          select: {
+            id: true,
+            title: true,
+            version: true,
+            environment: true,
+            status: true,
+            executedBy: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return {
+      testCaseId: id,
+      total: results.length,
+      history: results,
+    };
   }
 
   async remove(id: string) {

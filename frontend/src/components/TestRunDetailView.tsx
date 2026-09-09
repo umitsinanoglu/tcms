@@ -70,6 +70,7 @@ import {
   Monitor,
   ChevronLeft,
   ChevronsRight,
+  Lock,
 } from 'lucide-react';
 
 interface TestRunDetailViewProps {
@@ -336,6 +337,18 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
     };
   }, [isTimerRunning]);
 
+  // Lightbox Escape key listener
+  useEffect(() => {
+    if (!lightboxImage) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxImage(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxImage]);
+
   // Reload Run from backend
   const reloadRun = useCallback(async () => {
     if (!run?.id) return;
@@ -556,6 +569,16 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   // INSTANT STATUS CHANGE (1-Click Real-time Update)
   const handleInstantStatusChange = async (testCaseId: string, newStatus: ResultStatus) => {
     if (!project?.id) return;
+
+    // 🔒 Read-only guard: tamamlanmış veya iptal edilmiş koşumlarda sonuç değiştirilemez
+    if (run.status !== 'IN_PROGRESS') {
+      showToast(
+        `"${run.title}" koşumu ${run.status === 'COMPLETED' ? 'tamamlanmış' : run.status === 'ABORTED' ? 'iptal edilmiş' : 'arşivlenmiş'} olduğundan sonuç değiştirilemez.`,
+        'error',
+      );
+      return;
+    }
+
     const existingResult = runResultsMap.get(testCaseId);
     const matchedCase = allCases.find((c) => c.id === testCaseId);
 
@@ -644,6 +667,60 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   // Save Drawer Result
   const handleSaveDrawerResult = async () => {
     if (!project?.id || !activeResultModalCase) return;
+
+    const isReadOnlyRun = run.status !== 'IN_PROGRESS';
+    const testCaseId = activeResultModalCase.testCase.id;
+
+    // 🔒 Read-only run: sadece yorum + ekran resmi kaydedilebilir, status korunur
+    if (isReadOnlyRun) {
+      const existingResult = runResultsMap.get(testCaseId);
+      if (!existingResult) {
+        showToast('Bu test senaryosu henüz koşturulmamış — sonucu değiştirilemez.', 'error');
+        return;
+      }
+      setIsSavingDrawer(true);
+      try {
+        const combinedScreenshots = drawerScreenshots.join(';;');
+        const bugUrl =
+          drawerJiraBugUrl.trim() ||
+          (drawerJiraBugKey.trim() ? `https://company.atlassian.net/browse/${drawerJiraBugKey.trim()}` : existingResult.jiraBugUrl);
+
+        await TestRunsService.saveResults(project.id, run.id, {
+          results: [
+            {
+              testCaseId,
+              // Mevcut status korunur, değiştirilmez
+              status: existingResult.status as ResultStatus,
+              executionMs: existingResult.executionMs,
+              // Sadece bu alanlar güncellenir:
+              errorMessage: drawerComment.trim() || existingResult.errorMessage,
+              screenshotUrl: combinedScreenshots || existingResult.screenshotUrl,
+              // Audit-sensitive alanlar korunur:
+              environment: existingResult.environment,
+              platform: existingResult.platform,
+              appVersion: existingResult.appVersion,
+              device: existingResult.device,
+              userProfile: existingResult.userProfile,
+              customerType: existingResult.customerType,
+              flakyStatus: existingResult.flakyStatus,
+              retries: existingResult.retries,
+              jiraBugKey: drawerJiraBugKey.trim() || existingResult.jiraBugKey,
+              jiraBugUrl: bugUrl,
+            },
+          ],
+        });
+        showToast(`[${activeResultModalCase.testCase.code}] yorum ve ekran resmi kaydedildi.`, 'success');
+        setActiveResultModalCase(null);
+        await reloadRun();
+      } catch (err) {
+        console.error('Failed to save annotation:', err);
+        showToast('Yorum kaydedilirken hata oluştu.', 'error');
+      } finally {
+        setIsSavingDrawer(false);
+      }
+      return;
+    }
+
     if (!drawerStatus) {
       showToast('Lütfen bir test koşum sonucu seçiniz (PASSED, FAILED, BLOCKED, SKIPPED).', 'error');
       return;
@@ -651,7 +728,6 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
     setIsSavingDrawer(true);
     setIsTimerRunning(false);
     try {
-      const testCaseId = activeResultModalCase.testCase.id;
       const combinedScreenshots = drawerScreenshots.join(';;');
 
       const bugUrl =
@@ -694,6 +770,16 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   // Bulk Status Update
   const handleBulkStatusChange = async (targetStatus: ResultStatus) => {
     if (!project?.id || selectedCaseIds.length === 0) return;
+
+    // 🔒 Read-only guard
+    if (run.status !== 'IN_PROGRESS') {
+      showToast(
+        `"${run.title}" koşumu ${run.status === 'COMPLETED' ? 'tamamlanmış' : 'iptal edilmiş'} olduğundan toplu güncelleme yapılamaz.`,
+        'error',
+      );
+      return;
+    }
+
     setIsSavingStatus(true);
     try {
       const payloadResults = selectedCaseIds.map((cId) => {
@@ -734,6 +820,16 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
   // Mark all cases as PASSED
   const handleMarkAllPassed = async () => {
     if (!project?.id || runTestCases.length === 0) return;
+
+    // 🔒 Read-only guard
+    if (run.status !== 'IN_PROGRESS') {
+      showToast(
+        `"${run.title}" koşumu ${run.status === 'COMPLETED' ? 'tamamlanmış' : 'iptal edilmiş'} olduğundan güncelleme yapılamaz.`,
+        'error',
+      );
+      return;
+    }
+
     if (!window.confirm(`Tüm (${runTestCases.length}) test senaryolarını PASSED olarak işaretlemek istediğinize emin misiniz?`)) {
       return;
     }
@@ -776,6 +872,7 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
         COMPLETED: 'TAMAMLANDI',
         IN_PROGRESS: 'ÇALIŞIYOR',
         ABORTED: 'İPTAL EDİLDİ',
+        ARCHIVED: 'ARŞİVLENDİ',
       };
       showToast(`Koşum durumu "${labels[newRunStatus]}" olarak güncellendi.`, 'success');
       await reloadRun();
@@ -1907,34 +2004,52 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                             <div className="flex items-center space-x-1">
                               <button
                                 type="button"
+                                disabled={run.status !== 'IN_PROGRESS'}
                                 onClick={() => handleInstantStatusChange(testCase.id, 'PASSED')}
-                                className={`px-2 py-1 rounded text-[11px] font-mono font-bold ${
+                                className={`px-2 py-1 rounded text-[11px] font-mono font-bold transition-opacity ${
                                   currentStatus === 'PASSED'
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40'
+                                    ? run.status !== 'IN_PROGRESS'
+                                      ? 'bg-emerald-600 text-white cursor-not-allowed'
+                                      : 'bg-emerald-600 text-white cursor-pointer'
+                                    : run.status !== 'IN_PROGRESS'
+                                    ? 'opacity-30 cursor-not-allowed bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20'
+                                    : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 cursor-pointer'
                                 }`}
+                                title={run.status !== 'IN_PROGRESS' ? 'Koşum tamamlandı — sonuç değiştirilemez (Kilitli)' : 'PASSED olarak işaretle'}
                               >
                                 PASS
                               </button>
                               <button
                                 type="button"
+                                disabled={run.status !== 'IN_PROGRESS'}
                                 onClick={() => handleInstantStatusChange(testCase.id, 'FAILED')}
-                                className={`px-2 py-1 rounded text-[11px] font-mono font-bold ${
+                                className={`px-2 py-1 rounded text-[11px] font-mono font-bold transition-opacity ${
                                   currentStatus === 'FAILED'
-                                    ? 'bg-rose-600 text-white'
-                                    : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40'
+                                    ? run.status !== 'IN_PROGRESS'
+                                      ? 'bg-rose-600 text-white cursor-not-allowed'
+                                      : 'bg-rose-600 text-white cursor-pointer'
+                                    : run.status !== 'IN_PROGRESS'
+                                    ? 'opacity-30 cursor-not-allowed bg-rose-50 text-rose-600 dark:bg-rose-950/20'
+                                    : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 cursor-pointer'
                                 }`}
+                                title={run.status !== 'IN_PROGRESS' ? 'Koşum tamamlandı — sonuç değiştirilemez (Kilitli)' : 'FAILED olarak işaretle'}
                               >
                                 FAIL
                               </button>
                               <button
                                 type="button"
+                                disabled={run.status !== 'IN_PROGRESS'}
                                 onClick={() => handleInstantStatusChange(testCase.id, 'BLOCKED')}
-                                className={`px-2 py-1 rounded text-[11px] font-mono font-bold ${
+                                className={`px-2 py-1 rounded text-[11px] font-mono font-bold transition-opacity ${
                                   currentStatus === 'BLOCKED'
-                                    ? 'bg-amber-600 text-white'
-                                    : 'bg-amber-50 text-amber-600 dark:bg-amber-950/40'
+                                    ? run.status !== 'IN_PROGRESS'
+                                      ? 'bg-amber-600 text-white cursor-not-allowed'
+                                      : 'bg-amber-600 text-white cursor-pointer'
+                                    : run.status !== 'IN_PROGRESS'
+                                    ? 'opacity-30 cursor-not-allowed bg-amber-50 text-amber-600 dark:bg-amber-950/20'
+                                    : 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 cursor-pointer'
                                 }`}
+                                title={run.status !== 'IN_PROGRESS' ? 'Koşum tamamlandı — sonuç değiştirilemez (Kilitli)' : 'BLOCKED olarak işaretle'}
                               >
                                 BLOCK
                               </button>
@@ -2344,29 +2459,33 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                 <span className="font-mono font-extrabold text-sm text-slate-900 dark:text-slate-100 min-w-[65px]">
                   {formatDuration(drawerExecutionMs)}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setIsTimerRunning(!isTimerRunning)}
-                  className={`p-1 rounded-md text-xs font-bold ${
-                    isTimerRunning
-                      ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
-                      : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                  }`}
-                  title={isTimerRunning ? 'Sayacı Duraklat' : 'Sayacı Başlat'}
-                >
-                  {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsTimerRunning(false);
-                    setDrawerExecutionMs(0);
-                  }}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-600"
-                  title="Sayacı Sıfırla"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
+                {run.status === 'IN_PROGRESS' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setIsTimerRunning(!isTimerRunning)}
+                      className={`p-1 rounded-md text-xs font-bold ${
+                        isTimerRunning
+                          ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                          : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                      }`}
+                      title={isTimerRunning ? 'Sayacı Duraklat' : 'Sayacı Başlat'}
+                    >
+                      {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsTimerRunning(false);
+                        setDrawerExecutionMs(0);
+                      }}
+                      className="p-1 rounded-md text-slate-400 hover:text-slate-600"
+                      title="Sayacı Sıfırla"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
               </div>
 
               <button
@@ -2381,6 +2500,24 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
               </button>
             </div>
 
+            {/* 🔒 Read-Only Banner — tamamlanmış/iptal edilmiş koşumlar için */}
+            {run.status !== 'IN_PROGRESS' && (
+              <div className="flex items-center space-x-3 px-6 py-3.5 bg-amber-500/10 border-b border-amber-500/20 shrink-0">
+                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                    <span>Koşum {run.status === 'COMPLETED' ? 'Tamamlanmış' : run.status === 'ABORTED' ? 'İptal Edilmiş' : 'Arşivlenmiş'}</span>
+                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 font-mono">Salt Okunur</span>
+                  </p>
+                  <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mt-0.5">
+                    Test koşum durumu ve parametreleri kilitlidir, değiştirilemez. Yalnızca gözden geçirme yorumu ve ekran resmi ekleyebilirsiniz.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Drawer Body */}
             <div className="p-6 overflow-y-auto flex-1 space-y-5 text-xs">
               {/* Status Selector Buttons */}
@@ -2389,8 +2526,10 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                   Test Koşum Sonucu *
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {/* PASSED */}
                   <button
                     type="button"
+                    disabled={run.status !== 'IN_PROGRESS'}
                     onClick={() => {
                       setDrawerStatus('PASSED');
                       setIsTimerRunning(false);
@@ -2401,62 +2540,100 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                         setCompletedStepNumbers(allStepNos);
                       }
                     }}
-                    className={`py-2.5 px-3 rounded-xl font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                    className={`py-2.5 px-3 rounded-xl font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all ${
                       drawerStatus === 'PASSED'
-                        ? 'bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm'
-                        : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
+                        ? run.status !== 'IN_PROGRESS'
+                          ? 'bg-emerald-600 text-white ring-2 ring-emerald-400/50 shadow-md cursor-not-allowed select-none'
+                          : 'bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm cursor-pointer'
+                        : run.status !== 'IN_PROGRESS'
+                        ? 'bg-emerald-50/50 text-emerald-700/60 dark:bg-emerald-950/20 dark:text-emerald-400/50 border border-emerald-200/50 dark:border-emerald-800/40 opacity-40 cursor-not-allowed select-none'
+                        : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 cursor-pointer'
                     }`}
+                    title={run.status !== 'IN_PROGRESS' ? 'Koşum tamamlandı — sonuç kilitlidir' : undefined}
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>PASSED</span>
+                    {run.status !== 'IN_PROGRESS' && drawerStatus === 'PASSED' && (
+                      <Lock className="w-3 h-3 ml-0.5 opacity-80" />
+                    )}
                   </button>
 
+                  {/* FAILED */}
                   <button
                     type="button"
+                    disabled={run.status !== 'IN_PROGRESS'}
                     onClick={() => {
                       setDrawerStatus('FAILED');
                       setIsTimerRunning(false);
                     }}
-                    className={`py-2.5 px-3 rounded-xl font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                    className={`py-2.5 px-3 rounded-xl font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all ${
                       drawerStatus === 'FAILED'
-                        ? 'bg-rose-600 text-white ring-2 ring-rose-400 shadow-sm'
-                        : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800 hover:bg-rose-100'
+                        ? run.status !== 'IN_PROGRESS'
+                          ? 'bg-rose-600 text-white ring-2 ring-rose-400/50 shadow-md cursor-not-allowed select-none'
+                          : 'bg-rose-600 text-white ring-2 ring-rose-400 shadow-sm cursor-pointer'
+                        : run.status !== 'IN_PROGRESS'
+                        ? 'bg-rose-50/50 text-rose-700/60 dark:bg-rose-950/20 dark:text-rose-400/50 border border-rose-200/50 dark:border-rose-800/40 opacity-40 cursor-not-allowed select-none'
+                        : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 cursor-pointer'
                     }`}
+                    title={run.status !== 'IN_PROGRESS' ? 'Koşum tamamlandı — sonuç kilitlidir' : undefined}
                   >
                     <XCircle className="w-4 h-4" />
                     <span>FAILED</span>
+                    {run.status !== 'IN_PROGRESS' && drawerStatus === 'FAILED' && (
+                      <Lock className="w-3 h-3 ml-0.5 opacity-80" />
+                    )}
                   </button>
 
+                  {/* BLOCKED */}
                   <button
                     type="button"
+                    disabled={run.status !== 'IN_PROGRESS'}
                     onClick={() => {
                       setDrawerStatus('BLOCKED');
                       setIsTimerRunning(false);
                     }}
-                    className={`py-2.5 px-3 rounded-xl font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                    className={`py-2.5 px-3 rounded-xl font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all ${
                       drawerStatus === 'BLOCKED'
-                        ? 'bg-amber-600 text-white ring-2 ring-amber-400 shadow-sm'
-                        : 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100'
+                        ? run.status !== 'IN_PROGRESS'
+                          ? 'bg-amber-600 text-white ring-2 ring-amber-400/50 shadow-md cursor-not-allowed select-none'
+                          : 'bg-amber-600 text-white ring-2 ring-amber-400 shadow-sm cursor-pointer'
+                        : run.status !== 'IN_PROGRESS'
+                        ? 'bg-amber-50/50 text-amber-700/60 dark:bg-amber-950/20 dark:text-amber-400/50 border border-amber-200/50 dark:border-amber-800/40 opacity-40 cursor-not-allowed select-none'
+                        : 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 cursor-pointer'
                     }`}
+                    title={run.status !== 'IN_PROGRESS' ? 'Koşum tamamlandı — sonuç kilitlidir' : undefined}
                   >
                     <Ban className="w-4 h-4" />
                     <span>BLOCKED</span>
+                    {run.status !== 'IN_PROGRESS' && drawerStatus === 'BLOCKED' && (
+                      <Lock className="w-3 h-3 ml-0.5 opacity-80" />
+                    )}
                   </button>
 
+                  {/* SKIPPED */}
                   <button
                     type="button"
+                    disabled={run.status !== 'IN_PROGRESS'}
                     onClick={() => {
                       setDrawerStatus('SKIPPED');
                       setIsTimerRunning(false);
                     }}
-                    className={`py-2.5 px-3 rounded-xl font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                    className={`py-2.5 px-3 rounded-xl font-mono font-bold text-xs flex items-center justify-center space-x-2 transition-all ${
                       drawerStatus === 'SKIPPED'
-                        ? 'bg-slate-600 text-white ring-2 ring-slate-400 shadow-sm'
-                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                        ? run.status !== 'IN_PROGRESS'
+                          ? 'bg-slate-600 text-white ring-2 ring-slate-400/50 shadow-md cursor-not-allowed select-none'
+                          : 'bg-slate-600 text-white ring-2 ring-slate-400 shadow-sm cursor-pointer'
+                        : run.status !== 'IN_PROGRESS'
+                        ? 'bg-slate-100/50 text-slate-600/60 dark:bg-slate-800/30 dark:text-slate-400/50 border border-slate-200/50 dark:border-slate-700/40 opacity-40 cursor-not-allowed select-none'
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 cursor-pointer'
                     }`}
+                    title={run.status !== 'IN_PROGRESS' ? 'Koşum tamamlandı — sonuç kilitlidir' : undefined}
                   >
                     <FastForward className="w-4 h-4" />
                     <span>SKIPPED</span>
+                    {run.status !== 'IN_PROGRESS' && drawerStatus === 'SKIPPED' && (
+                      <Lock className="w-3 h-3 ml-0.5 opacity-80" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -2476,8 +2653,9 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     </label>
                     <select
                       value={drawerEnvironment}
+                      disabled={run.status !== 'IN_PROGRESS'}
                       onChange={(e) => setDrawerEnvironment(e.target.value)}
-                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-semibold"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="PRODUCTION">PRODUCTION</option>
                       <option value="UAT">UAT</option>
@@ -2493,8 +2671,9 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     </label>
                     <select
                       value={drawerPlatform}
+                      disabled={run.status !== 'IN_PROGRESS'}
                       onChange={(e) => setDrawerPlatform(e.target.value)}
-                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-semibold"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="WEB">🌐 WEB</option>
                       <option value="iOS">🍎 iOS</option>
@@ -2511,9 +2690,10 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     <input
                       type="text"
                       value={drawerAppVersion}
+                      disabled={run.status !== 'IN_PROGRESS'}
                       onChange={(e) => setDrawerAppVersion(e.target.value)}
                       placeholder="v2.4.1"
-                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
 
@@ -2525,9 +2705,10 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     <input
                       type="text"
                       value={drawerDevice}
+                      disabled={run.status !== 'IN_PROGRESS'}
                       onChange={(e) => setDrawerDevice(e.target.value)}
                       placeholder="Chrome 128 (Windows 11)"
-                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
 
@@ -2539,9 +2720,10 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     <input
                       type="text"
                       value={drawerUserProfile}
+                      disabled={run.status !== 'IN_PROGRESS'}
                       onChange={(e) => setDrawerUserProfile(e.target.value)}
                       placeholder="ADMİN KULLANICI / MOBİL WEB KULLANICISI"
-                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs uppercase"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs uppercase disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
 
@@ -2552,8 +2734,9 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     </label>
                     <select
                       value={drawerCustomerType}
+                      disabled={run.status !== 'IN_PROGRESS'}
                       onChange={(e) => setDrawerCustomerType(e.target.value)}
-                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-semibold"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="BIREYSEL">BIREYSEL</option>
                       <option value="KURUMSAL">KURUMSAL</option>
@@ -2567,8 +2750,9 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     </label>
                     <select
                       value={drawerFlakyStatus}
+                      disabled={run.status !== 'IN_PROGRESS'}
                       onChange={(e) => setDrawerFlakyStatus(e.target.value)}
-                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-semibold"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="NONE">Stabil (Retry Yok)</option>
                       <option value="+1 retry">+1 retry</option>
@@ -2585,9 +2769,10 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                     <input
                       type="number"
                       value={drawerExecutionMs}
+                      disabled={run.status !== 'IN_PROGRESS'}
                       onChange={(e) => setDrawerExecutionMs(parseInt(e.target.value, 10) || 0)}
                       placeholder="7000"
-                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono"
+                      className="w-full bg-white dark:bg-[#1d232f] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -2858,15 +3043,27 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={handleSaveDrawerResult}
-                disabled={isSavingDrawer}
-                className="inline-flex items-center space-x-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#991b1b] hover:bg-[#881337] shadow-sm transition-all cursor-pointer disabled:opacity-50"
-              >
-                <Check className="w-4 h-4" />
-                <span>{isSavingDrawer ? 'Kaydediliyor...' : 'Koşum Sonucunu Kaydet'}</span>
-              </button>
+              {run.status === 'IN_PROGRESS' ? (
+                <button
+                  type="button"
+                  onClick={handleSaveDrawerResult}
+                  disabled={isSavingDrawer}
+                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#991b1b] hover:bg-[#881337] shadow-md shadow-rose-950/20 transition-all cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{isSavingDrawer ? 'Kaydediliyor...' : 'Koşum Sonucunu Kaydet'}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSaveDrawerResult}
+                  disabled={isSavingDrawer}
+                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#991b1b] to-[#b91c1c] hover:from-[#881337] hover:to-[#991b1b] shadow-md shadow-rose-950/20 transition-all cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>{isSavingDrawer ? 'Kaydediliyor...' : 'Yorum ve Ekran Resmi Kaydet'}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -2875,19 +3072,23 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
       {/* 9. Fullscreen Lightbox Modal */}
       {lightboxImage && (
         <div
-          className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150"
           onClick={() => setLightboxImage(null)}
         >
-          <div className="relative max-w-5xl max-h-[90vh]">
+          <div
+            className="relative max-w-5xl max-h-[90vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <img
               src={lightboxImage}
               alt="Lightbox Screenshot"
-              className="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl border border-slate-700"
+              className="max-h-[85vh] max-w-full rounded-xl object-contain shadow-2xl border border-slate-700 select-none"
             />
             <button
               type="button"
               onClick={() => setLightboxImage(null)}
-              className="absolute -top-3 -right-3 p-2 bg-[#991b1b] text-white rounded-full shadow-lg hover:bg-rose-600 transition-colors"
+              className="absolute -top-3 -right-3 p-2 bg-[#991b1b] text-white rounded-full shadow-lg hover:bg-rose-600 transition-colors cursor-pointer"
+              title="Kapat (Esc)"
             >
               <X className="w-4 h-4" />
             </button>

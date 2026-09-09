@@ -232,7 +232,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                 className="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm transition-all active:scale-95 cursor-pointer shrink-0"
                 title="Önceki ekrana dön"
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-rose-500" />
+                <ArrowLeft className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                 <span>Geri</span>
               </button>
             )}
@@ -414,7 +414,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
               placeholder="Test Case başlığı, kod veya açıklama ara..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 pl-9 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-rose-500 transition-colors"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 pl-9 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] transition-colors"
             />
           </div>
 
@@ -424,7 +424,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
+              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] cursor-pointer"
             >
               <option value="ALL">Tüm Durumlar</option>
               <option value="PASSED">Passed</option>
@@ -437,7 +437,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
+              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] cursor-pointer"
             >
               <option value="ALL">Tüm Öncelikler</option>
               <option value="BLOCKER">🔴 BLOCKER</option>
@@ -450,7 +450,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
+              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] cursor-pointer"
             >
               <option value="ALL">Tüm Platformlar</option>
               <option value="DESKTOP">🖥️ DESKTOP</option>
@@ -463,9 +463,9 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
         </div>
 
         {/* Global/Default Suite Run Settings Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20 rounded-2xl text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[var(--accent-primary)]/5 dark:bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-2xl text-xs">
           <div className="flex items-center space-x-2">
-            <Settings2 className="w-4 h-4 text-rose-500 shrink-0" />
+            <Settings2 className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
             <span className="font-semibold text-slate-800 dark:text-slate-200">Varsayılan Koşu Parametreleri:</span>
             <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden md:inline">
               (Liste satırları için genel versiyon ve ortam şablonu)
@@ -502,7 +502,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
             <button
               type="button"
               onClick={handleApplyDefaultSettingsToAll}
-              className="flex items-center space-x-1 px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="flex items-center space-x-1 px-3 py-1.5 bg-accent-gradient hover:brightness-110 text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
               title="Bu versiyon ve ortamı aşağıdaki tüm test case satırlarına uygula"
             >
               <Check className="w-3.5 h-3.5" />
@@ -537,7 +537,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
             <button
               type="button"
               onClick={() => onAddCaseInSuite(suite.id)}
-              className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
+              className="px-3.5 py-1.5 bg-accent-gradient hover:brightness-110 text-white text-xs font-semibold rounded-lg shadow-xs transition-all cursor-pointer"
             >
               + Yeni Test Case Oluştur
             </button>
@@ -576,7 +576,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
 
                       {/* Test Code */}
                       <td className="py-2.5 px-3 whitespace-nowrap">
-                        <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 inline-flex items-center space-x-1 shrink-0">
+                        <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-lg bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20 inline-flex items-center space-x-1 shrink-0">
                           <FileCode2 className="w-3 h-3" />
                           <span>{tc.code}</span>
                         </span>
@@ -587,7 +587,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                         <div className="min-w-0">
                           <div
                             onClick={() => onSelectCase(tc)}
-                            className="font-bold text-slate-900 dark:text-slate-100 hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer transition-colors text-xs truncate"
+                            className="font-bold text-slate-900 dark:text-slate-100 hover:text-[var(--accent-primary)] cursor-pointer transition-colors text-xs truncate"
                             title={tc.description ? `${tc.title}\n\nAçıklama: ${tc.description}` : tc.title}
                           >
                             {tc.title}
@@ -670,7 +670,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                               }
                               placeholder="v1.0.0"
                               title="Versiyon Numarası"
-                              className="w-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/80 rounded-lg px-2 py-0.5 text-[11px] font-mono font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500 text-center"
+                              className="w-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/80 rounded-lg px-2 py-0.5 text-[11px] font-mono font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] text-center"
                             />
                           </div>
 
@@ -685,7 +685,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                                 }))
                               }
                               title="Test Ortamı"
-                              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/80 rounded-lg px-2 py-0.5 text-[11px] font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
+                              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/80 rounded-lg px-2 py-0.5 text-[11px] font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] cursor-pointer"
                             >
                               {PRESET_ENVIRONMENTS.map((env) => (
                                 <option key={env} value={env}>
@@ -707,7 +707,7 @@ export const SuiteCasesView: React.FC<SuiteCasesViewProps> = ({
                             className="inline-flex items-center space-x-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 shadow-sm transition-all active:scale-95 cursor-pointer"
                             title="Test Case Detaylarını İncele ve Düzenle"
                           >
-                            <Eye className="w-3.5 h-3.5 text-rose-500" />
+                            <Eye className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                             <span>İncele</span>
                           </button>
 

@@ -50,6 +50,7 @@ enum RunStatus {
   IN_PROGRESS
   COMPLETED
   ABORTED
+  ARCHIVED  // Onaylandı / Tamamen kilitli — audit trail koruması
 }
 
 enum ResultStatus {

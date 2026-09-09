@@ -906,7 +906,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                 <button
                   type="button"
                   onClick={handleRemoveSelectedCases}
-                  className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer"
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 dark:hover:border-rose-800 transition-colors cursor-pointer shadow-2xs"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Seçilenleri Plandan Çıkar ({selectedCaseIds.length})</span>
@@ -1321,7 +1321,7 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setCandidateCaseIdsToAdd([])}
-                    className="text-xs text-slate-500 hover:text-rose-600 transition-colors cursor-pointer underline ml-2"
+                    className="text-xs text-slate-500 hover:text-[var(--accent-primary)] transition-colors cursor-pointer underline ml-2"
                   >
                     Tüm Seçimleri Temizle
                   </button>

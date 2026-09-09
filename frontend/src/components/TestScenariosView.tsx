@@ -237,7 +237,7 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
               className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-700 shadow-2xs transition-all cursor-pointer"
               title="Tüm içe aktarma ve güncelleme kanalları merkezi"
             >
-              <Upload className="w-3.5 h-3.5 text-[#b83a4b]" />
+              <Upload className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
               <span>İçe Aktar & Güncelle</span>
             </button>
           </div>
@@ -571,9 +571,32 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                           }
 
                           if (col.id === 'updatedAt') {
+                            const dateValue = tc.updatedAt || tc.createdAt;
+                            let formatted = '—';
+                            let fullTitle = '';
+                            if (dateValue) {
+                              try {
+                                const d = new Date(dateValue);
+                                if (!isNaN(d.getTime())) {
+                                  formatted = d.toLocaleString('tr-TR', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  });
+                                  fullTitle = `Güncellenme: ${d.toLocaleString('tr-TR')}`;
+                                }
+                              } catch {
+                                formatted = '—';
+                              }
+                            }
+
                             return (
                               <td key={col.id} className={`${densityCls.pyTd} px-3 whitespace-nowrap text-slate-500 dark:text-slate-400 text-[11px] font-mono ${alignClass}`}>
-                                {tc.updatedAt ? new Date(tc.updatedAt).toLocaleDateString('tr-TR') : '—'}
+                                <span title={fullTitle || undefined}>
+                                  {formatted}
+                                </span>
                               </td>
                             );
                           }

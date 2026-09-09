@@ -582,7 +582,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
         {/* 1. Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-[#2e3748] bg-slate-50 dark:bg-[#1a212f]">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#b83a4b] to-[#821c2b] flex items-center justify-center text-white shadow-md shadow-[#b83a4b]/20">
+            <div className="w-10 h-10 rounded-xl bg-accent-gradient flex items-center justify-center text-white shadow-md shadow-[var(--accent-dark)]/20">
               <FileCode2 className="w-5 h-5" />
             </div>
             <div>
@@ -590,7 +590,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                 <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
                   Test Senaryoları İçe Aktar & Güncelle
                 </h2>
-                <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-full bg-[#b83a4b]/15 text-[#b83a4b] border border-[#b83a4b]/30">
+                <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-full bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30">
                   {projectName}
                 </span>
               </div>
@@ -616,7 +616,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
               onClick={() => setActiveTab('CUCUMBER')}
               className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'CUCUMBER'
-                  ? 'bg-[#b83a4b] text-white shadow-sm shadow-[#b83a4b]/30'
+                  ? 'bg-accent-gradient text-white shadow-sm shadow-[var(--accent-dark)]/30'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
               }`}
             >
@@ -628,7 +628,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
               onClick={() => setActiveTab('PLAYWRIGHT')}
               className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'PLAYWRIGHT'
-                  ? 'bg-[#b83a4b] text-white shadow-sm shadow-[#b83a4b]/30'
+                  ? 'bg-accent-gradient text-white shadow-sm shadow-[var(--accent-dark)]/30'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
               }`}
             >
@@ -640,7 +640,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
               onClick={() => setActiveTab('TAC')}
               className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'TAC'
-                  ? 'bg-[#b83a4b] text-white shadow-sm shadow-[#b83a4b]/30'
+                  ? 'bg-accent-gradient text-white shadow-sm shadow-[var(--accent-dark)]/30'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
               }`}
             >
@@ -660,7 +660,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
               onClick={() => setActiveTab('EXCEL')}
               className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'EXCEL'
-                  ? 'bg-[#b83a4b] text-white shadow-sm shadow-[#b83a4b]/30'
+                  ? 'bg-accent-gradient text-white shadow-sm shadow-[var(--accent-dark)]/30'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
               }`}
             >
@@ -676,7 +676,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                 type="checkbox"
                 checked={updateIfExists}
                 onChange={(e) => setUpdateIfExists(e.target.checked)}
-                className="w-4 h-4 rounded text-[#b83a4b] focus:ring-[#b83a4b] border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
+                className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
               />
               <span className="hidden sm:inline">Var Olanları Güncelle</span>
             </label>
@@ -724,7 +724,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                 {/* File Upload Zone */}
                 <div
                   onClick={() => cucumberFileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-300 dark:border-[#2e3748] hover:border-[#b83a4b] dark:hover:border-[#b83a4b] rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-slate-50/50 dark:bg-[#1a212f]/40 hover:bg-slate-50 dark:hover:bg-[#1a212f]"
+                  className="border-2 border-dashed border-slate-300 dark:border-[#2e3748] hover:border-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)] rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-slate-50/50 dark:bg-[#1a212f]/40 hover:bg-slate-50 dark:hover:bg-[#1a212f]"
                 >
                   <input
                     ref={cucumberFileInputRef}
@@ -760,7 +760,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                     <button
                       type="button"
                       onClick={handleLoadCucumberSample}
-                      className="text-[11px] font-semibold text-[#b83a4b] hover:underline flex items-center space-x-1 cursor-pointer"
+                      className="text-[11px] font-semibold text-[var(--accent-primary)] hover:underline flex items-center space-x-1 cursor-pointer"
                     >
                       <Sparkles className="w-3 h-3" />
                       <span>Örnek Şablon Yükle</span>
@@ -771,7 +771,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                     value={cucumberText}
                     onChange={(e) => setCucumberText(e.target.value)}
                     placeholder={`@smoke\nFeature: Giriş Modülü\n  Scenario: Başarılı Giriş\n    When Kullanıcı adı girilir\n    Then Giriş onaylanır`}
-                    className="w-full flex-1 bg-white dark:bg-[#111620] border border-slate-200 dark:border-[#2e3748] rounded-xl p-3 text-xs font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] resize-none"
+                    className="w-full flex-1 bg-white dark:bg-[#111620] border border-slate-200 dark:border-[#2e3748] rounded-xl p-3 text-xs font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none"
                   />
                   <div className="flex justify-end">
                     <button
@@ -858,7 +858,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                                   sc.id
                                 )
                               }
-                              className="w-4 h-4 mt-1 rounded text-[#b83a4b] focus:ring-[#b83a4b] border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
+                              className="w-4 h-4 mt-1 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
                             />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center flex-wrap gap-2">
@@ -957,7 +957,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                         )
                       }
                       disabled={isSubmitting}
-                      className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:brightness-110 shadow-md shadow-[#821c2b]/30 transition-all disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/30 transition-all disabled:opacity-50 cursor-pointer"
                     >
                       {isSubmitting ? (
                         <RefreshCw className="w-4 h-4 animate-spin" />
@@ -981,7 +981,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                 {/* File Upload Zone */}
                 <div
                   onClick={() => playwrightFileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-300 dark:border-[#2e3748] hover:border-[#b83a4b] dark:hover:border-[#b83a4b] rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-slate-50/50 dark:bg-[#1a212f]/40 hover:bg-slate-50 dark:hover:bg-[#1a212f]"
+                  className="border-2 border-dashed border-slate-300 dark:border-[#2e3748] hover:border-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)] rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-slate-50/50 dark:bg-[#1a212f]/40 hover:bg-slate-50 dark:hover:bg-[#1a212f]"
                 >
                   <input
                     ref={playwrightFileInputRef}
@@ -1017,7 +1017,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                     <button
                       type="button"
                       onClick={handleLoadPlaywrightSample}
-                      className="text-[11px] font-semibold text-[#b83a4b] hover:underline flex items-center space-x-1 cursor-pointer"
+                      className="text-[11px] font-semibold text-[var(--accent-primary)] hover:underline flex items-center space-x-1 cursor-pointer"
                     >
                       <Sparkles className="w-3 h-3" />
                       <span>Örnek Playwright Kodu Yükle</span>
@@ -1028,7 +1028,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                     value={playwrightText}
                     onChange={(e) => setPlaywrightText(e.target.value)}
                     placeholder={`import { test, expect } from '@playwright/test';\ntest.describe('Modül', () => {\n  test('Senaryo', async ({ page }) => {\n    await page.goto('/');\n  });\n});`}
-                    className="w-full flex-1 bg-white dark:bg-[#111620] border border-slate-200 dark:border-[#2e3748] rounded-xl p-3 text-xs font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-[#b83a4b] resize-none"
+                    className="w-full flex-1 bg-white dark:bg-[#111620] border border-slate-200 dark:border-[#2e3748] rounded-xl p-3 text-xs font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none"
                   />
                   <div className="flex justify-end">
                     <button
@@ -1115,7 +1115,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                                   sc.id
                                 )
                               }
-                              className="w-4 h-4 mt-1 rounded text-[#b83a4b] focus:ring-[#b83a4b] border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
+                              className="w-4 h-4 mt-1 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
                             />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center flex-wrap gap-2">
@@ -1202,7 +1202,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                         )
                       }
                       disabled={isSubmitting}
-                      className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:brightness-110 shadow-md shadow-[#821c2b]/30 transition-all disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/30 transition-all disabled:opacity-50 cursor-pointer"
                     >
                       {isSubmitting ? (
                         <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1316,7 +1316,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
 
                 {tacLoadingSpecs ? (
                   <div className="p-8 text-center text-xs text-slate-400 space-y-2">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#b83a4b]" />
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[var(--accent-primary)]" />
                     <span>TAC Spec listesi taranıyor...</span>
                   </div>
                 ) : tacSpecs.length === 0 ? (
@@ -1346,7 +1346,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => handleToggleTacSpec(spec.relativePath)}
-                              className="w-4 h-4 mt-1 rounded text-[#b83a4b] focus:ring-[#b83a4b] border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
+                              className="w-4 h-4 mt-1 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
                             />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center flex-wrap gap-2">
@@ -1390,7 +1390,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                     type="button"
                     onClick={handleSyncTacSpecsToCases}
                     disabled={isSubmitting || tacSelectedSpecs.length === 0}
-                    className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:brightness-110 shadow-md shadow-[#821c2b]/30 transition-all disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/30 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {isSubmitting ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1437,7 +1437,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
               {/* Excel Drop Zone */}
               <div
                 onClick={() => excelFileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-300 dark:border-[#2e3748] hover:border-[#b83a4b] dark:hover:border-[#b83a4b] rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-slate-50/50 dark:bg-[#1a212f]/40 hover:bg-slate-50 dark:hover:bg-[#1a212f]"
+                className="border-2 border-dashed border-slate-300 dark:border-[#2e3748] hover:border-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)] rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-slate-50/50 dark:bg-[#1a212f]/40 hover:bg-slate-50 dark:hover:bg-[#1a212f]"
               >
                 <input
                   ref={excelFileInputRef}
@@ -1480,7 +1480,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
                     type="button"
                     onClick={handleCommitExcelCases}
                     disabled={isSubmitting}
-                    className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#b83a4b] to-[#821c2b] hover:brightness-110 shadow-md shadow-[#821c2b]/30 transition-all disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-accent-gradient hover:brightness-110 shadow-md shadow-[var(--accent-dark)]/30 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {isSubmitting ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1500,7 +1500,7 @@ test.describe('Hesaplar ve Para Transferi Modülü', () => {
         {/* 5. Modal Footer */}
         <div className="px-6 py-3.5 border-t border-slate-200 dark:border-[#2e3748] bg-slate-50 dark:bg-[#1a212f] flex items-center justify-between text-xs">
           <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
-            <Info className="w-3.5 h-3.5 shrink-0 text-[#b83a4b]" />
+            <Info className="w-3.5 h-3.5 shrink-0 text-[var(--accent-primary)]" />
             <span>
               {updateIfExists
                 ? 'Var olan senaryolar güncellenecektir (Update Mode Açık).'

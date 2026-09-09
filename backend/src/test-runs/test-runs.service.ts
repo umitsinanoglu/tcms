@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAutomationRunDto } from './dto/automation-run-result.dto';
 import { CreateTestRunDto } from './dto/create-test-run.dto';
@@ -54,6 +54,47 @@ export class TestRunsService {
       existingMap.set(res.testCaseId, res);
     });
 
+    // 🔒 Read-only guard:
+    // Tamamlanmış veya iptal edilmiş koşumlarda test senaryosu durumu (status), süre veya ortam bilgileri değiştirilemez, yeni test eklenemez.
+    // Ancak inceleme ve kanıt amacıyla mevcut sonuçlara yalnızca yorum (errorMessage), ekran resmi (screenshotUrl) veya Jira bug linki eklenebilir.
+    if (run.status !== RunStatus.IN_PROGRESS) {
+      for (const item of dto.results) {
+        const existing = existingMap.get(item.testCaseId);
+        if (!existing) {
+          throw new ForbiddenException(
+            `TestRun '${run.title}' is ${run.status}. New test results cannot be added to a closed run.`,
+          );
+        }
+        if (item.status && item.status !== existing.status) {
+          throw new ForbiddenException(
+            `TestRun '${run.title}' is ${run.status}. Test execution status (${existing.status}) cannot be changed.`,
+          );
+        }
+      }
+
+      // Sadece inceleme notu / ekran resmi / Jira bilgilerini güncelle
+      await this.prisma.$transaction(async (tx) => {
+        for (const item of dto.results) {
+          const existing = existingMap.get(item.testCaseId);
+          if (existing) {
+            const bugUrl =
+              item.jiraBugUrl || (item.jiraBugKey ? `https://company.atlassian.net/browse/${item.jiraBugKey}` : existing.jiraBugUrl);
+            await tx.testResult.update({
+              where: { id: existing.id },
+              data: {
+                errorMessage: item.errorMessage !== undefined ? item.errorMessage : existing.errorMessage,
+                screenshotUrl: item.screenshotUrl !== undefined ? item.screenshotUrl : existing.screenshotUrl,
+                jiraBugKey: item.jiraBugKey !== undefined ? item.jiraBugKey : existing.jiraBugKey,
+                jiraBugUrl: bugUrl,
+              },
+            });
+          }
+        }
+      });
+
+      return this.findOne(runId);
+    }
+
     // Execute batch writes in single transaction
     await this.prisma.$transaction(async (tx) => {
       for (const item of dto.results) {
@@ -108,13 +149,8 @@ export class TestRunsService {
           });
         }
 
-        // Sync screenshotUrl to TestCase if provided
-        if (item.screenshotUrl !== undefined) {
-          await tx.testCase.update({
-            where: { id: item.testCaseId },
-            data: { screenshotUrl: item.screenshotUrl || null },
-          });
-        }
+        // Note: screenshotUrl is intentionally NOT synced back to TestCase.
+        // TestCase is a static template; screenshots should be set via the TestCase editor.
       }
     });
 
@@ -155,19 +191,13 @@ export class TestRunsService {
     let targetRunId = dto.testRunId;
 
     if (targetRunId) {
-      // Check if testRun already exists
+      // 🔒 Read-only guard: only append to an IN_PROGRESS run;
+      // if the referenced run is already COMPLETED/ABORTED, ignore it and create a new one.
       const existingRun = await this.prisma.testRun.findUnique({ where: { id: targetRunId } });
-      if (existingRun) {
-        await this.prisma.testRun.update({
-          where: { id: targetRunId },
-          data: {
-            status: RunStatus.COMPLETED,
-            version: dto.version || existingRun.version,
-            environment: dto.environment || existingRun.environment,
-            executedBy: dto.executedBy || existingRun.executedBy,
-          },
-        });
+      if (existingRun && existingRun.status === RunStatus.IN_PROGRESS) {
+        // Keep targetRunId — results will be appended
       } else {
+        // Either not found or already closed → create a fresh run
         targetRunId = undefined;
       }
     }
@@ -254,12 +284,7 @@ export class TestRunsService {
           });
         }
 
-        if (r.screenshotUrl) {
-          await tx.testCase.update({
-            where: { id: caseId },
-            data: { screenshotUrl: r.screenshotUrl },
-          });
-        }
+        // Note: screenshotUrl is intentionally NOT synced back to TestCase.
       }
     });
 
@@ -371,12 +396,7 @@ export class TestRunsService {
       },
     });
 
-    if (dto.screenshotUrl !== undefined) {
-      await this.prisma.testCase.update({
-        where: { id: dto.testCaseId },
-        data: { screenshotUrl: dto.screenshotUrl || null },
-      });
-    }
+    // Note: screenshotUrl is intentionally NOT synced back to TestCase.
 
     return result;
   }

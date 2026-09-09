@@ -1852,7 +1852,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
       {/* Lightbox Modal */}
       {lightboxIndex !== null && currentCaseState && currentCaseState.screenshots[lightboxIndex] && (
         <div
-          className="fixed inset-0 z-60 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-150"
           onClick={() => setLightboxIndex(null)}
         >
           <button

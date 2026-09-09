@@ -38,6 +38,24 @@ export class TestCasesController {
     return this.testCasesService.findAllBySuite(suiteId);
   }
 
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'Test Senaryosu Kalite İstatistikleri: pass rate, flakiness, ortalama süre (tüm geçmiş)' })
+  @ApiParam({ name: 'id', description: 'TestCase UUID' })
+  getStats(@Param('id') id: string) {
+    return this.testCasesService.getStats(id);
+  }
+
+  @Get(':id/history')
+  @ApiOperation({ summary: 'Test Senaryosu Koşum Geçmişi: son N çalıştırmanın sonuçları' })
+  @ApiParam({ name: 'id', description: 'TestCase UUID' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Maksimum kayıt sayısı (varsayılan: 20)' })
+  getHistory(
+    @Param('id') id: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.testCasesService.getHistory(id, limit ? parseInt(limit, 10) : 20);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'ID ile Test Case detaylarını adımlarıyla getir' })
   @ApiParam({ name: 'id', description: 'TestCase UUID' })

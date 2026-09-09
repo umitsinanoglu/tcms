@@ -144,7 +144,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
     setIsImporting(true);
     try {
       if (isCaseImport) {
-        const res = await TestCasesService.createBulk(projectId, validCases);
+        const res = await TestCasesService.createBulk(projectId, validCases, true);
         setImportResult({
           success: true,
           count: res.count || validCases.length,

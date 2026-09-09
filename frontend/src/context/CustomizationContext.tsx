@@ -9,7 +9,7 @@ import {
   TableDensity,
 } from '@/services/api';
 
-const STORAGE_KEY = 'tcms_field_customizations_v2';
+const STORAGE_KEY = 'tcms_field_customizations_v4';
 
 export const DEFAULT_FIELD_CUSTOMIZATIONS: FieldCustomizationState = {
   modules: {
@@ -46,7 +46,7 @@ export const DEFAULT_FIELD_CUSTOMIZATIONS: FieldCustomizationState = {
         { id: 'jiraStoryKey', label: 'Jira Story', defaultLabel: 'Jira Story', visible: true, order: 6, width: '110px', align: 'left', sortable: true, description: 'Bağlı Jira Story / Epic referansı' },
         { id: 'stepsCount', label: 'Adım Sayısı', defaultLabel: 'Adım Sayısı', visible: true, order: 7, width: '80px', align: 'center', sortable: true, description: 'Senaryo adım adedi' },
         { id: 'lastResult', label: 'Son Durum', defaultLabel: 'Son Durum', visible: true, order: 8, width: '100px', align: 'center', sortable: true, description: 'En son icra edilen test sonucu' },
-        { id: 'updatedAt', label: 'Güncellenme', defaultLabel: 'Güncellenme', visible: false, order: 9, width: '120px', align: 'left', sortable: true, description: 'Son değişiklik zaman damgası' },
+        { id: 'updatedAt', label: 'Güncellenme Zamanı', defaultLabel: 'Güncellenme Zamanı', visible: true, order: 9, width: '135px', align: 'left', sortable: true, description: 'Son değişiklik zaman damgası' },
         { id: 'actions', label: 'İşlemler', defaultLabel: 'İşlemler', visible: true, order: 10, width: '100px', align: 'right', sortable: false, isSticky: 'right', isSystem: true, description: 'Koş, Detay, Düzenle, Sil' },
       ],
     },
@@ -119,10 +119,13 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [customizationState, setCustomizationState] = useState<FieldCustomizationState>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem(STORAGE_KEY);
+        let cached = localStorage.getItem(STORAGE_KEY);
+        if (!cached) {
+          cached = localStorage.getItem('tcms_field_customizations_v3') || localStorage.getItem('tcms_field_customizations_v2');
+        }
         if (cached) {
           const parsed = JSON.parse(cached);
-          return {
+          const state: FieldCustomizationState = {
             ...DEFAULT_FIELD_CUSTOMIZATIONS,
             ...parsed,
             modules: {
@@ -130,6 +133,16 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
               ...(parsed.modules || {}),
             },
           };
+          // Guarantee updatedAt is present and visible in test-cases as per user requirement
+          if (state.modules['test-cases']?.columns) {
+            const defCols = DEFAULT_FIELD_CUSTOMIZATIONS.modules['test-cases'].columns;
+            const existingIds = new Set(state.modules['test-cases'].columns.map((c) => c.id));
+            const missing = defCols.filter((c) => !existingIds.has(c.id));
+            state.modules['test-cases'].columns = [...state.modules['test-cases'].columns, ...missing].map((c) =>
+              c.id === 'updatedAt' ? { ...c, visible: true, label: c.label || 'Güncellenme Zamanı' } : c
+            );
+          }
+          return state;
         }
       } catch (e) {
         console.warn('Failed to parse cached field customizations:', e);
@@ -159,6 +172,14 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
                 ...(remote.modules || {}),
               },
             };
+            if (merged.modules['test-cases']?.columns) {
+              const defCols = DEFAULT_FIELD_CUSTOMIZATIONS.modules['test-cases'].columns;
+              const existingIds = new Set(merged.modules['test-cases'].columns.map((c) => c.id));
+              const missing = defCols.filter((c) => !existingIds.has(c.id));
+              merged.modules['test-cases'].columns = [...merged.modules['test-cases'].columns, ...missing].map((c) =>
+                c.id === 'updatedAt' ? { ...c, visible: true, label: c.label || 'Güncellenme Zamanı' } : c
+              );
+            }
             if (typeof window !== 'undefined') {
               try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
@@ -208,15 +229,33 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getModuleConfig = useCallback(
     (moduleId: string): ModuleGridConfig => {
-      return (
-        customizationState.modules[moduleId] ||
-        DEFAULT_FIELD_CUSTOMIZATIONS.modules[moduleId] || {
+      const baseDefault = DEFAULT_FIELD_CUSTOMIZATIONS.modules[moduleId];
+      const current = customizationState.modules[moduleId] || baseDefault;
+      if (!current) {
+        return {
           moduleId,
           moduleName: moduleId,
           density: 'normal',
           columns: [],
+        };
+      }
+      if (baseDefault) {
+        const existingIds = new Set(current.columns.map((c) => c.id));
+        const missingCols = baseDefault.columns.filter((c) => !existingIds.has(c.id));
+        if (missingCols.length > 0 || moduleId === 'test-cases') {
+          const mergedCols = [...current.columns, ...missingCols].map((c) => {
+            if (moduleId === 'test-cases' && c.id === 'updatedAt') {
+              return { ...c, visible: true, label: c.label || 'Güncellenme Zamanı' };
+            }
+            return c;
+          });
+          return {
+            ...current,
+            columns: mergedCols,
+          };
         }
-      );
+      }
+      return current;
     },
     [customizationState.modules],
   );
