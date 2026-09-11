@@ -379,6 +379,19 @@ function findSmartSuiteId(targetName: string, existingSuites: { id: string; name
   async update(id: string, updateTestCaseDto: UpdateTestCaseDto) {
     const { steps, ...caseData } = updateTestCaseDto;
 
+    const cleanCaseData: any = { ...caseData };
+    if ('suiteId' in cleanCaseData) {
+      cleanCaseData.suiteId =
+        cleanCaseData.suiteId && typeof cleanCaseData.suiteId === 'string' && cleanCaseData.suiteId.trim() !== ''
+          ? cleanCaseData.suiteId.trim()
+          : null;
+    }
+    if (cleanCaseData.preconditions && !cleanCaseData.precondition) {
+      cleanCaseData.precondition = cleanCaseData.preconditions;
+    }
+    delete cleanCaseData.preconditions;
+    delete cleanCaseData.id;
+
     return this.prisma.$transaction(async (tx) => {
       // If steps are provided, replace existing steps
       if (steps) {
@@ -390,7 +403,7 @@ function findSmartSuiteId(targetName: string, existingSuites: { id: string; name
       return tx.testCase.update({
         where: { id },
         data: {
-          ...caseData,
+          ...cleanCaseData,
           updatedAt: new Date(),
           steps: steps ? {
             create: steps.map((step, idx) => ({
@@ -402,6 +415,11 @@ function findSmartSuiteId(targetName: string, existingSuites: { id: string; name
           } : undefined,
         },
         include: {
+          suite: {
+            include: {
+              project: true,
+            },
+          },
           steps: {
             orderBy: { stepNumber: 'asc' },
           },

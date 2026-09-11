@@ -1013,6 +1013,13 @@ export default function Home() {
             selectedCase ? (
               <TestCaseEditor
                 testCase={selectedCase}
+                projectId={selectedProject?.id}
+                suites={tree}
+                onRefreshSuites={async () => {
+                  if (selectedProject) {
+                    await loadProjectData(selectedProject.id);
+                  }
+                }}
                 onSave={handleSaveCase}
                 onDelete={handleDeleteCase}
                 onQuickRun={(tc) => {

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { TestCase, TestStep, Priority, TestType, ExecutionType, TestCaseStats, TestCaseHistory } from '@/services/api';
-import { TestCasesService } from '@/services/api';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { TestCase, TestStep, Priority, TestType, ExecutionType, TestCaseStats, TestCaseHistory, SuiteTreeNode } from '@/services/api';
+import { TestCasesService, SuitesService } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import {
   Save,
@@ -30,11 +30,15 @@ import {
   History,
   TrendingUp,
   ShieldCheck,
+  Pencil,
 } from 'lucide-react';
 import { exportTestCaseToGherkin, exportTestCaseToPlaywright } from '@/utils/scenarioParsers';
 
 interface TestCaseEditorProps {
   testCase: TestCase | null;
+  projectId?: string;
+  suites?: SuiteTreeNode[];
+  onRefreshSuites?: () => void | Promise<void>;
   onSave: (updatedCase: Partial<TestCase>) => Promise<void>;
   onDelete: (caseId: string) => Promise<void>;
   onQuickRun?: (testCase: TestCase) => void;
@@ -44,6 +48,9 @@ interface TestCaseEditorProps {
 
 export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
   testCase,
+  projectId,
+  suites = [],
+  onRefreshSuites,
   onSave,
   onDelete,
   onQuickRun,
@@ -62,6 +69,84 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
   const [steps, setSteps] = useState<TestStep[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Module (Suite) State & Management
+  const [selectedSuiteId, setSelectedSuiteId] = useState<string>('');
+  const [localSuites, setLocalSuites] = useState<SuiteTreeNode[]>(suites);
+  const [isRenamingModule, setIsRenamingModule] = useState(false);
+  const [renameModuleName, setRenameModuleName] = useState('');
+  const [isUpdatingModule, setIsUpdatingModule] = useState(false);
+  const [renameError, setRenameError] = useState('');
+
+  const [isAddingModule, setIsAddingModule] = useState(false);
+  const [newModuleName, setNewModuleName] = useState('');
+  const [newModuleParentId, setNewModuleParentId] = useState('');
+  const [isCreatingModule, setIsCreatingModule] = useState(false);
+  const [createModuleError, setCreateModuleError] = useState('');
+
+  // Inline Module Header Edit State
+  const [isEditingInlineModule, setIsEditingInlineModule] = useState(false);
+  const [inlineModuleName, setInlineModuleName] = useState('');
+  const [isSavingInlineModule, setIsSavingInlineModule] = useState(false);
+
+  // Focus and dynamic step insertion on Enter
+  const [focusStepIndex, setFocusStepIndex] = useState<number | null>(null);
+  const actionInputRefs = useRef<{ [key: number]: HTMLTextAreaElement | null }>({});
+
+  useEffect(() => {
+    if (focusStepIndex !== null) {
+      const target = actionInputRefs.current[focusStepIndex];
+      if (target) {
+        target.focus();
+        setFocusStepIndex(null);
+      }
+    }
+  }, [focusStepIndex, steps]);
+
+  // Sync suites from prop
+  useEffect(() => {
+    if (suites && suites.length > 0) {
+      setLocalSuites(suites);
+    }
+  }, [suites]);
+
+  // Load suites if not provided
+  useEffect(() => {
+    const activeProjectId = projectId || testCase?.projectId;
+    if (activeProjectId && (!localSuites || localSuites.length === 0)) {
+      SuitesService.getAllByProject(activeProjectId)
+        .then((res) => {
+          if (res && res.length > 0) {
+            setLocalSuites(res);
+          }
+        })
+        .catch(() => { /* silent */ });
+    }
+  }, [projectId, testCase?.projectId, localSuites.length]);
+
+  // Flatten suites hierarchy for dropdown display
+  const flattenedSuites = useMemo(() => {
+    const flatten = (nodes: SuiteTreeNode[], depth = 0): { id: string; name: string; depth: number }[] => {
+      let list: { id: string; name: string; depth: number }[] = [];
+      nodes.forEach((n) => {
+        list.push({ id: n.id, name: n.name, depth });
+        if (n.children && n.children.length > 0) {
+          list = list.concat(flatten(n.children, depth + 1));
+        }
+      });
+      return list;
+    };
+    return flatten(localSuites);
+  }, [localSuites]);
+
+  // Current active suite information
+  const currentSuite = useMemo(() => {
+    if (!selectedSuiteId) return null;
+    const found = flattenedSuites.find((s) => s.id === selectedSuiteId);
+    if (found) return found;
+    if (testCase?.suite && testCase.suite.id === selectedSuiteId) return testCase.suite;
+    return null;
+  }, [selectedSuiteId, flattenedSuites, testCase]);
 
   // Code Export Preview state
   const [codePreviewType, setCodePreviewType] = useState<'NONE' | 'CUCUMBER' | 'PLAYWRIGHT'>('NONE');
@@ -86,6 +171,12 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
         setPriority(testCase.priority || 'NORMAL');
         setType(testCase.type || 'WEB');
         setExecutionType(testCase.executionType || 'MANUAL');
+        setSelectedSuiteId(testCase.suiteId || (testCase.suite ? testCase.suite.id : ''));
+        setIsRenamingModule(false);
+        setIsAddingModule(false);
+        setIsEditingInlineModule(false);
+        setRenameError('');
+        setCreateModuleError('');
         setSteps(
           testCase.steps
             ? testCase.steps.map((s) => ({
@@ -116,8 +207,131 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
       prevCaseIdRef.current = null;
       setCaseStats(null);
       setCaseHistory(null);
+      setSelectedSuiteId('');
     }
   }, [testCase]);
+
+  // Rename module handler
+  const handleRenameModule = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!selectedSuiteId || !renameModuleName.trim()) return;
+
+    setIsUpdatingModule(true);
+    setRenameError('');
+    try {
+      const newName = renameModuleName.trim();
+      await SuitesService.update(selectedSuiteId, { name: newName });
+
+      const updateNode = (nodes: SuiteTreeNode[]): SuiteTreeNode[] => {
+        return nodes.map((node) => {
+          if (node.id === selectedSuiteId) {
+            return { ...node, name: newName };
+          }
+          if (node.children && node.children.length > 0) {
+            return { ...node, children: updateNode(node.children) };
+          }
+          return node;
+        });
+      };
+      setLocalSuites((prev) => updateNode(prev));
+      setIsRenamingModule(false);
+
+      if (onRefreshSuites) {
+        await onRefreshSuites();
+      }
+    } catch (err: any) {
+      console.error(err);
+      setRenameError(err?.response?.data?.message || 'Modül adı güncellenirken bir hata oluştu.');
+    } finally {
+      setIsUpdatingModule(false);
+    }
+  };
+
+  // Inline Save Module Name from Header
+  const handleSaveInlineModule = async () => {
+    if (!selectedSuiteId || !inlineModuleName.trim()) {
+      setIsEditingInlineModule(false);
+      return;
+    }
+    setIsSavingInlineModule(true);
+    try {
+      const newName = inlineModuleName.trim();
+      await SuitesService.update(selectedSuiteId, { name: newName });
+      const updateNode = (nodes: SuiteTreeNode[]): SuiteTreeNode[] => {
+        return nodes.map((node) => {
+          if (node.id === selectedSuiteId) {
+            return { ...node, name: newName };
+          }
+          if (node.children && node.children.length > 0) {
+            return { ...node, children: updateNode(node.children) };
+          }
+          return node;
+        });
+      };
+      setLocalSuites((prev) => updateNode(prev));
+      setIsEditingInlineModule(false);
+      if (onRefreshSuites) {
+        await onRefreshSuites();
+      }
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 2500);
+    } catch (err) {
+      console.error('Failed to update module name inline', err);
+    } finally {
+      setIsSavingInlineModule(false);
+    }
+  };
+
+  // Create new module handler
+  const handleCreateModule = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const activeProjectId = projectId || testCase?.projectId;
+    if (!activeProjectId || !newModuleName.trim()) return;
+
+    setIsCreatingModule(true);
+    setCreateModuleError('');
+    try {
+      const created = await SuitesService.create({
+        name: newModuleName.trim(),
+        projectId: activeProjectId,
+        parentId: newModuleParentId || undefined,
+      });
+
+      if (newModuleParentId) {
+        const addToParent = (nodes: SuiteTreeNode[]): SuiteTreeNode[] => {
+          return nodes.map((node) => {
+            if (node.id === newModuleParentId) {
+              return {
+                ...node,
+                children: [...(node.children || []), { ...created, children: [] }],
+              };
+            }
+            if (node.children && node.children.length > 0) {
+              return { ...node, children: addToParent(node.children) };
+            }
+            return node;
+          });
+        };
+        setLocalSuites((prev) => addToParent(prev));
+      } else {
+        setLocalSuites((prev) => [...prev, { ...created, children: [] }]);
+      }
+
+      setSelectedSuiteId(created.id);
+      setNewModuleName('');
+      setNewModuleParentId('');
+      setIsAddingModule(false);
+
+      if (onRefreshSuites) {
+        await onRefreshSuites();
+      }
+    } catch (err: any) {
+      console.error(err);
+      setCreateModuleError(err?.response?.data?.message || 'Yeni modül oluşturulurken bir hata meydana geldi.');
+    } finally {
+      setIsCreatingModule(false);
+    }
+  };
 
   // Keyboard shortcut Ctrl+S / Cmd+S for saving
   useEffect(() => {
@@ -131,7 +345,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [testCase, title, description, jiraStoryKey, preconditions, priority, type, executionType, steps, isViewer]);
+  }, [testCase, title, description, jiraStoryKey, preconditions, priority, type, executionType, selectedSuiteId, steps, isViewer]);
 
   const handleSaveDirect = useCallback(async () => {
     if (!testCase) return;
@@ -144,10 +358,13 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
         title,
         description,
         jiraStoryKey,
+        jiraIssueUrl,
+        precondition: preconditions,
         preconditions,
         priority,
         type,
         executionType,
+        suiteId: selectedSuiteId || null,
         steps,
       });
       setSavedSuccess(true);
@@ -157,7 +374,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [testCase, title, description, jiraStoryKey, preconditions, priority, type, executionType, steps, onSave]);
+  }, [testCase, title, description, jiraStoryKey, jiraIssueUrl, preconditions, priority, type, executionType, selectedSuiteId, steps, onSave]);
 
   if (!testCase) {
     return (
@@ -173,6 +390,17 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
     );
   }
 
+  const handleInsertStepAfter = (index: number) => {
+    const newSteps = [...steps];
+    newSteps.splice(index + 1, 0, {
+      stepNumber: index + 2,
+      action: '',
+      expectedResult: '',
+    });
+    setSteps(newSteps.map((s, i) => ({ ...s, stepNumber: i + 1 })));
+    setFocusStepIndex(index + 1);
+  };
+
   const handleAddStep = () => {
     const nextNum = steps.length + 1;
     setSteps([
@@ -183,6 +411,7 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
         expectedResult: '',
       },
     ]);
+    setFocusStepIndex(steps.length);
   };
 
   const handleDuplicateStep = (index: number) => {
@@ -244,10 +473,14 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
     title,
     description,
     jiraStoryKey,
+    jiraIssueUrl,
+    precondition: preconditions,
     preconditions,
     priority,
     type,
     executionType,
+    suiteId: selectedSuiteId || null,
+    suite: currentSuite ? { id: currentSuite.id, name: currentSuite.name } : undefined,
     steps,
   };
 
@@ -289,11 +522,79 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                 <span>{testCase.code}</span>
               </span>
 
-              {testCase.suite?.name && (
-                <span className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 inline-flex items-center space-x-1.5 h-8">
-                  <Folder className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Modül: {testCase.suite.name}</span>
-                </span>
+              {/* Dynamic Module Tag in Header with Click-to-Edit & Inline Rename */}
+              {isEditingInlineModule ? (
+                <div className="inline-flex items-center h-8 rounded-lg bg-white dark:bg-slate-850 border-2 border-amber-500 shadow-sm px-2 py-0.5 space-x-1.5 animate-fadeIn">
+                  <Folder className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 hidden sm:inline">Modül:</span>
+                  <input
+                    type="text"
+                    autoFocus
+                    value={inlineModuleName}
+                    onChange={(e) => setInlineModuleName(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        await handleSaveInlineModule();
+                      } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        setIsEditingInlineModule(false);
+                      }
+                    }}
+                    placeholder="Modül adı yazın..."
+                    className="bg-transparent text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none w-32 sm:w-44 py-0.5"
+                  />
+                  <button
+                    type="button"
+                    disabled={isSavingInlineModule || !inlineModuleName.trim()}
+                    onClick={handleSaveInlineModule}
+                    className="p-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors cursor-pointer disabled:opacity-30"
+                    title="Kaydet (Enter)"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingInlineModule(false)}
+                    className="p-1 rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+                    title="Vazgeç (Esc)"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isViewer}
+                  onClick={() => {
+                    if (isViewer) return;
+                    if (selectedSuiteId && currentSuite) {
+                      setInlineModuleName(currentSuite.name);
+                      setIsEditingInlineModule(true);
+                    } else {
+                      setNewModuleName('');
+                      setNewModuleParentId('');
+                      setIsAddingModule(true);
+                    }
+                  }}
+                  className="group inline-flex items-center h-8 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 active:bg-amber-500/30 text-amber-700 dark:text-amber-400 border border-amber-500/30 hover:border-amber-500/50 px-2.5 py-1 text-xs font-semibold space-x-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
+                  title={
+                    selectedSuiteId
+                      ? `Modül Adını Düzenle (Tıklayın): ${currentSuite?.name}`
+                      : 'Yeni Modül Oluşturmak veya Bağlamak İçin Tıklayın'
+                  }
+                >
+                  <Folder className="w-3.5 h-3.5 text-amber-500 shrink-0 group-hover:scale-110 transition-transform" />
+                  <span className="text-slate-500 dark:text-slate-400 font-normal">Modül:</span>
+                  <span className="font-bold truncate max-w-[180px] group-hover:underline decoration-amber-500/60 underline-offset-2">
+                    {currentSuite ? currentSuite.name : 'Ana Modül (Modülsüz)'}
+                  </span>
+                  {!isViewer && (
+                    <span className="ml-0.5 p-0.5 rounded text-amber-500/70 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
+                      <Pencil className="w-3 h-3" />
+                    </span>
+                  )}
+                </button>
               )}
 
               {testCase.updatedAt && (
@@ -441,8 +742,65 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
           </div>
         )}
 
-        {/* Meta Configuration Fields (Execution Type, Type, Priority) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+        {/* Meta Configuration Fields (Module, Execution Type, Type, Priority) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+          {/* Module / Test Suite Selector */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center space-x-1">
+                <Folder className="w-3.5 h-3.5 text-amber-500" />
+                <span>Modül (Suite)</span>
+              </label>
+              <div className="flex items-center space-x-1">
+                {selectedSuiteId && can('EDIT_SUITE') && !isViewer && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRenameModuleName(currentSuite?.name || '');
+                      setIsRenamingModule(true);
+                    }}
+                    className="text-[10px] text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold flex items-center space-x-0.5 px-1 py-0.5 rounded hover:bg-amber-500/10 transition-colors cursor-pointer"
+                    title="Seçili modülün adını düzenle"
+                  >
+                    <Pencil className="w-2.5 h-2.5" />
+                    <span>Düzenle</span>
+                  </button>
+                )}
+                {can('CREATE_SUITE') && !isViewer && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewModuleName('');
+                      setNewModuleParentId('');
+                      setIsAddingModule(true);
+                    }}
+                    className="text-[10px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold flex items-center space-x-0.5 px-1 py-0.5 rounded hover:bg-blue-500/10 transition-colors cursor-pointer"
+                    title="Yeni modül oluştur ve bağla"
+                  >
+                    <Plus className="w-2.5 h-2.5" />
+                    <span>Yeni</span>
+                  </button>
+                )}
+              </div>
+            </div>
+            <select
+              value={selectedSuiteId}
+              disabled={isViewer}
+              onChange={(e) => setSelectedSuiteId(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] truncate"
+            >
+              <option value="">📁 Ana Modül (Modülsüz / Proje Geneli)</option>
+              {flattenedSuites.map((s) => (
+                <option key={s.id} value={s.id}>
+                  📁 {'— '.repeat(s.depth)}{s.name}
+                </option>
+              ))}
+              {testCase.suite && !flattenedSuites.some((s) => s.id === testCase.suite?.id) && (
+                <option value={testCase.suite.id}>📁 {testCase.suite.name}</option>
+              )}
+            </select>
+          </div>
+
           {/* Execution Type */}
           <div className="space-y-1">
             <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
@@ -640,10 +998,17 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
 
                       <div className="col-span-6">
                         <textarea
+                          ref={(el) => { actionInputRefs.current[idx] = el; }}
                           rows={2}
                           value={step.action}
                           onChange={(e) => handleStepChange(idx, 'action', e.target.value)}
-                          placeholder="Örn: 'Giriş Yap' butonuna tıklanır..."
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleInsertStepAfter(idx);
+                            }
+                          }}
+                          placeholder="Örn: 'Giriş Yap' butonuna tıklanır... (Enter: yeni adım ekler)"
                           className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none shadow-xs"
                         />
                       </div>
@@ -653,7 +1018,13 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
                           rows={2}
                           value={step.expectedResult || ''}
                           onChange={(e) => handleStepChange(idx, 'expectedResult', e.target.value)}
-                          placeholder="Örn: Ana sayfaya yönlendirilir ve kullanıcı paneli açılır..."
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleInsertStepAfter(idx);
+                            }
+                          }}
+                          placeholder="Örn: Ana sayfaya yönlendirilir ve kullanıcı paneli açılır... (Enter: yeni adım ekler)"
                           className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none shadow-xs"
                         />
                       </div>
@@ -838,6 +1209,188 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
               <p>Bu senaryoyu koşturduğunuzda kalite metrikleri burada görünecektir.</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Rename Module Modal */}
+      {isRenamingModule && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-slate-800 dark:text-slate-100 font-bold text-sm">
+                <Pencil className="w-4 h-4 text-amber-500" />
+                <span>Modül Adını Düzenle</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRenamingModule(false);
+                  setRenameError('');
+                }}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Seçili modülün adını güncelleyin. Bu modüle bağlı tüm test senaryoları ve modül ağacı güncellenecektir.
+            </p>
+
+            {renameError && (
+              <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{renameError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleRenameModule} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Modül Adı *
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={renameModuleName}
+                  onChange={(e) => setRenameModuleName(e.target.value)}
+                  placeholder="Modül adını giriniz..."
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRenamingModule(false);
+                    setRenameError('');
+                  }}
+                  className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingModule || !renameModuleName.trim()}
+                  className="px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white shadow-md shadow-amber-500/20 flex items-center space-x-1.5 transition-all cursor-pointer"
+                >
+                  {isUpdatingModule ? (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                      <span>Güncelleniyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Adı Güncelle</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Module Modal */}
+      {isAddingModule && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-slate-800 dark:text-slate-100 font-bold text-sm">
+                <Folder className="w-4 h-4 text-blue-500" />
+                <span>Yeni Modül Tanımla</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAddingModule(false);
+                  setCreateModuleError('');
+                }}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Projeye yeni bir modül ekleyin. Oluşturulan modül otomatik olarak bu senaryoya bağlanacaktır.
+            </p>
+
+            {createModuleError && (
+              <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{createModuleError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateModule} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Modül / İş Alanı Adı *
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={newModuleName}
+                  onChange={(e) => setNewModuleName(e.target.value)}
+                  placeholder="Örn: Para Transferleri, Kimlik Doğrulama, Kart İşlemleri..."
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Üst Modül (Opsiyonel)
+                </label>
+                <select
+                  value={newModuleParentId}
+                  onChange={(e) => setNewModuleParentId(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+                >
+                  <option value="">📁 Ana Seviye Modül (Üst modülsüz)</option>
+                  {flattenedSuites.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      📁 {'— '.repeat(s.depth)}{s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingModule(false);
+                    setCreateModuleError('');
+                  }}
+                  className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingModule || !newModuleName.trim()}
+                  className="px-4 py-2 text-xs font-bold rounded-xl bg-accent-gradient hover:brightness-110 disabled:opacity-50 text-white shadow-md shadow-[var(--accent-dark)]/25 flex items-center space-x-1.5 transition-all cursor-pointer"
+                >
+                  {isCreatingModule ? (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                      <span>Oluşturuluyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Modülü Oluştur ve Seç</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </main>

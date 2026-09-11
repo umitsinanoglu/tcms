@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Boş Test Planı İzolasyonu ve Gerçek Metrik Hesaplaması**: İçi boş oluşturulan test planlarında projedeki senaryoların rastgele/varsayılan olarak atanması ve sahte (mock seed) istatistiklerin gösterilmesi engellendi; senaryo atanmamış planlar kesinlikle 0 senaryo, 0 koşum ve %0 başarı oranıyla izole edildi.
 
 ### Added
+- Test senaryosu başlığındaki modül etiketine tıklayarak doğrudan düzenleme ve test adımlarında Enter tuşu ile hemen alta yeni adım ekleme özellikleri getirildi
+- Test senaryosu düzenleme (TestCaseEditor) ekranına değiştirilebilir ve düzenlenebilir modül (suite) seçimi ve yönetimi eklendi
 - TestCase kalite metrikleri: GET /test-cases/:id/stats ve GET /test-cases/:id/history endpointleri eklendi. TestCaseEditor'a Kosum Kalite Metrikleri paneli (pass rate, flakiness, avg sure, kosup gecmisi tablosu) eklendi
 - Desktop (Core Bankacilik) platform destegi eklendi ve test tipi mimarisi optimize edildi
 - Test senaryoları için 4 kanallı güncelleme ve içe aktarma sistemi (Manuel, Cucumber .feature, TAC Servisi Canlı Senkronizasyon, Playwright .spec.ts) ve zenginleştirilmiş kullanıcı dostu arayüz eklendi

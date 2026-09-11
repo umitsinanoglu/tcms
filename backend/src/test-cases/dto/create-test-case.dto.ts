@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateIf, ValidateNested } from 'class-validator';
 import { TestType, Priority } from '@prisma/client';
 import { CreateTestStepDto } from './test-step.dto';
 
@@ -41,15 +41,21 @@ export class CreateTestCaseDto {
   @IsOptional()
   precondition?: string;
 
+  @ApiProperty({ example: 'Sistemde kayıtlı kullanıcı olmalıdır', description: 'Ön koşul alternatifi', required: false })
+  @IsString()
+  @IsOptional()
+  preconditions?: string;
+
   @ApiProperty({ example: 'uuid-project-id', description: 'Ait olduğu Test Planı / Proje UUID', required: false })
   @IsUUID()
   @IsOptional()
   projectId?: string;
 
-  @ApiProperty({ example: 'uuid-suite-id', description: 'Ait olduğu Suite UUID', required: false })
+  @ApiProperty({ example: 'uuid-suite-id', description: 'Ait olduğu Suite UUID', required: false, nullable: true })
+  @ValidateIf((o) => o.suiteId !== null && o.suiteId !== undefined && o.suiteId !== '')
   @IsUUID()
   @IsOptional()
-  suiteId?: string;
+  suiteId?: string | null;
 
   @ApiProperty({ example: 0, description: 'Sıralama indeksi', required: false })
   @IsInt()
