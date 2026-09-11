@@ -126,7 +126,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     getDensityClasses,
   } = useCustomization();
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>('PROJECTS_SYSTEM');
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('tcms_settings_active_tab') as SettingsTab | null;
+      const validTabs: SettingsTab[] = [
+        'PROJECTS_SYSTEM',
+        'MODULES',
+        'FIELD_CUSTOMIZATION',
+        'USERS',
+        'SESSIONS',
+        'ROLES',
+        'LDAP',
+        'API_KEYS',
+        'WEBHOOKS',
+      ];
+      if (saved && validTabs.includes(saved)) {
+        return saved;
+      }
+    }
+    return 'PROJECTS_SYSTEM';
+  });
+
+  const handleTabChange = (tab: SettingsTab) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tcms_settings_active_tab', tab);
+    }
+  };
+
   const [selectedCustomModule, setSelectedCustomModule] = useState<'test-plans' | 'test-cases' | 'test-runs' | 'defects'>('test-plans');
   const [newTagInput, setNewTagInput] = useState('');
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
@@ -695,7 +722,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
                   isActive
                     ? 'bg-accent-gradient text-white shadow-sm shadow-[var(--accent-dark)]/30 font-bold'

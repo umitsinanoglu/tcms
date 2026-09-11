@@ -610,6 +610,24 @@ export default function Home() {
     }
   }, [loadProjectData, pushState]);
 
+  const refreshProjectsList = useCallback(async () => {
+    try {
+      const data = await ProjectsService.getAll();
+      const sorted = [...data].sort((a, b) =>
+        a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
+      );
+      setProjects(sorted);
+      if (selectedProject) {
+        const updated = sorted.find((p) => p.id === selectedProject.id);
+        if (updated) {
+          setSelectedProject(updated);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to refresh projects list:', err);
+    }
+  }, [selectedProject]);
+
   useEffect(() => {
     if (isAuthenticated) {
       loadProjects();
@@ -1142,7 +1160,7 @@ export default function Home() {
                 handleSelectProject(proj);
               }}
               onRefreshProjects={async () => {
-                await loadProjects();
+                await refreshProjectsList();
               }}
               onOpenCreateProject={() => setIsNewProjectOpen(true)}
               onOpenEditProject={(proj) => {

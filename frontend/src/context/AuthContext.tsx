@@ -84,6 +84,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Find user in active list
       const matchedUser = userList.find((u) => u.id === session.userId || u.email.toLowerCase() === session.email.toLowerCase());
       if (matchedUser && matchedUser.isActive) {
+        if (session.role !== matchedUser.role || session.name !== matchedUser.name) {
+          session.role = matchedUser.role;
+          session.name = matchedUser.name;
+          localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+          localStorage.setItem('tcms_active_user_role', matchedUser.role);
+          localStorage.setItem('tcms_active_user_name', matchedUser.name);
+        }
         setCurrentUser(matchedUser);
         setIsAuthenticated(true);
         return true;
@@ -101,10 +108,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Fetch users and initialize auth state on mount
+  // Fetch users and initialize auth state on mount (background refresh does not trigger full-screen unmount)
   const refreshUsers = useCallback(async () => {
     try {
-      setIsLoading(true);
       const userList = await UsersService.getUsers();
       setUsers(userList);
       checkAndRestoreSession(userList);

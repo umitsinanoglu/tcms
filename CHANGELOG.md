@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Başarılı test koşularından sonra çıkan konfeti animasyonu kaldırıldı.
 
 ### Fixed
+- Sistem ayarlarında kullanıcı rolü ve işlem yapıldığında sayfanın Projeler ve Sistem sekmesine sıfırlanması sorunu düzeltildi
 - TestRun detay modalındaki kaydet butonu kurumsal kırmızı gradyan rengine çekildi ve &amp; metin hatası giderildi
 - TestRunDetailView read-only kilidi tamamlandi: handleInstantStatusChange, handleSaveDrawerResult, handleBulkStatusChange ve handleMarkAllPassed fonksiyonlarina run.status kontrolu eklendi. COMPLETED/ABORTED kosumda PASS/FAIL/BLOCK butonlari disabled ve opacity-30 gorunu uyle kilitlenir, tiklama toast hatasiyla engellenir
 - TestCase static template ihlali duzeltildi: saveResults, createAutomationRun ve quickRun icindeki screenshotUrl->TestCase otomatik yazimi kaldirildi. Screenshot artik sadece TestCase editor uzerinden guncellenir
