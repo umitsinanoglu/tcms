@@ -22,6 +22,7 @@ import {
   BookOpen,
   LayoutDashboard,
   ChevronsUpDown,
+  Terminal,
 } from 'lucide-react';
 import { SidebarTab } from './AppSidebar';
 
@@ -80,6 +81,41 @@ export const Header: React.FC<HeaderProps> = ({
   // Global Top Navigation Search State
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // Status Bar visibility state
+  const [isStatusBarVisible, setIsStatusBarVisible] = useState<boolean>(true);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tcms_statusbar_visible');
+      if (saved !== null) {
+        setIsStatusBarVisible(saved === 'true');
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    const handleStateChange = (e: any) => {
+      if (typeof e.detail?.visible === 'boolean') {
+        setIsStatusBarVisible(e.detail.visible);
+      }
+    };
+    window.addEventListener('tcms:statusbar-state-changed', handleStateChange);
+    return () => window.removeEventListener('tcms:statusbar-state-changed', handleStateChange);
+  }, []);
+
+  const handleToggleStatusBar = () => {
+    const next = !isStatusBarVisible;
+    setIsStatusBarVisible(next);
+    try {
+      localStorage.setItem('tcms_statusbar_visible', String(next));
+    } catch (e) {
+      // ignore
+    }
+    window.dispatchEvent(
+      new CustomEvent('tcms:statusbar-toggle', { detail: { visible: next } })
+    );
+  };
 
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const projectDropdownRef = useRef<HTMLDivElement>(null);
@@ -746,6 +782,25 @@ export const Header: React.FC<HeaderProps> = ({
         {/* 3. Theme Selector */}
         <ThemeSelector />
 
+        {/* 3.5. Status Bar Quick Toggle Button */}
+        <button
+          type="button"
+          onClick={handleToggleStatusBar}
+          className={`w-8 h-8 flex items-center justify-center rounded-xl border transition-all shadow-xs shrink-0 cursor-pointer ${
+            isStatusBarVisible
+              ? 'text-[#b83a4b] bg-[#b83a4b]/10 border-[#b83a4b]/30 hover:bg-[#b83a4b]/20'
+              : 'text-slate-400 bg-slate-100/90 dark:bg-slate-800/80 hover:text-slate-200 border-slate-200 dark:border-slate-700'
+          }`}
+          title={
+            isStatusBarVisible
+              ? 'Alt Durum Çubuğunu Gizle (Developer Status Bar)'
+              : 'Alt Durum Çubuğunu Göster (Developer Status Bar)'
+          }
+          aria-label="Durum Çubuğu Aç/Kapat"
+        >
+          <Terminal className="w-4 h-4" />
+        </button>
+
         {/* 4. Help / Docs Button */}
         <a
           href={
@@ -804,6 +859,31 @@ export const Header: React.FC<HeaderProps> = ({
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Status Bar Switch in Popover */}
+              <div className="p-1.5 border-b border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={handleToggleStatusBar}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-xl transition-colors font-medium cursor-pointer"
+                >
+                  <div className="flex items-center space-x-2">
+                    <Terminal className="w-3.5 h-3.5 text-[#b83a4b]" />
+                    <span>Alt Durum Çubuğu</span>
+                  </div>
+                  <div
+                    className={`w-8 h-4 rounded-full transition-colors relative flex items-center px-0.5 ${
+                      isStatusBarVisible ? 'bg-[#b83a4b]' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                  >
+                    <div
+                      className={`w-3 h-3 rounded-full bg-white transition-transform ${
+                        isStatusBarVisible ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                </button>
               </div>
 
               {/* Logout Action */}

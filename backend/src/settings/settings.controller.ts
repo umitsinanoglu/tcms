@@ -18,6 +18,13 @@ import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
+  // 0. System Status & Git Info
+  @Get('system-status')
+  @ApiOperation({ summary: 'Sistem durumu, Git branch ve canlı metrikleri getir' })
+  getSystemStatus() {
+    return this.settingsService.getSystemStatus();
+  }
+
   // 1. System Settings
   @Get('system')
   @ApiOperation({ summary: 'Genel sistem ayarlarını getir' })

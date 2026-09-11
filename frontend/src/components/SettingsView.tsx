@@ -265,6 +265,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   });
   const [isSavingSystem, setIsSavingSystem] = useState(false);
 
+  // Status Bar visibility state
+  const [isStatusBarActive, setIsStatusBarActive] = useState<boolean>(true);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tcms_statusbar_visible');
+      if (saved !== null) {
+        setIsStatusBarActive(saved === 'true');
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    const handleStateChange = (e: any) => {
+      if (typeof e.detail?.visible === 'boolean') {
+        setIsStatusBarActive(e.detail.visible);
+      }
+    };
+    window.addEventListener('tcms:statusbar-state-changed', handleStateChange);
+    return () => window.removeEventListener('tcms:statusbar-state-changed', handleStateChange);
+  }, []);
+
+  const handleToggleStatusBar = (checked: boolean) => {
+    setIsStatusBarActive(checked);
+    try {
+      localStorage.setItem('tcms_statusbar_visible', String(checked));
+    } catch (e) {
+      // ignore
+    }
+    window.dispatchEvent(
+      new CustomEvent('tcms:statusbar-toggle', { detail: { visible: checked } })
+    );
+  };
+
   // 2. User Management Form Modal
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [userFormData, setUserFormData] = useState<CreateUserInput>({
@@ -971,6 +1005,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       }
                       className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                     />
+                  </div>
+
+                  {/* Developer Status Bar Setting Card */}
+                  <div className="md:col-span-2 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 flex items-center justify-between">
+                    <div className="space-y-0.5 pr-4">
+                      <div className="flex items-center space-x-2">
+                        <Terminal className="w-4 h-4 text-[#b83a4b]" />
+                        <span className="font-semibold text-xs text-slate-800 dark:text-slate-200">
+                          Geliştirici Alt Durum Çubuğu (Developer Status Bar)
+                        </span>
+                        <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#b83a4b]/10 text-[#b83a4b] border border-[#b83a4b]/20">
+                          Canlı Öncesi
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Sayfanın alt kısmında Git branch, commit hash, veritabanı gecikmesi ve sistem performans metriklerini görüntüler. Canlıya geçene kadar buradan veya çubuk üzerindeki düğmelerden açıp kapatabilirsiniz.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={isStatusBarActive}
+                        onChange={(e) => handleToggleStatusBar(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#b83a4b]"></div>
+                    </label>
                   </div>
                 </div>
 

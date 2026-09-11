@@ -46,6 +46,7 @@ import {
 import { LoginView } from '@/components/LoginView';
 import { ReportsView } from '@/components/ReportsView';
 import { SettingsView } from '@/components/SettingsView';
+import { StatusBar } from '@/components/StatusBar';
 
 
 
@@ -1174,6 +1175,15 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* Optional & Switchable Bottom Status Bar with Git & System Metrics */}
+      <StatusBar
+        selectedProject={selectedProject}
+        casesCount={allCases.length}
+        runsCount={testRunsCount}
+        defectsCount={defectsCount}
+        onNavigateToTab={(tab) => handleTabChange(tab)}
+      />
 
       {/* Modals */}
       <NewProjectModal

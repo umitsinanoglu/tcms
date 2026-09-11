@@ -1038,7 +1038,43 @@ export interface LdapSyncResult {
   };
 }
 
+export interface SystemStatus {
+  status: 'healthy' | 'degraded' | 'error';
+  git: {
+    branch: string;
+    commit: string;
+    commitMessage: string;
+    commitDate: string;
+    isDirty: boolean;
+  };
+  server: {
+    nodeVersion: string;
+    uptimeSeconds: number;
+    environment: string;
+    memory: {
+      heapUsedMB: number;
+      heapTotalMB: number;
+      rssMB: number;
+    };
+    serverTime: string;
+  };
+  database: {
+    status: string;
+    latencyMs: number;
+  };
+  counts?: {
+    projects: number;
+    testCases: number;
+    testSuites: number;
+    testRuns: number;
+    activeRuns: number;
+    openDefects: number;
+  };
+  version: string;
+}
+
 export const SettingsService = {
+  getSystemStatus: () => api.get<SystemStatus>('/settings/system-status').then((res) => res.data),
   getSystemSettings: () => api.get<SystemSettings>('/settings/system').then((res) => res.data),
   updateSystemSettings: (data: Partial<SystemSettings>) =>
     api.patch<SystemSettings>('/settings/system', data).then((res) => res.data),

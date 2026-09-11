@@ -7,6 +7,7 @@ import {
   CreateApiKeyDto,
 } from './dto/settings.dto';
 import * as crypto from 'crypto';
+import { execSync } from 'child_process';
 
 export interface SystemSettings {
   systemTitle: string;
@@ -424,5 +425,127 @@ export class SettingsService {
     this.fieldCustomizations.updatedAt = new Date().toISOString();
     return this.fieldCustomizations;
   }
+
+  async getSystemStatus() {
+    let gitBranch = 'unknown';
+    let gitCommit = 'unknown';
+    let gitCommitMessage = '';
+    let gitCommitDate = '';
+    let isDirty = false;
+
+    try {
+      gitBranch = execSync('git rev-parse --abbrev-ref HEAD', {
+        timeout: 1500,
+        stdio: ['pipe', 'pipe', 'ignore'],
+      })
+        .toString()
+        .trim();
+      gitCommit = execSync('git rev-parse --short HEAD', {
+        timeout: 1500,
+        stdio: ['pipe', 'pipe', 'ignore'],
+      })
+        .toString()
+        .trim();
+      gitCommitMessage = execSync('git log -1 --pretty=%s', {
+        timeout: 1500,
+        stdio: ['pipe', 'pipe', 'ignore'],
+      })
+        .toString()
+        .trim();
+      gitCommitDate = execSync('git log -1 --format=%cd --date=relative', {
+        timeout: 1500,
+        stdio: ['pipe', 'pipe', 'ignore'],
+      })
+        .toString()
+        .trim();
+      const statusOutput = execSync('git status --porcelain', {
+        timeout: 1500,
+        stdio: ['pipe', 'pipe', 'ignore'],
+      })
+        .toString()
+        .trim();
+      isDirty = statusOutput.length > 0;
+    } catch (e) {
+      gitBranch = process.env.GIT_BRANCH || 'main';
+      gitCommit = process.env.GIT_COMMIT || 'latest';
+    }
+
+    // Measure DB query latency
+    let dbStatus = 'connected';
+    let dbLatencyMs = 0;
+    const dbStart = Date.now();
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      dbLatencyMs = Date.now() - dbStart;
+    } catch (e) {
+      dbStatus = 'disconnected';
+      dbLatencyMs = -1;
+    }
+
+    // Counts
+    let projectsCount = 0;
+    let testCasesCount = 0;
+    let testSuitesCount = 0;
+    let testRunsCount = 0;
+    let activeRunsCount = 0;
+    let openDefectsCount = 0;
+
+    try {
+      const [pCount, cCount, sCount, rCount, activeRCount, defCount] = await Promise.all([
+        this.prisma.project.count(),
+        this.prisma.testCase.count(),
+        this.prisma.suite.count(),
+        this.prisma.testRun.count(),
+        this.prisma.testRun.count({ where: { status: 'IN_PROGRESS' } }),
+        this.prisma.defect.count({ where: { status: { in: ['OPEN', 'IN_PROGRESS'] } } }),
+      ]);
+      projectsCount = pCount;
+      testCasesCount = cCount;
+      testSuitesCount = sCount;
+      testRunsCount = rCount;
+      activeRunsCount = activeRCount;
+      openDefectsCount = defCount;
+    } catch (e) {
+      // Ignore fallback
+    }
+
+    const memoryUsage = process.memoryUsage();
+
+    return {
+      status: dbStatus === 'connected' ? 'healthy' : 'degraded',
+      git: {
+        branch: gitBranch,
+        commit: gitCommit,
+        commitMessage: gitCommitMessage,
+        commitDate: gitCommitDate,
+        isDirty,
+      },
+      server: {
+        nodeVersion: process.version,
+        uptimeSeconds: Math.floor(process.uptime()),
+        environment: process.env.NODE_ENV || 'development',
+        memory: {
+          heapUsedMB: Math.round((memoryUsage.heapUsed / 1024 / 1024) * 10) / 10,
+          heapTotalMB: Math.round((memoryUsage.heapTotal / 1024 / 1024) * 10) / 10,
+          rssMB: Math.round((memoryUsage.rss / 1024 / 1024) * 10) / 10,
+        },
+        serverTime: new Date().toISOString(),
+      },
+      database: {
+        status: dbStatus,
+        latencyMs: dbLatencyMs,
+      },
+      counts: {
+        projects: projectsCount,
+        testCases: testCasesCount,
+        testSuites: testSuitesCount,
+        testRuns: testRunsCount,
+        activeRuns: activeRunsCount,
+        openDefects: openDefectsCount,
+      },
+      version: this.systemSettings.version,
+    };
+  }
 }
+
 
