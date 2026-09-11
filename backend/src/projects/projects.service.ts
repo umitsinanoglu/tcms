@@ -86,9 +86,10 @@ export class ProjectsService {
       orderBy: { orderIndex: 'asc' },
     });
 
-    // Fetch all test cases in the project including steps and latest result
+    // Fetch all active test cases in the project including steps and latest result
     const testCases = await this.prisma.testCase.findMany({
       where: {
+        isDeleted: false,
         OR: [
           { projectId },
           { suite: { projectId } },

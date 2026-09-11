@@ -288,7 +288,7 @@ function findSmartSuiteId(targetName: string, existingSuites: { id: string; name
 
   async findAllBySuite(suiteId: string) {
     return this.prisma.testCase.findMany({
-      where: { suiteId },
+      where: { suiteId, isDeleted: false },
       include: {
         steps: {
           orderBy: { stepNumber: 'asc' },
@@ -579,8 +579,60 @@ function findSmartSuiteId(targetName: string, existingSuites: { id: string; name
 
   async remove(id: string) {
     await this.findOne(id);
-    return this.prisma.testCase.delete({
+
+    // Dependency & Audit check: If this test case has any execution results, plans or defects,
+    // prevent hard deletion to protect compliance and audit records.
+    const [resultCount, planCount, defectCount] = await Promise.all([
+      this.prisma.testResult.count({ where: { testCaseId: id } }),
+      this.prisma.testPlanCase.count({ where: { testCaseId: id } }),
+      this.prisma.defect.count({ where: { testCaseId: id } }),
+    ]);
+
+    const hasHistory = resultCount > 0 || planCount > 0 || defectCount > 0;
+
+    if (hasHistory) {
+      // Soft Delete: Mark as deleted and archived without breaking relational references
+      const updated = await this.prisma.testCase.update({
+        where: { id },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+      });
+
+      return {
+        success: true,
+        softDeleted: true,
+        message: `Test senaryosu geçmiş kayıtları (${resultCount} test koşumu, ${planCount} plan) bulunduğu için denetim izini korumak amacıyla güvenle arşivlendi.`,
+        data: updated,
+      };
+    }
+
+    // Pure draft case with 0 execution history: Safe to hard delete
+    const deleted = await this.prisma.testCase.delete({
       where: { id },
+    });
+
+    return {
+      success: true,
+      softDeleted: false,
+      message: 'Test senaryosu başarıyla silindi.',
+      data: deleted,
+    };
+  }
+
+  async restore(id: string) {
+    const testCase = await this.prisma.testCase.findUnique({ where: { id } });
+    if (!testCase) {
+      throw new NotFoundException(`TestCase with ID ${id} not found`);
+    }
+
+    return this.prisma.testCase.update({
+      where: { id },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+      },
     });
   }
 }

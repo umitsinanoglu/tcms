@@ -202,10 +202,14 @@ model TestCase {
 
   screenshotUrl String?
 
+  isDeleted    Boolean      @default(false)
+  deletedAt    DateTime?
+
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
   @@index([projectId, suiteId])
+  @@index([projectId, isDeleted])
   @@index([projectId, type])
   @@index([projectId, priority])
   @@index([createdAt])

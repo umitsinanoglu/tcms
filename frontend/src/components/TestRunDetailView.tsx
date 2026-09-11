@@ -1100,14 +1100,16 @@ export const TestRunDetailView: React.FC<TestRunDetailViewProps> = ({
             <span className="hidden md:inline">HTML</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleDeleteRun}
-            className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 transition-all cursor-pointer"
-            title="Koşumu Sil"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          {can('DELETE_RUN') && run.status !== 'ARCHIVED' && (
+            <button
+              type="button"
+              onClick={handleDeleteRun}
+              className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 transition-all cursor-pointer"
+              title="Koşumu Sil (Yalnızca Admin ve Test Lead)"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 

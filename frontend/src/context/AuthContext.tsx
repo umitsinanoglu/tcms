@@ -18,6 +18,8 @@ export type PermissionAction =
   | 'EDIT_PLAN'
   | 'DELETE_PLAN'
   | 'EXECUTE_RUN'
+  | 'DELETE_RUN'
+  | 'DELETE_DEFECT'
   | 'VIEW_REPORTS'
   | 'AUTOMATION_ACCESS';
 
@@ -226,14 +228,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         case 'CREATE_CASE':
         case 'EDIT_CASE':
-        case 'DELETE_CASE':
         case 'CREATE_PLAN':
         case 'EDIT_PLAN':
         case 'EXECUTE_RUN':
           return effectiveRole === 'ADMIN' || effectiveRole === 'TEST_LEAD' || effectiveRole === 'TESTER' || effectiveRole === 'AUTOMATION_ENGINEER';
 
+        case 'DELETE_CASE':
         case 'DELETE_PLAN':
+        case 'DELETE_RUN':
           return effectiveRole === 'ADMIN' || effectiveRole === 'TEST_LEAD';
+
+        case 'DELETE_DEFECT':
+          return effectiveRole === 'ADMIN';
 
         case 'AUTOMATION_ACCESS':
           return effectiveRole === 'ADMIN' || effectiveRole === 'AUTOMATION_ENGINEER';

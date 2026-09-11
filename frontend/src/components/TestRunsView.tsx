@@ -1162,16 +1162,20 @@ export const TestRunsView: React.FC<TestRunsViewProps> = ({
                                         </>
                                       )}
 
-                                      <div className="border-t border-[#d0d8e4] dark:border-[#2e3748] my-1" />
+                                      {can('DELETE_RUN') && run.status !== 'ARCHIVED' && (
+                                        <>
+                                          <div className="border-t border-[#d0d8e4] dark:border-[#2e3748] my-1" />
 
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteRun(run.id, run.title)}
-                                        className="w-full px-3 py-1.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 flex items-center space-x-2 text-rose-600 dark:text-rose-400"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                        <span>Koşumu Sil</span>
-                                      </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteRun(run.id, run.title)}
+                                            className="w-full px-3 py-1.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 flex items-center space-x-2 text-rose-600 dark:text-rose-400"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <span>Koşumu Sil</span>
+                                          </button>
+                                        </>
+                                      )}
                                     </div>
                                   )}
                                 </div>

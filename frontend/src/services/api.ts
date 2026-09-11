@@ -378,7 +378,8 @@ export const TestCasesService = {
     api.patch<TestCase>(`/test-cases/${id}`, data).then((res) => res.data),
   linkJiraStory: (id: string, jiraStoryKey?: string, jiraIssueUrl?: string) =>
     api.patch<TestCase>(`/test-cases/${id}/jira-link`, { jiraStoryKey, jiraIssueUrl }).then((res) => res.data),
-  delete: (id: string) => api.delete(`/test-cases/${id}`).then((res) => res.data),
+  delete: (id: string) => api.delete<{ success: boolean; softDeleted?: boolean; message?: string; data?: any }>(`/test-cases/${id}`).then((res) => res.data),
+  restore: (id: string) => api.post<TestCase>(`/test-cases/${id}/restore`).then((res) => res.data),
 };
 
 

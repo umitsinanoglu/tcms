@@ -97,8 +97,8 @@ export class DefectsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.TEST_LEAD)
-  @ApiOperation({ summary: 'Defect kaydını sil (Admin & Test Lead)' })
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Defect kaydını sil (Yalnızca Admin yetkisiyle)' })
   @ApiParam({ name: 'id', description: 'Defect UUID' })
   remove(@Param('id') id: string) {
     return this.defectsService.remove(id);

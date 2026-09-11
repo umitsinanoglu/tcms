@@ -386,14 +386,15 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
 
   // Handle plan delete
   const handleDeletePlan = async () => {
-    if (!confirm(`'${plan.title}' adlı test planını tamamen silmek istediğinize emin misiniz?`)) return;
+    if (!confirm(`'${plan.title}' adlı test planını silmek istediğinize emin misiniz?\n\n(Not: Eğer bu plana bağlı geçmiş test koşumları varsa, denetim izini korumak amacıyla plan silinemez; durumu 'ARCHIVED' yapılmalıdır.)`)) return;
     try {
       await TestPlansService.delete(plan.id);
       if (onDeletePlanSuccess) onDeletePlanSuccess(plan.id);
       onBack();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete test plan:', err);
-      alert('Test planı silinemedi.');
+      const msg = err?.response?.data?.message || err?.message || 'Test planı silinemedi.';
+      alert(msg);
     }
   };
 
@@ -499,14 +500,16 @@ export const TestPlanDetailView: React.FC<TestPlanDetailViewProps> = ({
             <span>{isEditingMetadata ? 'Düzenlemeyi Kapat' : 'Planı Düzenle'}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleDeletePlan}
-            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1d232f] text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:border-rose-500/30 transition-all shadow-xs cursor-pointer"
-            title="Test Planını Sil"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          {can('DELETE_PLAN') && (
+            <button
+              type="button"
+              onClick={handleDeletePlan}
+              className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1d232f] text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:border-rose-500/30 transition-all shadow-xs cursor-pointer"
+              title="Test Planını Sil (Admin & Test Lead)"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
 
           <button
             type="button"

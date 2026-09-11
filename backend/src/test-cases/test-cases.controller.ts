@@ -87,11 +87,19 @@ export class TestCasesController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.TEST_LEAD, Role.TESTER, Role.AUTOMATION_ENGINEER)
-  @ApiOperation({ summary: 'Test Case\'i sil (Admin, Lead, Tester)' })
+  @Roles(Role.ADMIN, Role.TEST_LEAD)
+  @ApiOperation({ summary: 'Test Case\'i sil veya güvenli arşive al (Sadece Admin ve Test Lead)' })
   @ApiParam({ name: 'id', description: 'TestCase UUID' })
   remove(@Param('id') id: string) {
     return this.testCasesService.remove(id);
+  }
+
+  @Post(':id/restore')
+  @Roles(Role.ADMIN, Role.TEST_LEAD)
+  @ApiOperation({ summary: 'Arşivlenmiş/Silinmiş Test Case\'i geri yükle (Admin, Test Lead)' })
+  @ApiParam({ name: 'id', description: 'TestCase UUID' })
+  restore(@Param('id') id: string) {
+    return this.testCasesService.restore(id);
   }
 }
 

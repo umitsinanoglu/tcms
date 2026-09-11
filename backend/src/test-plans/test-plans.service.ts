@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTestPlanDto } from './dto/create-test-plan.dto';
 import { UpdateTestPlanDto } from './dto/update-test-plan.dto';
@@ -283,6 +283,18 @@ export class TestPlansService {
 
   async remove(id: string) {
     await this.findOne(id);
+
+    // Dependency check: If this test plan has test runs, block destructive hard deletion
+    const runCount = await this.prisma.testRun.count({
+      where: { testPlanId: id },
+    });
+
+    if (runCount > 0) {
+      throw new BadRequestException(
+        `Bu test planına bağlı ${runCount} adet test koşumu bulunmaktadır. Geçmiş test sonuçlarını ve denetim izini korumak için planı silmek yerine lütfen durumunu 'ARCHIVED' (Arşivlendi) olarak güncelleyiniz.`,
+      );
+    }
+
     return this.prisma.testPlan.delete({
       where: { id },
     });

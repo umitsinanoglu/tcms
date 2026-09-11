@@ -402,15 +402,26 @@ export class TestRunsService {
   }
 
   async deleteRun(runId: string) {
-    await this.findOne(runId);
+    const run = await this.findOne(runId);
 
-    // Explicitly clean up all defects generated from or linked to this run
-    await this.prisma.defect.deleteMany({
+    // Audit compliance: Do not allow deletion of officially ARCHIVED runs
+    if (run.status === RunStatus.ARCHIVED) {
+      throw new ForbiddenException(
+        'Arşivlenmiş test koşumları kalite güvence ve denetim izi (audit trail) mevzuatı gereği silinemez.',
+      );
+    }
+
+    // Preserve defects by detaching them from this run so valuable bug descriptions and Jira links are not lost
+    await this.prisma.defect.updateMany({
       where: {
         OR: [
           { testRunId: runId },
           { testResult: { testRunId: runId } },
         ],
+      },
+      data: {
+        testRunId: null,
+        testResultId: null,
       },
     });
 

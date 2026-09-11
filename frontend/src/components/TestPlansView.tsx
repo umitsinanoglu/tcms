@@ -137,9 +137,15 @@ export const TestPlansView: React.FC<TestPlansViewProps> = ({
 
   // Handle plan delete
   const handleDeletePlan = async (id: string) => {
-    if (!confirm('Bu test planını silmek istediğinize emin misiniz?')) return;
-    await TestPlansService.delete(id);
-    await loadPlans();
+    if (!confirm('Bu test planını silmek istediğinize emin misiniz?\n\n(Not: Eğer bu plana bağlı test koşumları varsa denetim izini korumak için plan silinemez; lütfen durumunu ARCHIVED yapınız.)')) return;
+    try {
+      await TestPlansService.delete(id);
+      await loadPlans();
+    } catch (err: any) {
+      console.error('Failed to delete test plan:', err);
+      const msg = err?.response?.data?.message || err?.message || 'Test planı silinemedi.';
+      alert(msg);
+    }
   };
 
   // Helper to infer or calculate statistics for each plan

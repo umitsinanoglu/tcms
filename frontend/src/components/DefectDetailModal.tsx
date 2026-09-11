@@ -5,6 +5,7 @@ import {
   DefectSeverity,
   UpdateDefectDto,
 } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 import {
   X,
   Bug,
@@ -47,6 +48,7 @@ export const DefectDetailModal: React.FC<DefectDetailModalProps> = ({
   onNavigateToCase,
   onNavigateToRun,
 }) => {
+  const { can } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -234,15 +236,17 @@ export const DefectDetailModal: React.FC<DefectDetailModalProps> = ({
             >
               <Edit3 className="w-4 h-4" />
             </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="p-2 rounded-xl text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-              title="Defect Kaydını Sil"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            {can('DELETE_DEFECT') && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="p-2 rounded-xl text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                title="Defect Kaydını Kalıcı Olarak Sil (Yalnızca Admin)"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}

@@ -671,12 +671,12 @@ export const TestCaseEditor: React.FC<TestCaseEditorProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm('Bu Test Senaryosunu silmek istediğinize emin misiniz?')) {
+                  if (confirm(`'${testCase.code}: ${testCase.title}' test senaryosunu silmek / arşivlemek istediğinize emin misiniz?\n\n(Not: Senaryonun geçmiş test koşum kayıtları varsa denetim izini korumak için güvenle arşivlenecektir.)`)) {
                     onDelete(testCase.id);
                   }
                 }}
                 className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 transition-colors cursor-pointer"
-                title="Test Senaryosunu Sil"
+                title="Test Senaryosunu Sil / Arşivle"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

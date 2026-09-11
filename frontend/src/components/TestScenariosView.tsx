@@ -633,20 +633,22 @@ export const TestScenariosView: React.FC<TestScenariosViewProps> = ({
                                     <Pencil className="w-3.5 h-3.5" />
                                   </button>
 
-                                  {/* Delete Scenario */}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (confirm(`'${tc.code} - ${tc.title}' senaryosunu silmek istediğinize emin misiniz?`)) {
-                                        onDeleteCase(tc.id);
-                                      }
-                                    }}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors cursor-pointer"
-                                    title="Senaryoyu Sil"
-                                    aria-label="Senaryoyu Sil"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                  {/* Delete Scenario (Admin & Test Lead only) */}
+                                  {can('DELETE_CASE') && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (confirm(`'${tc.code} - ${tc.title}' senaryosunu silmek / arşivlemek istediğinize emin misiniz?\n\n(Not: Senaryonun geçmiş koşum kayıtları varsa denetim izini korumak için güvenle arşivlenecektir.)`)) {
+                                          onDeleteCase(tc.id);
+                                        }
+                                      }}
+                                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors cursor-pointer"
+                                      title="Senaryoyu Sil / Arşivle"
+                                      aria-label="Senaryoyu Sil / Arşivle"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             );
