@@ -64,7 +64,94 @@ interface QuickRunModalProps {
   onSuccess: () => void;
 }
 
-type StepStatus = 'PASSED' | 'FAILED' | 'BLOCKED' | 'NONE';
+export type StepStatus = 'PASSED' | 'FAILED' | 'BLOCKED' | 'NOT_RUN' | 'N/A';
+
+export const computeNextStepStatuses = (
+  currentIndex: number,
+  flag: 'PASSED' | 'FAILED' | 'BLOCKED',
+  currentStatuses: Record<number, StepStatus>,
+  totalSteps: number,
+  currentOverallStatus: ResultStatus | ''
+): { nextStatuses: Record<number, StepStatus>; nextOverallStatus: ResultStatus | '' } => {
+  // 1. Check if step is disabled (any preceding step < currentIndex is FAILED)
+  for (let i = 0; i < currentIndex; i++) {
+    if (currentStatuses[i] === 'FAILED') {
+      return { nextStatuses: currentStatuses, nextOverallStatus: currentOverallStatus };
+    }
+  }
+
+  const nextStatuses: Record<number, StepStatus> = {};
+  for (let i = 0; i < totalSteps; i++) {
+    nextStatuses[i] = currentStatuses[i] || 'NOT_RUN';
+  }
+
+  const currentStepStatus = nextStatuses[currentIndex];
+  const isTogglingOff = currentStepStatus === flag;
+
+  if (isTogglingOff) {
+    // 2. Toggle off: user clicked active flag again -> set to NOT_RUN
+    nextStatuses[currentIndex] = 'NOT_RUN';
+  } else {
+    // Set this step to the selected flag
+    nextStatuses[currentIndex] = flag;
+
+    // 3. Auto-pass preceding steps (0 to currentIndex - 1) if they are NOT_RUN or N/A
+    for (let i = 0; i < currentIndex; i++) {
+      if (nextStatuses[i] === 'NOT_RUN' || nextStatuses[i] === 'N/A') {
+        nextStatuses[i] = 'PASSED';
+      }
+    }
+  }
+
+  // 4. Failure (Failed) cascade logic:
+  // Find the first FAILED step index
+  let firstFailedIdx = -1;
+  for (let i = 0; i < totalSteps; i++) {
+    if (nextStatuses[i] === 'FAILED') {
+      firstFailedIdx = i;
+      break;
+    }
+  }
+
+  if (firstFailedIdx !== -1) {
+    // All steps after the first FAILED step automatically become N/A
+    for (let i = firstFailedIdx + 1; i < totalSteps; i++) {
+      nextStatuses[i] = 'N/A';
+    }
+  } else {
+    // If no step is FAILED anymore, any step that was N/A reverts back to NOT_RUN
+    for (let i = 0; i < totalSteps; i++) {
+      if (nextStatuses[i] === 'N/A') {
+        nextStatuses[i] = 'NOT_RUN';
+      }
+    }
+  }
+
+  // 5. Smart overall status recommendation
+  let nextOverallStatus: ResultStatus | '' = currentOverallStatus;
+  const hasFailed = Array.from({ length: totalSteps }).some((_, i) => nextStatuses[i] === 'FAILED');
+  const hasBlocked = Array.from({ length: totalSteps }).some((_, i) => nextStatuses[i] === 'BLOCKED');
+  const allPassed =
+    totalSteps > 0 && Array.from({ length: totalSteps }).every((_, i) => nextStatuses[i] === 'PASSED');
+
+  if (hasFailed) {
+    nextOverallStatus = 'FAILED';
+  } else if (hasBlocked) {
+    nextOverallStatus = 'BLOCKED';
+  } else if (allPassed) {
+    nextOverallStatus = 'PASSED';
+  } else {
+    if (currentOverallStatus === 'FAILED' && !hasFailed) {
+      nextOverallStatus = '';
+    } else if (currentOverallStatus === 'BLOCKED' && !hasBlocked) {
+      nextOverallStatus = '';
+    } else if (currentOverallStatus === 'PASSED' && !allPassed) {
+      nextOverallStatus = '';
+    }
+  }
+
+  return { nextStatuses, nextOverallStatus };
+};
 
 export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   isOpen,
@@ -155,7 +242,7 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
       const initialSteps: Record<number, StepStatus> = {};
       if (testCase.steps && testCase.steps.length > 0) {
         testCase.steps.forEach((_, idx) => {
-          initialSteps[idx] = 'NONE';
+          initialSteps[idx] = 'NOT_RUN';
         });
       }
       setStepStatuses(initialSteps);
@@ -222,30 +309,46 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
   if (!isOpen || !testCase) return null;
 
   const totalSteps = testCase.steps?.length || 0;
-  const verifiedStepsCount = Object.values(stepStatuses).filter((s) => s !== 'NONE').length;
+  const verifiedStepsCount = Object.values(stepStatuses).filter(
+    (s) => s === 'PASSED' || s === 'FAILED' || s === 'BLOCKED'
+  ).length;
 
-  const handleToggleStepCheckbox = (index: number) => {
-    setStepStatuses((prev) => {
-      const current = prev[index];
-      const nextStatus: StepStatus = current === 'PASSED' ? 'NONE' : 'PASSED';
-      const updated: Record<number, StepStatus> = { ...prev, [index]: nextStatus };
-      evaluateOverallStatus(updated);
-      return updated;
-    });
+  const isStepDisabled = (stepIdx: number): boolean => {
+    for (let i = 0; i < stepIdx; i++) {
+      if (stepStatuses[i] === 'FAILED') return true;
+    }
+    return false;
   };
 
   const handleSetStepFlag = (index: number, flag: StepStatus) => {
-    setStepStatuses((prev) => {
-      const current = prev[index];
-      const nextStatus: StepStatus = current === flag ? 'NONE' : flag;
-      const updated: Record<number, StepStatus> = { ...prev, [index]: nextStatus };
-      evaluateOverallStatus(updated);
-      return updated;
-    });
+    if (flag === 'NOT_RUN' || flag === 'N/A') return;
+    const total = testCase?.steps?.length || 0;
+    const { nextStatuses, nextOverallStatus } = computeNextStepStatuses(
+      index,
+      flag,
+      stepStatuses,
+      total,
+      status
+    );
+    setStepStatuses(nextStatuses);
+    setStatus(nextOverallStatus);
   };
 
-  // Set status helper: When PASSED is selected, mark all steps as PASSED
+  // Set status helper: Toggle off if already selected, or mark all steps as PASSED if PASSED selected
   const handleSetStatus = (newStatus: ResultStatus) => {
+    if (status === newStatus) {
+      // Toggle off: reset status and all steps to NOT_RUN
+      setStatus('');
+      if (testCase?.steps && testCase.steps.length > 0) {
+        const resetSteps: Record<number, StepStatus> = {};
+        testCase.steps.forEach((_, idx) => {
+          resetSteps[idx] = 'NOT_RUN';
+        });
+        setStepStatuses(resetSteps);
+      }
+      return;
+    }
+
     setStatus(newStatus);
     if (newStatus === 'PASSED' && testCase?.steps && testCase.steps.length > 0) {
       const allPassed: Record<number, StepStatus> = {};
@@ -253,18 +356,6 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
         allPassed[idx] = 'PASSED';
       });
       setStepStatuses(allPassed);
-    }
-  };
-
-  // Smart overall status recommendation based on step flags
-  const evaluateOverallStatus = (statuses: Record<number, StepStatus>) => {
-    const values = Object.values(statuses);
-    if (values.some((v) => v === 'FAILED')) {
-      setStatus('FAILED');
-    } else if (values.some((v) => v === 'BLOCKED')) {
-      setStatus('BLOCKED');
-    } else if (values.length > 0 && values.every((v) => v === 'PASSED')) {
-      setStatus('PASSED');
     }
   };
 
@@ -311,8 +402,17 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
     let stepsText = '';
     if (testCase.steps && testCase.steps.length > 0) {
       stepsText = '\n\nTest Adımları Kontrol Listesi:\n' + testCase.steps.map((st, idx) => {
-        const stepSt = stepStatuses[idx] || 'NONE';
-        const statusLabel = stepSt === 'PASSED' ? '[PASSED]' : stepSt === 'FAILED' ? '[FAILED]' : stepSt === 'BLOCKED' ? '[BLOCKED]' : '[NOT RUN]';
+        const stepSt = stepStatuses[idx] || 'NOT_RUN';
+        const statusLabel =
+          stepSt === 'PASSED'
+            ? '[PASSED]'
+            : stepSt === 'FAILED'
+            ? '[FAILED]'
+            : stepSt === 'BLOCKED'
+            ? '[BLOCKED]'
+            : stepSt === 'N/A'
+            ? '[N/A]'
+            : '[NOT RUN]';
         const action = (st as any).action || (st as any).step || `Adım ${idx + 1}`;
         const expected = (st as any).expectedResult || (st as any).expected || '';
         return `${idx + 1}. ${statusLabel} ${action}${expected ? ` (Beklenen: ${expected})` : ''}`;
@@ -395,10 +495,10 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
 
       // Build step notes summary if steps were flagged
       let finalErrorMessage = errorMessage.trim();
-      if (totalSteps > 0 && Object.values(stepStatuses).some((s) => s !== 'NONE')) {
+      if (totalSteps > 0 && Object.values(stepStatuses).some((s) => s === 'PASSED' || s === 'FAILED' || s === 'BLOCKED')) {
         const stepSummary = testCase.steps
           ?.map((st, idx) => {
-            const stStatus = stepStatuses[idx] || 'NONE';
+            const stStatus = stepStatuses[idx] || 'NOT_RUN';
             return `Adım ${st.stepNumber} [${stStatus}]: ${st.action}`;
           })
           .join(' | ');
@@ -766,14 +866,16 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
 
                 <div className="space-y-2.5">
                   {testCase.steps.map((step, idx) => {
-                    const stStatus = stepStatuses[idx] || 'NONE';
-                    const isVerified = stStatus !== 'NONE';
+                    const stStatus = stepStatuses[idx] || 'NOT_RUN';
+                    const disabled = isStepDisabled(idx);
 
                     return (
                       <div
                         key={idx}
                         className={`p-3 rounded-xl border transition-all flex items-start gap-3 ${
-                          stStatus === 'PASSED'
+                          disabled || stStatus === 'N/A'
+                            ? 'bg-slate-100/60 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 opacity-60'
+                            : stStatus === 'PASSED'
                             ? 'bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/30'
                             : stStatus === 'FAILED'
                             ? 'bg-red-500/5 dark:bg-red-500/10 border-red-500/30'
@@ -782,24 +884,18 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                             : 'bg-white dark:bg-[#151b28] border-slate-200 dark:border-slate-800'
                         }`}
                       >
-                        {/* Checkbox on Left */}
-                        <button
-                          type="button"
-                          onClick={() => handleToggleStepCheckbox(idx)}
-                          className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
-                            isVerified
-                              ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white'
-                              : 'border-slate-300 dark:border-slate-600 hover:border-slate-400'
-                          }`}
-                        >
-                          {isVerified && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                        </button>
-
                         {/* Step Description & Expected */}
                         <div className="flex-1 min-w-0 text-xs">
-                          <p className="font-bold text-slate-800 dark:text-slate-200">
-                            Adım {step.stepNumber}: {step.action}
-                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-bold text-slate-800 dark:text-slate-200">
+                              Adım {step.stepNumber}: {step.action}
+                            </p>
+                            {stStatus === 'N/A' && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                N/A (Koşulmadı)
+                              </span>
+                            )}
+                          </div>
                           {step.expectedResult && (
                             <p className="mt-1 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
                               <span className="font-semibold text-slate-600 dark:text-slate-300">Beklenen:</span>{' '}
@@ -813,13 +909,16 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                           {/* Pass Flag */}
                           <button
                             type="button"
+                            disabled={disabled}
                             onClick={() => handleSetStepFlag(idx, 'PASSED')}
-                            className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-                              stStatus === 'PASSED'
-                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                                : 'bg-white dark:bg-slate-800 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-slate-200 dark:border-slate-700'
+                            className={`p-1.5 rounded-lg border text-xs font-bold transition-all ${
+                              disabled
+                                ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+                                : stStatus === 'PASSED'
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs cursor-pointer'
+                                : 'bg-white dark:bg-slate-800 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-slate-200 dark:border-slate-700 cursor-pointer'
                             }`}
-                            title="Adımı Başarılı (Passed) olarak işaretle"
+                            title={disabled ? 'Önceki adım FAILED olduğu için bu adım devre dışıdır' : 'Adımı Başarılı (Passed) olarak işaretle'}
                           >
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
@@ -827,13 +926,16 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                           {/* Fail Flag */}
                           <button
                             type="button"
+                            disabled={disabled}
                             onClick={() => handleSetStepFlag(idx, 'FAILED')}
-                            className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-                              stStatus === 'FAILED'
-                                ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                                : 'bg-white dark:bg-slate-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 border-slate-200 dark:border-slate-700'
+                            className={`p-1.5 rounded-lg border text-xs font-bold transition-all ${
+                              disabled
+                                ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+                                : stStatus === 'FAILED'
+                                ? 'bg-red-600 text-white border-red-600 shadow-xs cursor-pointer'
+                                : 'bg-white dark:bg-slate-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 border-slate-200 dark:border-slate-700 cursor-pointer'
                             }`}
-                            title="Adımı Başarısız (Failed) olarak işaretle"
+                            title={disabled ? 'Önceki adım FAILED olduğu için bu adım devre dışıdır' : 'Adımı Başarısız (Failed) olarak işaretle'}
                           >
                             <XCircle className="w-4 h-4" />
                           </button>
@@ -841,13 +943,16 @@ export const QuickRunModal: React.FC<QuickRunModalProps> = ({
                           {/* Blocked Flag */}
                           <button
                             type="button"
+                            disabled={disabled}
                             onClick={() => handleSetStepFlag(idx, 'BLOCKED')}
-                            className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-                              stStatus === 'BLOCKED'
-                                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                                : 'bg-white dark:bg-slate-800 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-slate-200 dark:border-slate-700'
+                            className={`p-1.5 rounded-lg border text-xs font-bold transition-all ${
+                              disabled
+                                ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+                                : stStatus === 'BLOCKED'
+                                ? 'bg-amber-600 text-white border-amber-600 shadow-xs cursor-pointer'
+                                : 'bg-white dark:bg-slate-800 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-slate-200 dark:border-slate-700 cursor-pointer'
                             }`}
-                            title="Adımı Engellenmiş (Blocked) olarak işaretle"
+                            title={disabled ? 'Önceki adım FAILED olduğu için bu adım devre dışıdır' : 'Adımı Engellenmiş (Blocked) olarak işaretle'}
                           >
                             <Slash className="w-4 h-4" />
                           </button>

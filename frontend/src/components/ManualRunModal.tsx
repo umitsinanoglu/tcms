@@ -13,7 +13,7 @@ import {
   DefectSeverity,
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
-import { parseScreenshots, formatScreenshots } from './QuickRunModal';
+import { parseScreenshots, formatScreenshots, StepStatus, computeNextStepStatuses } from './QuickRunModal';
 import { NewDefectModal } from './NewDefectModal';
 import {
   X,
@@ -74,7 +74,6 @@ export const getPlanScenarioIds = (plan: TestPlan | null | undefined): string[] 
 };
 
 type WizardStep = 'PLAN_SELECT' | 'CASE_SELECT' | 'EXECUTION' | 'SUMMARY';
-type StepStatus = 'PASSED' | 'FAILED' | 'BLOCKED' | 'NONE';
 
 interface CaseRunState {
   status: ResultStatus | '';
@@ -362,7 +361,7 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
         const stepInit: Record<number, StepStatus> = {};
         if (tc.steps && tc.steps.length > 0) {
           tc.steps.forEach((_, sIdx) => {
-            stepInit[sIdx] = 'NONE';
+            stepInit[sIdx] = 'NOT_RUN';
           });
         }
 
@@ -416,9 +415,26 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     setLightboxIndex(null);
   };
 
-  // Set status helper: When PASSED is selected, mark all steps as PASSED
+  // Set status helper: Toggle off if already selected, or mark all steps as PASSED if PASSED selected
   const handleSetStatus = (newStatus: ResultStatus) => {
     if (!currentCase) return;
+    const currentStatus = currentCaseState?.status;
+
+    if (currentStatus === newStatus) {
+      // Toggle off: reset status and all steps to NOT_RUN
+      const resetSteps: Record<number, StepStatus> = {};
+      if (currentCase.steps && currentCase.steps.length > 0) {
+        currentCase.steps.forEach((_, idx) => {
+          resetSteps[idx] = 'NOT_RUN';
+        });
+      }
+      handleUpdateCurrentState({
+        status: '',
+        stepStatuses: resetSteps,
+      });
+      return;
+    }
+
     if (newStatus === 'PASSED') {
       const allPassed: Record<number, StepStatus> = {};
       if (currentCase.steps && currentCase.steps.length > 0) {
@@ -524,41 +540,22 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     });
   };
 
-  const handleToggleStepCheckbox = (stepIdx: number) => {
-    if (!currentCase || !currentCaseState) return;
-    const currentSteps = currentCaseState.stepStatuses || {};
-    const currentStatus = currentSteps[stepIdx] || 'NONE';
-    const nextStatus: StepStatus = currentStatus === 'PASSED' ? 'NONE' : 'PASSED';
-    const nextSteps = { ...currentSteps, [stepIdx]: nextStatus };
-
-    let recommendedStatus: ResultStatus | '' = currentCaseState.status;
-    const values = Object.values(nextSteps);
-    if (values.some((v) => v === 'FAILED')) recommendedStatus = 'FAILED';
-    else if (values.some((v) => v === 'BLOCKED')) recommendedStatus = 'BLOCKED';
-    else if (values.length > 0 && values.every((v) => v === 'PASSED')) recommendedStatus = 'PASSED';
-
-    handleUpdateCurrentState({
-      stepStatuses: nextSteps,
-      status: recommendedStatus,
-    });
-  };
-
   const handleSetStepFlag = (stepIdx: number, flag: StepStatus) => {
     if (!currentCase || !currentCaseState) return;
+    if (flag === 'NOT_RUN' || flag === 'N/A') return;
+    const total = currentCase.steps?.length || 0;
     const currentSteps = currentCaseState.stepStatuses || {};
-    const currentStatus = currentSteps[stepIdx] || 'NONE';
-    const nextStatus: StepStatus = currentStatus === flag ? 'NONE' : flag;
-    const nextSteps = { ...currentSteps, [stepIdx]: nextStatus };
-
-    let recommendedStatus: ResultStatus | '' = currentCaseState.status;
-    const values = Object.values(nextSteps);
-    if (values.some((v) => v === 'FAILED')) recommendedStatus = 'FAILED';
-    else if (values.some((v) => v === 'BLOCKED')) recommendedStatus = 'BLOCKED';
-    else if (values.length > 0 && values.every((v) => v === 'PASSED')) recommendedStatus = 'PASSED';
+    const { nextStatuses, nextOverallStatus } = computeNextStepStatuses(
+      stepIdx,
+      flag,
+      currentSteps,
+      total,
+      currentCaseState.status
+    );
 
     handleUpdateCurrentState({
-      stepStatuses: nextSteps,
-      status: recommendedStatus,
+      stepStatuses: nextStatuses,
+      status: nextOverallStatus,
     });
   };
 
@@ -644,8 +641,17 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
     let stepsText = '';
     if (currentCase.steps && currentCase.steps.length > 0) {
       stepsText = '\n\nTest Adımları Kontrol Listesi:\n' + currentCase.steps.map((st, idx) => {
-        const stepSt = curState.stepStatuses?.[idx] || 'NONE';
-        const statusLabel = stepSt === 'PASSED' ? '[PASSED]' : stepSt === 'FAILED' ? '[FAILED]' : stepSt === 'BLOCKED' ? '[BLOCKED]' : '[NOT RUN]';
+        const stepSt = curState.stepStatuses?.[idx] || 'NOT_RUN';
+        const statusLabel =
+          stepSt === 'PASSED'
+            ? '[PASSED]'
+            : stepSt === 'FAILED'
+            ? '[FAILED]'
+            : stepSt === 'BLOCKED'
+            ? '[BLOCKED]'
+            : stepSt === 'N/A'
+            ? '[N/A]'
+            : '[NOT RUN]';
         const action = (st as any).action || (st as any).step || `Adım ${idx + 1}`;
         const expected = (st as any).expectedResult || (st as any).expected || '';
         return `${idx + 1}. ${statusLabel} ${action}${expected ? ` (Beklenen: ${expected})` : ''}`;
@@ -719,8 +725,22 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
   // Submit and Complete Run Results
   const handleSubmitRun = async () => {
     if (!activeRun) return;
-    setIsSubmitting(true);
     setErrorMsg(null);
+
+    // Rule 4: Mandatory run status validation
+    const uncompletedCase = runCases.find((tc) => !caseStates[tc.id]?.status);
+    if (uncompletedCase) {
+      const msg = 'Lütfen bir test koşum sonucu seçiniz (PASSED, FAILED, BLOCKED, SKIPPED).';
+      setErrorMsg(msg);
+      showToast(msg, 'error');
+      const targetIdx = runCases.findIndex((tc) => tc.id === uncompletedCase.id);
+      if (targetIdx !== -1 && targetIdx !== currentIndex) {
+        handleChangeIndex(targetIdx);
+      }
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const resultsPayload = runCases.map((tc) => {
         const cState = caseStates[tc.id];
@@ -730,32 +750,20 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
         let finalErrorMsg = cState?.errorMessage?.trim() || undefined;
         if (tc.steps && tc.steps.length > 0 && cState?.stepStatuses) {
           const totalSt = tc.steps.length;
-          const verifiedSt = Object.values(cState.stepStatuses).filter((s) => s !== 'NONE').length;
+          const verifiedSt = Object.values(cState.stepStatuses).filter(
+            (s) => s === 'PASSED' || s === 'FAILED' || s === 'BLOCKED'
+          ).length;
           if (verifiedSt > 0 && !finalErrorMsg) {
             const stText = tc.steps
-              .map((st, idx) => `Adım ${st.stepNumber} [${cState.stepStatuses[idx] || 'NONE'}]: ${st.action}`)
+              .map((st, idx) => `Adım ${st.stepNumber} [${cState.stepStatuses[idx] || 'NOT_RUN'}]: ${st.action}`)
               .join(' | ');
             finalErrorMsg = `[Adım Doğrulaması: ${verifiedSt}/${totalSt}] ${stText}`;
           }
         }
 
-        let effectiveStatus: ResultStatus = 'SKIPPED';
-        if (cState?.status) {
-          effectiveStatus = cState.status as ResultStatus;
-        } else if (cState?.stepStatuses) {
-          const vals = Object.values(cState.stepStatuses);
-          if (vals.length > 0 && vals.every((v) => v === 'PASSED')) {
-            effectiveStatus = 'PASSED';
-          } else if (vals.some((v) => v === 'FAILED')) {
-            effectiveStatus = 'FAILED';
-          } else if (vals.some((v) => v === 'BLOCKED')) {
-            effectiveStatus = 'BLOCKED';
-          }
-        }
-
         return {
           testCaseId: tc.id,
-          status: effectiveStatus,
+          status: cState.status as ResultStatus,
           executionMs: cState?.executionMs || Math.floor(Math.random() * 800) + 200,
           errorMessage: finalErrorMsg,
           jiraBugKey: cState?.jiraBugKey || undefined,
@@ -791,8 +799,18 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
   const totalSteps = currentCase?.steps?.length || 0;
   const verifiedStepsCount = currentCaseState?.stepStatuses
-    ? Object.values(currentCaseState.stepStatuses).filter((s) => s !== 'NONE').length
+    ? Object.values(currentCaseState.stepStatuses).filter(
+        (s) => s === 'PASSED' || s === 'FAILED' || s === 'BLOCKED'
+      ).length
     : 0;
+
+  const isStepDisabled = (stepIdx: number): boolean => {
+    if (!currentCaseState?.stepStatuses) return false;
+    for (let i = 0; i < stepIdx; i++) {
+      if (currentCaseState.stepStatuses[i] === 'FAILED') return true;
+    }
+    return false;
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
@@ -1426,14 +1444,16 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
 
                   <div className="space-y-2.5">
                     {currentCase.steps.map((step, idx) => {
-                      const stStatus = currentCaseState.stepStatuses[idx] || 'NONE';
-                      const isVerified = stStatus !== 'NONE';
+                      const stStatus = currentCaseState.stepStatuses[idx] || 'NOT_RUN';
+                      const disabled = isStepDisabled(idx);
 
                       return (
                         <div
                           key={idx}
                           className={`p-3 rounded-xl border transition-all flex items-start gap-3 ${
-                            stStatus === 'PASSED'
+                            disabled || stStatus === 'N/A'
+                              ? 'bg-slate-100/60 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 opacity-60'
+                              : stStatus === 'PASSED'
                               ? 'bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/30'
                               : stStatus === 'FAILED'
                               ? 'bg-red-500/5 dark:bg-red-500/10 border-red-500/30'
@@ -1442,24 +1462,18 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                               : 'bg-white dark:bg-[#151b28] border-slate-200 dark:border-slate-800'
                           }`}
                         >
-                          {/* Checkbox on Left */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleStepCheckbox(idx)}
-                            className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
-                              isVerified
-                                ? 'bg-blue-600 border-blue-600 text-white'
-                                : 'border-slate-300 dark:border-slate-600 hover:border-slate-400'
-                            }`}
-                          >
-                            {isVerified && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                          </button>
-
                           {/* Step Description & Expected */}
                           <div className="flex-1 min-w-0 text-xs">
-                            <p className="font-bold text-slate-800 dark:text-slate-200">
-                              Adım {step.stepNumber}: {step.action}
-                            </p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-bold text-slate-800 dark:text-slate-200">
+                                Adım {step.stepNumber}: {step.action}
+                              </p>
+                              {stStatus === 'N/A' && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                  N/A (Koşulmadı)
+                                </span>
+                              )}
+                            </div>
                             {step.expectedResult && (
                               <p className="mt-1 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
                                 <span className="font-semibold text-slate-600 dark:text-slate-300">Beklenen:</span>{' '}
@@ -1473,13 +1487,16 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                             {/* Pass Flag */}
                             <button
                               type="button"
+                              disabled={disabled}
                               onClick={() => handleSetStepFlag(idx, 'PASSED')}
-                              className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-                                stStatus === 'PASSED'
-                                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                                  : 'bg-white dark:bg-slate-800 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-slate-200 dark:border-slate-700'
+                              className={`p-1.5 rounded-lg border text-xs font-bold transition-all ${
+                                disabled
+                                  ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+                                  : stStatus === 'PASSED'
+                                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs cursor-pointer'
+                                  : 'bg-white dark:bg-slate-800 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-slate-200 dark:border-slate-700 cursor-pointer'
                               }`}
-                              title="Adımı Başarılı (Passed) olarak işaretle"
+                              title={disabled ? 'Önceki adım FAILED olduğu için bu adım devre dışıdır' : 'Adımı Başarılı (Passed) olarak işaretle'}
                             >
                               <CheckCircle2 className="w-4 h-4" />
                             </button>
@@ -1487,13 +1504,16 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                             {/* Fail Flag */}
                             <button
                               type="button"
+                              disabled={disabled}
                               onClick={() => handleSetStepFlag(idx, 'FAILED')}
-                              className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-                                stStatus === 'FAILED'
-                                  ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                                  : 'bg-white dark:bg-slate-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 border-slate-200 dark:border-slate-700'
+                              className={`p-1.5 rounded-lg border text-xs font-bold transition-all ${
+                                disabled
+                                  ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+                                  : stStatus === 'FAILED'
+                                  ? 'bg-red-600 text-white border-red-600 shadow-xs cursor-pointer'
+                                  : 'bg-white dark:bg-slate-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 border-slate-200 dark:border-slate-700 cursor-pointer'
                               }`}
-                              title="Adımı Başarısız (Failed) olarak işaretle"
+                              title={disabled ? 'Önceki adım FAILED olduğu için bu adım devre dışıdır' : 'Adımı Başarısız (Failed) olarak işaretle'}
                             >
                               <XCircle className="w-4 h-4" />
                             </button>
@@ -1501,13 +1521,16 @@ export const ManualRunModal: React.FC<ManualRunModalProps> = ({
                             {/* Blocked Flag */}
                             <button
                               type="button"
+                              disabled={disabled}
                               onClick={() => handleSetStepFlag(idx, 'BLOCKED')}
-                              className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-                                stStatus === 'BLOCKED'
-                                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                                  : 'bg-white dark:bg-slate-800 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-slate-200 dark:border-slate-700'
+                              className={`p-1.5 rounded-lg border text-xs font-bold transition-all ${
+                                disabled
+                                  ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+                                  : stStatus === 'BLOCKED'
+                                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs cursor-pointer'
+                                  : 'bg-white dark:bg-slate-800 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-slate-200 dark:border-slate-700 cursor-pointer'
                               }`}
-                              title="Adımı Engellenmiş (Blocked) olarak işaretle"
+                              title={disabled ? 'Önceki adım FAILED olduğu için bu adım devre dışıdır' : 'Adımı Engellenmiş (Blocked) olarak işaretle'}
                             >
                               <Slash className="w-4 h-4" />
                             </button>
